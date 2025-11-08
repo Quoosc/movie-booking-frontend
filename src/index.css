@@ -1,0 +1,9 @@
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  @apply bg-gradient-to-b from-[#070018] via-[#050015] to-[#02000f] text-white;
+}
+ #root { height: 100%; }

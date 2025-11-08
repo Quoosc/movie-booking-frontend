@@ -1,0 +1,143 @@
+// src/app/(auth)/register/page.jsx
+
+import HomeButton from "@/components/shared/Buttons/HomeButton";
+import RegisterForm from "@/components/auth/register/RegisterForm/RegisterForm";
+
+export default function RegisterPage() {
+	return (
+		<main className="relative min-h-screen bg-[#020014] text-white overflow-hidden">
+			{/* Hiệu ứng nền */}
+			<div className="pointer-events-none fixed inset-0">
+				<div className="absolute -top-40 -left-24 w-[420px] h-[420px] bg-[radial-gradient(circle_at_center,#7b5cff55,transparent)] blur-3xl" />
+				<div className="absolute -bottom-40 left-1/3 w-[420px] h-[420px] bg-[radial-gradient(circle_at_center,#ff7af650,transparent)] blur-3xl" />
+				<div className="absolute -top-32 right-0 w-[420px] h-[420px] bg-[radial-gradient(circle_at_center,#00e0ff40,transparent)] blur-3xl" />
+			</div>
+
+			<div className="relative z-10 max-w-6xl mx-auto px-4 py-7">
+				<HomeButton />
+
+				<div className="mt-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_2px_minmax(0,1.4fr)] gap-0 lg:gap-6 items-stretch">
+					
+					{/* LEFT: FORM PANEL */}
+					<section
+						className="
+              flex flex-col justify-center
+              bg-gradient-to-b from-[#080018]/98 via-[#050015]/98 to-[#040010]/98
+              rounded-3xl px-6 sm:px-8 py-7
+              shadow-[0_0_35px_rgba(0,0,0,0.9)]
+              border border-white/5
+            "
+					>
+						<div className="flex-1 flex items-center justify-center">
+							<div className="w-full max-w-md">
+								<RegisterForm />
+							</div>
+						</div>
+					</section>
+
+					{/* CENTER: GLOW LINE */}
+					<div className="hidden lg:flex items-stretch justify-center">
+						<div
+							className="
+                w-[2px] my-6
+                bg-gradient-to-b from-transparent via-[#7b5cff] to-transparent
+                shadow-[0_0_26px_rgba(123,92,255,0.9)]
+                rounded-full
+              "
+						/>
+					</div>
+
+					{/* RIGHT: HEADER + INFO */}
+					<section
+						className="
+              hidden lg:flex flex-col justify-center gap-5
+              bg-gradient-to-b from-[#070018]/96 via-[#040015]/98 to-[#02000f]/98
+              rounded-3xl px-7 py-7
+              shadow-[0_0_32px_rgba(0,0,0,0.9)]
+              border border-white/5
+            "
+					>
+						<p className="text-[10px] tracking-[0.22em] text-[#9ca3ff] uppercase">
+							Movie Booking • CinesVerse
+						</p>
+
+						<h1 className="mt-2 text-3xl md:text-[32px] font-extrabold leading-tight">
+							<span className="bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_14px_rgba(123,92,255,0.8)]">
+								CinesVerse
+							</span>
+						</h1>
+
+						<p className="mt-3 text-[13px] text-[#cbd5ff]/85 max-w-md">
+							Trở thành 1 phần của {" "}
+							<span className="text-[#ffe700] font-semibold">
+								cộng động Cinescon
+							</span>
+							, nhận và cập nhật thông tin sớm nhất.
+						</p>
+
+						<div className="mt-4 flex gap-2">
+							<div className="h-1 w-16 bg-gradient-to-r from-[#43e1ff] to-[#7b5cff] rounded-full" />
+							<div className="h-1 w-10 bg-gradient-to-r from-[#7b5cff] to-[#ff7af6] rounded-full" />
+							<div className="h-1 w-6 bg-white/20 rounded-full" />
+						</div>
+
+						<p className="text-[13px] text-[#e5e7ff]/80 mt-2">
+							Tham gia CinesVerse Club để mở khóa ưu đãi SILVER • GOLD •
+							PLATINUM, nhận thông báo suất chiếu sớm và combo độc quyền.
+						</p>
+
+						<div className="mt-3 space-y-3">
+							<Card
+								title="Đăng ký miễn phí"
+								desc="Hoàn toàn miễn phí, chỉ mất vài giây để bắt đầu."
+								iconBg="from-[#43e1ff] to-[#7b5cff]"
+							/>
+							<Card
+								title="Ưu đãi tự động"
+								desc="Áp dụng mã giảm giá, điểm thưởng trực tiếp khi đặt vé."
+								iconBg="from-[#ffe700] to-[#ff9f1c]"
+							/>
+							<Card
+								title="Quản lý vé tiện lợi"
+								desc="Xem lại vé, lịch sử giao dịch & QR Code trên một tài khoản."
+								iconBg="from-[#ff7af6] to-[#ffe700]"
+							/>
+						</div>
+
+						<p className="mt-4 text-[11px] text-right text-[#fbbf24]/80 italic">
+							“ Thành viên hôm nay, đặc quyền dài lâu. ”
+						</p>
+					</section>
+				</div>
+			</div>
+		</main>
+	);
+}
+
+function Card({ title, desc, iconBg }) {
+	return (
+		<div
+			className="w-full flex items-center gap-4 px-4 py-3
+        bg-white/[0.02]
+        border border-white/5
+        rounded-2xl
+        hover:bg-white/[0.04]
+        hover:border-[#7b5cff66]
+        transition-all duration-200
+        shadow-[0_0_14px_rgba(0,0,0,0.8)]"
+		>
+			<div
+				className={`w-9 h-9 rounded-xl flex items-center justify-center
+          bg-gradient-to-br ${iconBg}
+          text-[#050816] text-lg font-extrabold
+          shadow-[0_0_12px_rgba(255,231,0,0.85)]`}
+			>
+				•
+			</div>
+			<div className="flex-1">
+				<p className="text-[13px] font-semibold text-white">{title}</p>
+				<p className="text-[11px] text-[#d1d5ff]/80">{desc}</p>
+			</div>
+		</div>
+	);
+}
