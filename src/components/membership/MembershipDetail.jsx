@@ -45,7 +45,7 @@ export default function MembershipDetail({ type, onBack }) {
             onClick={onBack}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/4 border border-white/15 text-[11px] text-[#cbd5ff]/80 hover:bg-white/8 hover:text-white transition"
           >
-            <span className="text-xs">←</span> Quay lại chương trình thành viên
+            <span className="text-xs">←</span> Thu gọn
           </button>
           <p className="text-[11px] text-[#9ca3ff]/70 uppercase tracking-[0.16em]">
             Member Benefits • CinesVerse

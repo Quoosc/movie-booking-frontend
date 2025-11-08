@@ -98,100 +98,108 @@ export default function HomePage() {
     scrollInto(membershipRef);
   };
 
-  return (
-    <div
-      className="
-        min-h-screen
-        bg-gradient-to-b
-        from-[#070018] via-[#100526] to-[#02000f]
-        text-white
-        relative overflow-hidden
-      "
-    >
-      {/* Hiệu ứng nền đồng bộ với login/register */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-[8%] w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,#7b5cff40,transparent)] blur-3xl" />
-        <div className="absolute top-[30%] right-[15%] w-[400px] h-[400px] bg-[radial-gradient(circle_at_center,#43e1ff30,transparent)] blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 w-[600px] h-[300px] bg-[radial-gradient(circle_at_center,#ff7af630,transparent)] blur-3xl" />
-      </div>
 
-      <Navbar />
-
-      <div className="relative z-10 pt-20">
-        {/* PHIM ĐANG CHIẾU */}
-        {!showAllUpcoming && (
-          <div ref={showingRef}>
-            {showAllShowing ? (
-              <AllMoviesGrid
-                title="PHIM ĐANG CHIẾU"
-                movies={showingMovies}
-                onCollapse={() => {
-                  setShowAllShowing(false);
-                  scrollInto(showingRef);
-                }}
-                titleClass="bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(123,92,255,0.7)]"
-              />
-            ) : (
-              <MovieCarousel
-                title="PHIM ĐANG CHIẾU"
-                movies={showingMovies}
-                onShowAll={() => {
-                  setShowAllShowing(true);
-                  setShowAllUpcoming(false);
-                  scrollInto(showingRef);
-                }}
-                titleClass="bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(123,92,255,0.7)]"
-              />
-            )}
-          </div>
-        )}
-
-        {/* PHIM SẮP CHIẾU */}
-        {!showAllShowing && (
-          <div ref={upcomingRef}>
-            {showAllUpcoming ? (
-              <AllMoviesGrid
-                title="PHIM SẮP CHIẾU"
-                movies={upcomingMovies}
-                onCollapse={() => {
-                  setShowAllUpcoming(false);
-                  scrollInto(upcomingRef);
-                }}
-                titleClass="bg-gradient-to-r from-[#ff7af6] via-[#7b5cff] to-[#43e1ff] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,122,246,0.7)]"
-              />
-            ) : (
-              <MovieCarousel
-                title="PHIM SẮP CHIẾU"
-                movies={upcomingMovies}
-                onShowAll={() => {
-                  setShowAllUpcoming(true);
-                  setShowAllShowing(false);
-                  scrollInto(upcomingRef);
-                }}
-                titleClass="bg-gradient-to-r from-[#ff7af6] via-[#7b5cff] to-[#43e1ff] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,122,246,0.7)]"
-              />
-            )}
-          </div>
-        )}
-
-        {/* MEMBERSHIP */}
-        <div ref={membershipRef} className="mt-16">
-          <MembershipHighlight
-            activeId={activeMembership}
-            onSelect={handleSelectMembership}
-          />
-          <MembershipDetail
-            type={activeMembership}
-            onBack={handleBackMembership}
-          />
-        </div>
-
-        {/* 🔹 LIÊN HỆ VỚI CHÚNG TÔI - nằm giữa membership và footer */}
-        <ContactSection />
-      </div>
-
-      <Footer />
+ return (
+  <div
+    className="
+      min-h-screen
+      bg-gradient-to-b
+      from-[#050018] via-[#080023] to-[#050018]
+      text-white
+      relative overflow-hidden
+    "
+  >
+    {/* Hiệu ứng nền nhẹ, cùng tông với navbar */}
+    <div className="pointer-events-none absolute inset-0">
+      {/* tím sáng phía trên (trùng glow navbar) */}
+      <div className="absolute -top-40 left-[8%] w-[520px] h-[520px] bg-[radial-gradient(circle_at_center,#7b5cff55,transparent)] blur-[110px]" />
+      {/* xanh ở bên phải */}
+      <div className="absolute top-[28%] right-[12%] w-[420px] h-[420px] bg-[radial-gradient(circle_at_center,#43e1ff40,transparent)] blur-[110px]" />
+      {/* hồng tím phía dưới */}
+      <div className="absolute bottom-[-60px] left-1/3 w-[640px] h-[320px] bg-[radial-gradient(circle_at_center,#ff7af640,transparent)] blur-[130px]" />
     </div>
-  );
+
+    {/* Navbar sticky (không đổi logic) */}
+    <Navbar />
+
+    {/* Nội dung chính, đẩy xuống khỏi navbar */}
+    <div className="relative z-10 pt-24">
+      {/* PHIM ĐANG CHIẾU */}
+      {!showAllUpcoming && (
+        <div ref={showingRef}>
+          {showAllShowing ? (
+            <AllMoviesGrid
+              title="PHIM ĐANG CHIẾU"
+              movies={showingMovies}
+              onCollapse={() => {
+                setShowAllShowing(false);
+                scrollInto(showingRef);
+              }}
+              titleClass="bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(123,92,255,0.7)]"
+            />
+          ) : (
+            <MovieCarousel
+              title="PHIM ĐANG CHIẾU"
+              movies={showingMovies}
+              onShowAll={() => {
+                setShowAllShowing(true);
+                setShowAllUpcoming(false);
+                scrollInto(showingRef);
+              }}
+              titleClass="bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(123,92,255,0.7)]"
+            />
+          )}
+        </div>
+      )}
+
+      {/* PHIM SẮP CHIẾU */}
+      {!showAllShowing && (
+        <div ref={upcomingRef}>
+          {showAllUpcoming ? (
+            <AllMoviesGrid
+              title="PHIM SẮP CHIẾU"
+              movies={upcomingMovies}
+              onCollapse={() => {
+                setShowAllUpcoming(false);
+                scrollInto(upcomingRef);
+              }}
+              titleClass="bg-gradient-to-r from-[#ff7af6] via-[#7b5cff] to-[#43e1ff] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,122,246,0.7)]"
+            />
+          ) : (
+            <MovieCarousel
+              title="PHIM SẮP CHIẾU"
+              movies={upcomingMovies}
+              onShowAll={() => {
+                setShowAllUpcoming(true);
+                setShowAllShowing(false);
+                scrollInto(upcomingRef);
+              }}
+              titleClass="bg-gradient-to-r from-[#ff7af6] via-[#7b5cff] to-[#43e1ff] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,122,246,0.7)]"
+            />
+          )}
+        </div>
+      )}
+
+      {/* MEMBERSHIP */}
+      <div ref={membershipRef} className="mt-16">
+        <MembershipHighlight
+          activeId={activeMembership}
+          onSelect={handleSelectMembership}
+        />
+        <MembershipDetail
+          type={activeMembership}
+          onBack={handleBackMembership}
+        />
+      </div>
+
+      {/* LIÊN HỆ */}
+      <ContactSection />
+    </div>
+
+    {/* Footer luôn nằm trên nền cùng tông */}
+    <Footer />
+  </div>
+);
+
 }
 
