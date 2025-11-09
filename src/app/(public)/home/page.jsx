@@ -125,7 +125,7 @@ export default function HomePage() {
 
       {/* MAIN */}
       <main className="relative z-10 flex-1">
-        {/* Hero ngay dưới navbar, khoảng cách vừa phải */}
+        {/* Hero */}
         <div className="pt-10 md:pt-12">
           <HeroSlider />
         </div>
