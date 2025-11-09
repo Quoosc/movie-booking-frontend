@@ -1,0 +1,88 @@
+// src/components/promotions/PromoList.jsx
+
+const promos = [
+  {
+    id: 1,
+    title: "C'SCHOOL - Ưu đãi vé từ 45K dành riêng cho HSSV/U22/Giáo viên",
+    image:
+      "https://api-website.cinestar.com.vn/media/wysiwyg/CMSPage/Promotions/HSSV-2.jpg",
+    desc: [
+      "Giá vé ưu đãi từ 45.000đ / vé 2D áp dụng vào Thứ 2 và các suất chiếu trước 10:00.",
+      "Áp dụng tại các cụm rạp Cinestar trên toàn hệ thống.",
+    ],
+  },
+  {
+    id: 2,
+    title: "HAPPY HOUR | Suất sớm & sau 22h - Giá vé ưu đãi chỉ từ 45K",
+    image:
+      "https://api-website.cinestar.com.vn/media/wysiwyg/CMSPage/Promotions/C_TEN.jpg",
+    desc: [
+      "Áp dụng cho các suất chiếu trước 10h và sau 22h.",
+      "Số lượng vé ưu đãi có giới hạn cho mỗi suất.",
+    ],
+  },
+  {
+    id: 3,
+    title: "THỨ 4 HAPPY DAY - Đồng giá vé hấp dẫn",
+    image:
+      "https://api-website.cinestar.com.vn/media/wysiwyg/CMSPage/Promotions/THU_4.jpg",
+    desc: [
+      "Thành viên C'Member/C'Friend/C'VIP nhận thêm ưu đãi tích điểm.",
+      "Không áp dụng Lễ, Tết và một số suất chiếu đặc biệt.",
+    ],
+  },
+];
+
+export default function PromoList() {
+  return (
+    <main className="relative z-10 max-w-6xl mx-auto px-4 pt-24 pb-14">
+      <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
+        Chương trình khuyến mãi
+      </h1>
+      <p className="text-sm text-[#cbd5ff]/80 mb-8 max-w-2xl">
+        Tổng hợp đầy đủ các ưu đãi, giảm giá và quyền lợi thành viên hiện hành
+        tại hệ thống rạp CinesVerse. Nội dung bên dưới có thể được điều chỉnh
+        theo từng thời điểm triển khai thực tế.
+      </p>
+
+      <div className="space-y-8">
+        {promos.map((p) => (
+          <section
+            key={p.id}
+            className="grid md:grid-cols-[minmax(0,1.6fr)_minmax(0,1.4fr)] gap-5 items-start bg-white/[0.02] border border-white/10 rounded-3xl p-4 md:p-6 shadow-[0_16px_50px_rgba(0,0,0,0.78)]"
+          >
+            <div>
+              <h2 className="text-xl md:text-2xl font-extrabold text-white mb-3">
+                {p.title}
+              </h2>
+              <ul className="list-disc list-outside pl-4 space-y-1.5 text-sm text-[#e5e7ff]/85">
+                {p.desc.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+              <button
+                className="
+                  mt-4 inline-flex items-center px-5 py-2.5 rounded-xl
+                  bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6]
+                  text-white text-xs font-extrabold
+                  shadow-[0_8px_22px_rgba(0,0,0,0.9)]
+                  hover:shadow-[0_0_22px_rgba(123,92,255,0.9)]
+                  hover:scale-[1.02] active:scale-100 transition-all
+                "
+              >
+                ĐẶT VÉ NGAY
+              </button>
+            </div>
+            <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-black/40">
+              <img
+                src={p.image}
+                alt={p.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </section>
+        ))}
+      </div>
+    </main>
+  );
+}

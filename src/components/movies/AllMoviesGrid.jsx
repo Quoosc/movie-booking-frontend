@@ -1,5 +1,4 @@
 
-
 // src/components/movies/AllMoviesGrid.jsx
 import MovieCard from "./MovieCard";
 

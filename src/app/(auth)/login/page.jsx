@@ -57,7 +57,7 @@ export default function LoginPage() {
               border border-white/5
             "
 					>
-						{/* ✅ GIỮ LẠI HEADER BẠN THÍCH */}
+						{/* HEADER */}
 						<p className="text-[10px] tracking-[0.22em] text-[#9ca3ff] uppercase">
 							Movie Booking • CinesVerse
 						</p>
