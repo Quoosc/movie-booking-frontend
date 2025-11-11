@@ -12,6 +12,8 @@ import RegisterPage from '@/app/(auth)/register/page';
 // Promotion
 import PromotionsPage from "@/app/(public)/promotions/page";
 
+import MovieDetailPage from "@/app/(public)/movie/[id]/page.jsx";
+
 export default function AppRouter() {
   return (
       <Routes>
@@ -19,7 +21,8 @@ export default function AppRouter() {
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<RegisterPage />} />
         <Route path="/promotions" element={<PromotionsPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/movie/:id" element={<MovieDetailPage />} />
         {/* Protected / Admin sẽ thêm sau */}
         {/* <Route path="/booking/:showtimeId" element={<BookingPage />} /> */}
       </Routes>

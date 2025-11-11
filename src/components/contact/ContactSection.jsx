@@ -123,15 +123,15 @@ export default function ContactSection() {
           <div className="space-y-1.5 text-xs text-white/85 mb-4">
             <div className="flex items-center gap-2">
               <HiOutlineMail className="text-[#FFE066]" />
-              <span>cskh@cinesverse.com</span>
+              <span>23521309@gm.uit.edu.vn</span>
             </div>
             <div className="flex items-center gap-2">
               <HiOutlinePhone className="text-[#FFE066]" />
-              <span>1900 0085</span>
+              <span>0969678599</span>
             </div>
             <div className="flex items-center gap-2">
               <HiOutlineLocationMarker className="text-[#FFE066]" />
-              <span>135 Hai Bà Trưng, Quận 1, TP.HCM</span>
+              <span>214 đường số 8, phường Linh Xuân, Thành phố Thủ Đức</span>
             </div>
           </div>
 
