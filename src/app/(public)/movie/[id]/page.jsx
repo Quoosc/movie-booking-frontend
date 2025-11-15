@@ -1,268 +1,3 @@
-// // src/app/(public)/movie/[id]/page.jsx
-// import { useEffect, useState } from "react";
-// import { useParams } from "react-router-dom";
-// import Navbar from "@/components/common/Navbar";
-// import Footer from "@/components/common/Footer";
-// import { getMovieById, getMovieShowtimesByDate } from "@/api/movieService";
-// import HomeButton from "@/components/shared/Buttons/HomeButton";
-
-// const DAYS = 7;
-
-// export default function MovieDetailPage() {
-//   const { id } = useParams();
-//   const [movie, setMovie] = useState(null);
-//   const [selectedDate, setSelectedDate] = useState(getToday());
-//   const [showtimes, setShowtimes] = useState([]);
-//   const [loadingMovie, setLoadingMovie] = useState(true);
-//   const [loadingShowtimes, setLoadingShowtimes] = useState(true);
-
-//   useEffect(() => {
-//     const fetchMovie = async () => {
-//       setLoadingMovie(true);
-//       const data = await getMovieById(id);
-//       setMovie(data);
-//       setLoadingMovie(false);
-//     };
-//     fetchMovie();
-//   }, [id]);
-
-//   useEffect(() => {
-//     if (!id) return;
-//     const fetchShowtimes = async () => {
-//       setLoadingShowtimes(true);
-//       const data = await getMovieShowtimesByDate(id, selectedDate);
-//       setShowtimes(data || []);
-//       setLoadingShowtimes(false);
-//     };
-//     fetchShowtimes();
-//   }, [id, selectedDate]);
-
-//   if (!movie && !loadingMovie) {
-//     return (
-//       <div className="min-h-screen bg-[#050018] text-white">
-//         <Navbar />
-//         <div className="max-w-5xl mx-auto px-4 py-24 text-center text-lg">
-//           <p>Không tìm thấy phim.</p>
-//         </div>
-//         <Footer />
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-b from-[#050018] via-[#080023] to-[#050018] text-white relative overflow-hidden">
-//       {/* Neon Background */}
-//       <div className="pointer-events-none absolute inset-0">
-//         <div className="absolute -top-40 left-[8%] w-[550px] h-[550px] bg-[radial-gradient(circle_at_center,#7b5cff55,transparent)] blur-[130px]" />
-//         <div className="absolute top-[28%] right-[12%] w-[480px] h-[480px] bg-[radial-gradient(circle_at_center,#43e1ff40,transparent)] blur-[130px]" />
-//         <div className="absolute bottom-[-60px] left-1/3 w-[700px] h-[360px] bg-[radial-gradient(circle_at_center,#ff7af640,transparent)] blur-[160px]" />
-//       </div>
-
-//       <Navbar />
-
-//       <main className="relative z-10">
-//         {/* Nút Home */}
-//         <div className="max-w-7xl mx-auto px-6 pt-6">
-//           <HomeButton />
-//         </div>
-
-//         {/* ===== Movie Info Section ===== */}
-//         <section className="max-w-7xl mx-auto px-6 pt-10 pb-14 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16">
-//           {/* Poster */}
-//           <div className="w-[280px] sm:w-[320px] lg:w-[360px] rounded-3xl overflow-hidden border border-white/20 shadow-[0_20px_80px_rgba(123,92,255,0.25)] hover:scale-105 transition-transform duration-500">
-//             {movie?.posterUrl && (
-//               <img
-//                 src={movie.posterUrl}
-//                 alt={movie.title}
-//                 className="w-full h-full object-cover"
-//               />
-//             )}
-//           </div>
-
-//           {/* Thông tin phim */}
-//           <div className="flex-1 max-w-2xl text-center lg:text-left">
-//             <p className="text-[12px] tracking-[0.25em] text-[#9ca3ff] uppercase">
-//               Movie Detail • CinesVerse
-//             </p>
-
-//             <h1
-//               className="mt-3 text-3xl sm:text-4xl md:text-5xl font-extrabold leading-snug tracking-wide
-//               bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent
-//               drop-shadow-[0_0_25px_rgba(123,92,255,0.8)]"
-//             >
-//               {movie?.title || "..."}
-//             </h1>
-
-//             {/* Tags */}
-//             <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-3 text-sm text-[#cbd5ff]/90">
-//               {movie?.minimumAge && (
-//                 <span className="px-2 py-1 rounded-md bg-[#ff4b4b] text-white text-xs font-bold shadow-[0_0_10px_rgba(255,75,75,0.6)]">
-//                   T{movie.minimumAge}
-//                 </span>
-//               )}
-//               {movie?.genre && (
-//                 <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
-//                   {movie.genre}
-//                 </span>
-//               )}
-//               {movie?.duration && (
-//                 <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
-//                   {movie.duration} phút
-//                 </span>
-//               )}
-//               {movie?.language && (
-//                 <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
-//                   {movie.language}
-//                 </span>
-//               )}
-//             </div>
-
-//             {/* Mô tả */}
-//             <p className="mt-6 text-[15px] text-[#e5e7ff]/85 leading-relaxed max-w-xl mx-auto lg:mx-0">
-//               {movie?.description}
-//             </p>
-
-//             {/* Director & Cast */}
-//             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-lg mx-auto lg:mx-0 text-[14px] text-[#d5d8ff]/90">
-//               {movie?.director && (
-//                 <div className="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-sm hover:bg-white/10 transition-all">
-//                   <p className="text-white/60 text-[11px] uppercase tracking-widest mb-1">
-//                     Đạo diễn
-//                   </p>
-//                   <p className="font-medium text-white">{movie.director}</p>
-//                 </div>
-//               )}
-//               {movie?.cast && (
-//                 <div className="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-sm hover:bg-white/10 transition-all">
-//                   <p className="text-white/60 text-[11px] uppercase tracking-widest mb-1">
-//                     Diễn viên
-//                   </p>
-//                   <p className="font-medium text-white">{movie.cast}</p>
-//                 </div>
-//               )}
-//             </div>
-
-//             {/* Trailer Button */}
-//             {movie?.trailerUrl && (
-//               <div className="mt-8">
-//                 <button
-//                   onClick={() => window.open(movie.trailerUrl, "_blank")}
-//                   className="px-8 py-3 rounded-2xl text-[14px] font-semibold text-white
-//                     bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6]
-//                     shadow-[0_0_25px_rgba(123,92,255,0.8)]
-//                     hover:shadow-[0_0_40px_rgba(123,92,255,1)]
-//                     hover:scale-[1.03] active:scale-100 transition-all"
-//                 >
-//                   🎬 XEM TRAILER
-//                 </button>
-//               </div>
-//             )}
-//           </div>
-//         </section>
-
-//         {/* ===== Showtime Section ===== */}
-//         <section className="max-w-5xl mx-auto px-6 pb-20 text-center">
-//           <h2 className="text-lg md:text-xl font-semibold text-[#e5e7ff] mb-6 tracking-wider">
-//             🎟️ LỊCH CHIẾU
-//           </h2>
-
-//           {/* Date selector */}
-//           <div className="flex justify-center gap-3 overflow-x-auto pb-3 mb-8 scrollbar-hide">
-//             {Array.from({ length: DAYS }).map((_, idx) => {
-//               const d = getDateByOffset(idx);
-//               const isActive = d.value === selectedDate;
-//               return (
-//                 <button
-//                   key={d.value}
-//                   onClick={() => setSelectedDate(d.value)}
-//                   className={`px-4 py-2.5 rounded-2xl text-[12px] border transition-all ${
-//                     isActive
-//                       ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white border-transparent shadow-[0_0_14px_rgba(123,92,255,0.9)]"
-//                       : "bg-white/5 border-white/10 text-[#cbd5ff]/80 hover:bg-white/10"
-//                   }`}
-//                 >
-//                   <div className="font-semibold">{d.label}</div>
-//                   <div className="text-[10px] opacity-75">{d.display}</div>
-//                 </button>
-//               );
-//             })}
-//           </div>
-
-//           {/* Showtime list */}
-//           <div className="max-w-3xl mx-auto">
-//             {loadingShowtimes ? (
-//               <p className="text-sm text-white/70">Đang tải lịch chiếu...</p>
-//             ) : showtimes.length === 0 ? (
-//               <p className="text-sm text-white/60">
-//                 Hiện chưa có lịch chiếu cho ngày này.
-//               </p>
-//             ) : (
-//               <div className="space-y-6">
-//                 {showtimes.map((c) => (
-//                   <div
-//                     key={c.cinemaId}
-//                     className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md shadow-[0_0_20px_rgba(255,255,255,0.05)] text-left"
-//                   >
-//                     <p className="text-[15px] font-semibold text-white mb-1">
-//                       {c.cinemaName}
-//                     </p>
-//                     <p className="text-[12px] text-white/60 mb-3">
-//                       {c.address}
-//                     </p>
-
-//                     <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-//                       {c.showtimes.map((s) => (
-//                         <button
-//                           key={s.showtimeId}
-//                           className="px-4 py-2 rounded-xl bg-[#050018] border border-[#7b5cff66] text-[12px] text-[#e5e7ff] hover:bg-[#7b5cff33] hover:shadow-[0_0_12px_rgba(123,92,255,0.7)] transition-all"
-//                         >
-//                           <span className="font-semibold mr-1">
-//                             {s.startTime}
-//                           </span>
-//                           <span className="text-[10px] opacity-75">
-//                             {s.format} • {s.room}
-//                           </span>
-//                           <span className="ml-2 text-[#ffe700] font-semibold">
-//                             {s.price.toLocaleString()}đ
-//                           </span>
-//                         </button>
-//                       ))}
-//                     </div>
-//                   </div>
-//                 ))}
-//               </div>
-//             )}
-//           </div>
-//         </section>
-//       </main>
-
-//       <Footer />
-//     </div>
-//   );
-// }
-
-// /* ===== Helpers ===== */
-// function getToday() {
-//   return new Date().toISOString().slice(0, 10);
-// }
-
-// function getDateByOffset(offset) {
-//   const d = new Date();
-//   d.setDate(d.getDate() + offset);
-
-//   const value = d.toISOString().slice(0, 10);
-//   const weekday = d.toLocaleDateString("vi-VN", { weekday: "short" });
-//   const day = String(d.getDate()).padStart(2, "0");
-//   const month = String(d.getMonth() + 1).padStart(2, "0");
-
-//   return {
-//     value,
-//     label: offset === 0 ? "HÔM NAY" : weekday.toUpperCase(),
-//     display: `${day}/${month}`,
-//   };
-// }
-// src/app/(public)/movie/[id]/page.jsx
-
 // src/app/(public)/movie/[id]/page.jsx
 
 import { useEffect, useMemo, useState } from "react";
@@ -271,6 +6,9 @@ import { useParams } from "react-router-dom";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import HomeButton from "@/components/shared/Buttons/HomeButton";
+import { getTicketTypes } from "@/api/ticketTypeService";
+
+
 
 import { getMovieById, getMovieShowtimesByDate } from "@/api/movieService";
 
@@ -285,14 +23,15 @@ import {
 const DAYS = 7;
 const HOLD_SECONDS = 300; // 5 phút
 
-// Mock loại vé (sau này có thể lấy từ BE theo showtime)
-const BASE_TICKET_TYPES = [
-  { id: "adult", label: "NGƯỜI LỚN", price: 69000 },
-  { id: "student", label: "HSSV/U22-GV", price: 49000 },
-  { id: "senior", label: "NGƯỜI CAO TUỔI", price: 55000 },
-  { id: "member", label: "GIÁ VÉ THÀNH VIÊN", price: 45000 },
-  { id: "double", label: "GHẾ ĐÔI (2 NGƯỜI)", price: 128000 },
+// Danh sách loại vé gốc (load từ API ticket-types)
+const DEFAULT_TICKET_TYPES = [
+  { id: "adult", label: "NGƯỜI LỚN",          price: 69000 },
+  { id: "student", label: "HSSV/U22-GV",       price: 49000 },
+  { id: "senior",  label: "NGƯỜI CAO TUỔI",    price: 55000 },
+  { id: "member",  label: "GIÁ VÉ THÀNH VIÊN", price: 45000 },
+  { id: "double",  label: "GHẾ ĐÔI (2 NGƯỜI)", price: 128000 },
 ];
+
 
 export default function MovieDetailPage() {
   const { id } = useParams();
@@ -307,9 +46,9 @@ export default function MovieDetailPage() {
   const [activeShowtime, setActiveShowtime] = useState(null); // { showtimeId, cinemaId, ... }
   const [seatLayout, setSeatLayout] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]); // [{ seat_id, row, number, price }]
-  const [ticketTypes, setTicketTypes] = useState(
-    BASE_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
-  );
+
+  const [ticketTypes, setTicketTypes] = useState([]);
+  
   const [snacks, setSnacks] = useState([]);
   const [selectedSnacks, setSelectedSnacks] = useState({}); // { snack_id: { ...snack, quantity } }
   const [holdExpireAt, setHoldExpireAt] = useState(null);
@@ -330,6 +69,40 @@ export default function MovieDetailPage() {
     };
     fetchMovie();
   }, [id]);
+
+  /* ===== LOAD TICKET TYPES (GLOBAL) ===== */
+// useEffect(() => {
+//   const fetchTicketTypes = async () => {
+//     try {
+//       const data = await getTicketTypes(); // từ API mock
+//       if (Array.isArray(data) && data.length > 0) {
+//         setBaseTicketTypes(data);
+//         setTicketTypes(data.map((t) => ({ ...t, quantity: 0 })));
+//       }
+//     } catch (err) {
+//       console.error("Failed to load ticket types, using default", err);
+//       // fallback: giữ DEFAULT_TICKET_TYPES
+//       setBaseTicketTypes(DEFAULT_TICKET_TYPES);
+//       setTicketTypes(
+//         DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
+//       );
+//     }
+//   };
+
+//   fetchTicketTypes();
+  // }, []);
+  /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) ===== */
+useEffect(() => {
+  const fetchTicketTypes = async () => {
+    const data = await getTicketTypes();
+    // Gắn thêm quantity = 0 cho UI
+    setTicketTypes((data || []).map((t) => ({ ...t, quantity: 0 })));
+  };
+
+  fetchTicketTypes();
+}, []);
+
+
 
   /* ===== LOAD SHOWTIMES THEO NGÀY ===== */
   useEffect(() => {
@@ -375,45 +148,75 @@ export default function MovieDetailPage() {
   }, [holdExpireAt, activeShowtime, selectedSeats]);
 
   /* ===== TÍNH TIỀN (previewPrice) ===== */
-  useEffect(() => {
-    const calc = async () => {
-      if (!activeShowtime) {
-        setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-        return;
-      }
+  // useEffect(() => {
+  //   const calc = async () => {
+  //     if (!activeShowtime) {
+  //       setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+  //       return;
+  //     }
 
-      const seatIds = selectedSeats.map((s) => s.seat_id);
-      const snackList = Object.values(selectedSnacks).map((s) => ({
-        snack_id: s.snack_id,
-        quantity: s.quantity,
-        price: s.price,
-      }));
+  //     const seatIds = selectedSeats.map((s) => s.seat_id);
+  //     const snackList = Object.values(selectedSnacks).map((s) => ({
+  //       snack_id: s.snack_id,
+  //       quantity: s.quantity,
+  //       price: s.price,
+  //     }));
 
-      const res = await previewPrice({
-        showtimeId: activeShowtime.showtimeId,
-        seatIds,
-        snacks: snackList,
-      });
+  //     const res = await previewPrice({
+  //       showtimeId: activeShowtime.showtimeId,
+  //       seatIds,
+  //       snacks: snackList,
+  //     });
 
-      if (res?.data) {
-        setPriceSummary(res.data);
-      } else {
-        // fallback mock
-        const seatTotal = selectedSeats.reduce(
-          (sum, s) => sum + (s.price || 0),
-          0
-        );
-        const snackTotal = snackList.reduce(
-          (sum, s) => sum + s.price * s.quantity,
-          0
-        );
-        const total = seatTotal + snackTotal;
-        setPriceSummary({ subtotal: total, discount: 0, total });
-      }
-    };
+  //     if (res?.data) {
+  //       setPriceSummary(res.data);
+  //     } else {
+  //       // fallback mock
+  //       const seatTotal = selectedSeats.reduce(
+  //         (sum, s) => sum + (s.price || 0),
+  //         0
+  //       );
+  //       const snackTotal = snackList.reduce(
+  //         (sum, s) => sum + s.price * s.quantity,
+  //         0
+  //       );
+  //       const total = seatTotal + snackTotal;
+  //       setPriceSummary({ subtotal: total, discount: 0, total });
+  //     }
+  //   };
 
-    calc();
-  }, [activeShowtime, selectedSeats, selectedSnacks]);
+  //   calc();
+  // }, [activeShowtime, selectedSeats, selectedSnacks]);
+
+  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC ===== */
+
+useEffect(() => {
+  if (!activeShowtime) {
+    setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+    return;
+  }
+
+  // 1. Tiền vé = sum(price * quantity) theo ticketTypes
+  const ticketTotal = ticketTypes.reduce(
+    (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
+    0
+  );
+
+  // 2. Tiền snack
+  const snackList = Object.values(selectedSnacks);
+  const snackTotal = snackList.reduce(
+    (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
+    0
+  );
+
+  const subtotal = ticketTotal + snackTotal;
+  const discount = 0; // hiện tại chưa áp promotion
+  const total = subtotal - discount;
+
+  setPriceSummary({ subtotal, discount, total });
+}, [activeShowtime, ticketTypes, selectedSnacks]);
+
+
 
   /* ===== SEAT LAYOUT THEO ROW ===== */
   const layoutByRow = useMemo(() => {
@@ -439,14 +242,19 @@ export default function MovieDetailPage() {
     selectedSeats.some((s) => s.seat_id === seatId);
 
   const resetBookingState = () => {
-    setActiveShowtime(null);
-    setSeatLayout([]);
-    setSelectedSeats([]);
-    setTicketTypes(BASE_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 })));
-    setSnacks([]);
-    setSelectedSnacks({});
-    setHoldExpireAt(null);
-  };
+  setActiveShowtime(null);
+  setSeatLayout([]);
+  setSelectedSeats([]);
+
+  // Reset quantity về 0 nhưng giữ nguyên danh sách loại vé đã load từ API
+  setTicketTypes((prev) => prev.map((t) => ({ ...t, quantity: 0 })));
+
+  setSnacks([]);
+  setSelectedSnacks({});
+  setHoldExpireAt(null);
+};
+
+
 
   const handleSelectShowtime = async (cinema, s) => {
     // chọn suất mới → reset rồi set lại
@@ -531,7 +339,7 @@ export default function MovieDetailPage() {
         ...selectedSeats,
         {
           ...seat,
-          price: seat.price || activeShowtime.price || 0,
+          // price: seat.price || activeShowtime.price || 0,
         },
       ];
       setSelectedSeats(newSelected);

@@ -3,8 +3,8 @@ import { ROLES } from "@/utils/constants";
 // Giả lập user trong DB v2.0
 const MOCK_USER = {
   user_id: "11111111-2222-3333-4444-555555555555",
-  name: "Nguyễn Văn A",
-  email: "user@example.com",
+  name: "Phạm Trấn Quốc",
+  email: "23521309@gmail.com",
   role: ROLES.USER, // ADMIN | USER
 };
 
