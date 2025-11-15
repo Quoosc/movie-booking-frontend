@@ -71,7 +71,7 @@
 //     duration: 120,
 //     minimum_age: 13,
 //     poster_url: "/public/movies/base64-17550626259371965999958.jpg",
-//     trailer_url: "",	
+//     trailer_url: "",
 //     status: "SHOWING",
 //     language: "Anh - Phụ đề Việt",
 //   },
@@ -252,8 +252,6 @@
 
 //   return MOCK_SHOWTIMES.filter((s) => String(s.movieId) === String(movieId));
 // }
-
-
 
 // // src/api/movieService.js
 // // import { apiFetch, USE_MOCK } from "./fetchConfig"; // 👉 Mở lại sau khi backend sẵn sàng
@@ -745,7 +743,6 @@
 //   return [];
 // }
 
-
 // src/api/movieService.js
 
 // 👉 Sau này bật khi có backend thật:
@@ -937,7 +934,8 @@ const MOCK_MOVIES = [
     minimum_age: 13,
     poster_url: "/public/movies/tinh-nguoi-duyen-ma-2025.jpg",
     banner_url: "/public/movies/tinh-nguoi-duyen-ma-2025.jpg",
-    description: "Phiên bản mới của câu chuyện tình người - duyên ma kinh điển.",
+    description:
+      "Phiên bản mới của câu chuyện tình người - duyên ma kinh điển.",
     trailer_url: "",
     status: "UPCOMING",
     language: "Thái - Phụ đề Việt",
@@ -1046,8 +1044,8 @@ const MOCK_MOVIES = [
  * =======================================================*/
 
 const MOCK_MOVIE_SHOWTIMES = {
-  "2": {
-    "2025-11-10": [
+  2: {
+    "2025-11-15": [
       {
         cinema_id: "c1",
         cinema_name: "Cinestar Quốc Thanh (Q.1)",
@@ -1091,7 +1089,7 @@ const MOCK_MOVIE_SHOWTIMES = {
         ],
       },
     ],
-    "2025-11-11": [
+    "2025-11-15": [
       {
         cinema_id: "c1",
         cinema_name: "Cinestar Quốc Thanh (Q.1)",
@@ -1123,8 +1121,8 @@ const MOCK_MOVIE_SHOWTIMES = {
     ],
   },
 
-  "1": {
-    "2025-11-11": [
+  1: {
+    "2025-11-15": [
       {
         cinema_id: "c3",
         cinema_name: "Cinestar Huỳnh Tấn Phát (Q.7)",
@@ -1277,4 +1275,3 @@ export async function getMovieShowtimesByDate(movieId, date) {
 }
 
 export const getShowtimesByMovieAndDate = getMovieShowtimesByDate;
-
