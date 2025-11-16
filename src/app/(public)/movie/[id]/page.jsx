@@ -7,9 +7,6 @@ import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import HomeButton from "@/components/shared/Buttons/HomeButton";
 import { getTicketTypes } from "@/api/ticketTypeService";
-
-
-
 import { getMovieById, getMovieShowtimesByDate } from "@/api/movieService";
 
 import {
@@ -25,13 +22,12 @@ const HOLD_SECONDS = 300; // 5 phút
 
 // Danh sách loại vé gốc (load từ API ticket-types)
 const DEFAULT_TICKET_TYPES = [
-  { id: "adult", label: "NGƯỜI LỚN",          price: 69000 },
-  { id: "student", label: "HSSV/U22-GV",       price: 49000 },
-  { id: "senior",  label: "NGƯỜI CAO TUỔI",    price: 55000 },
-  { id: "member",  label: "GIÁ VÉ THÀNH VIÊN", price: 45000 },
-  { id: "double",  label: "GHẾ ĐÔI (2 NGƯỜI)", price: 128000 },
+  { id: "adult", label: "NGƯỜI LỚN", price: 69000 },
+  { id: "student", label: "HSSV/U22-GV", price: 49000 },
+  { id: "senior", label: "NGƯỜI CAO TUỔI", price: 55000 },
+  { id: "member", label: "GIÁ VÉ THÀNH VIÊN", price: 45000 },
+  { id: "double", label: "GHẾ ĐÔI (2 NGƯỜI)", price: 128000 },
 ];
-
 
 export default function MovieDetailPage() {
   const { id } = useParams();
@@ -48,7 +44,7 @@ export default function MovieDetailPage() {
   const [selectedSeats, setSelectedSeats] = useState([]); // [{ seat_id, row, number, price }]
 
   const [ticketTypes, setTicketTypes] = useState([]);
-  
+
   const [snacks, setSnacks] = useState([]);
   const [selectedSnacks, setSelectedSnacks] = useState({}); // { snack_id: { ...snack, quantity } }
   const [holdExpireAt, setHoldExpireAt] = useState(null);
@@ -58,6 +54,24 @@ export default function MovieDetailPage() {
     discount: 0,
     total: 0,
   });
+
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "Lưu ý!",
+    message: "",
+  });
+
+  const showWarning = (message, title = "Lưu ý!") => {
+    setWarning({
+      open: true,
+      title,
+      message,
+    });
+  };
+
+  const closeWarning = () => {
+    setWarning((prev) => ({ ...prev, open: false }));
+  };
 
   /* ===== LOAD MOVIE ===== */
   useEffect(() => {
@@ -71,38 +85,36 @@ export default function MovieDetailPage() {
   }, [id]);
 
   /* ===== LOAD TICKET TYPES (GLOBAL) ===== */
-// useEffect(() => {
-//   const fetchTicketTypes = async () => {
-//     try {
-//       const data = await getTicketTypes(); // từ API mock
-//       if (Array.isArray(data) && data.length > 0) {
-//         setBaseTicketTypes(data);
-//         setTicketTypes(data.map((t) => ({ ...t, quantity: 0 })));
-//       }
-//     } catch (err) {
-//       console.error("Failed to load ticket types, using default", err);
-//       // fallback: giữ DEFAULT_TICKET_TYPES
-//       setBaseTicketTypes(DEFAULT_TICKET_TYPES);
-//       setTicketTypes(
-//         DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
-//       );
-//     }
-//   };
+  // useEffect(() => {
+  //   const fetchTicketTypes = async () => {
+  //     try {
+  //       const data = await getTicketTypes(); // từ API mock
+  //       if (Array.isArray(data) && data.length > 0) {
+  //         setBaseTicketTypes(data);
+  //         setTicketTypes(data.map((t) => ({ ...t, quantity: 0 })));
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to load ticket types, using default", err);
+  //       // fallback: giữ DEFAULT_TICKET_TYPES
+  //       setBaseTicketTypes(DEFAULT_TICKET_TYPES);
+  //       setTicketTypes(
+  //         DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
+  //       );
+  //     }
+  //   };
 
-//   fetchTicketTypes();
+  //   fetchTicketTypes();
   // }, []);
   /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) ===== */
-useEffect(() => {
-  const fetchTicketTypes = async () => {
-    const data = await getTicketTypes();
-    // Gắn thêm quantity = 0 cho UI
-    setTicketTypes((data || []).map((t) => ({ ...t, quantity: 0 })));
-  };
+  useEffect(() => {
+    const fetchTicketTypes = async () => {
+      const data = await getTicketTypes();
+      // Gắn thêm quantity = 0 cho UI
+      setTicketTypes((data || []).map((t) => ({ ...t, quantity: 0 })));
+    };
 
-  fetchTicketTypes();
-}, []);
-
-
+    fetchTicketTypes();
+  }, []);
 
   /* ===== LOAD SHOWTIMES THEO NGÀY ===== */
   useEffect(() => {
@@ -147,76 +159,33 @@ useEffect(() => {
     return () => clearInterval(timer);
   }, [holdExpireAt, activeShowtime, selectedSeats]);
 
-  /* ===== TÍNH TIỀN (previewPrice) ===== */
-  // useEffect(() => {
-  //   const calc = async () => {
-  //     if (!activeShowtime) {
-  //       setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-  //       return;
-  //     }
-
-  //     const seatIds = selectedSeats.map((s) => s.seat_id);
-  //     const snackList = Object.values(selectedSnacks).map((s) => ({
-  //       snack_id: s.snack_id,
-  //       quantity: s.quantity,
-  //       price: s.price,
-  //     }));
-
-  //     const res = await previewPrice({
-  //       showtimeId: activeShowtime.showtimeId,
-  //       seatIds,
-  //       snacks: snackList,
-  //     });
-
-  //     if (res?.data) {
-  //       setPriceSummary(res.data);
-  //     } else {
-  //       // fallback mock
-  //       const seatTotal = selectedSeats.reduce(
-  //         (sum, s) => sum + (s.price || 0),
-  //         0
-  //       );
-  //       const snackTotal = snackList.reduce(
-  //         (sum, s) => sum + s.price * s.quantity,
-  //         0
-  //       );
-  //       const total = seatTotal + snackTotal;
-  //       setPriceSummary({ subtotal: total, discount: 0, total });
-  //     }
-  //   };
-
-  //   calc();
-  // }, [activeShowtime, selectedSeats, selectedSnacks]);
-
   /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC ===== */
 
-useEffect(() => {
-  if (!activeShowtime) {
-    setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-    return;
-  }
+  useEffect(() => {
+    if (!activeShowtime) {
+      setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+      return;
+    }
 
-  // 1. Tiền vé = sum(price * quantity) theo ticketTypes
-  const ticketTotal = ticketTypes.reduce(
-    (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
-    0
-  );
+    // 1. Tiền vé = sum(price * quantity) theo ticketTypes
+    const ticketTotal = ticketTypes.reduce(
+      (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
+      0
+    );
 
-  // 2. Tiền snack
-  const snackList = Object.values(selectedSnacks);
-  const snackTotal = snackList.reduce(
-    (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
-    0
-  );
+    // 2. Tiền snack
+    const snackList = Object.values(selectedSnacks);
+    const snackTotal = snackList.reduce(
+      (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
+      0
+    );
 
-  const subtotal = ticketTotal + snackTotal;
-  const discount = 0; // hiện tại chưa áp promotion
-  const total = subtotal - discount;
+    const subtotal = ticketTotal + snackTotal;
+    const discount = 0; // hiện tại chưa áp promotion
+    const total = subtotal - discount;
 
-  setPriceSummary({ subtotal, discount, total });
-}, [activeShowtime, ticketTypes, selectedSnacks]);
-
-
+    setPriceSummary({ subtotal, discount, total });
+  }, [activeShowtime, ticketTypes, selectedSnacks]);
 
   /* ===== SEAT LAYOUT THEO ROW ===== */
   const layoutByRow = useMemo(() => {
@@ -232,29 +201,44 @@ useEffect(() => {
   }, [seatLayout]);
 
   /* ===== TICKET / SEAT LOGIC ===== */
+  // Tổng SỐ CHỖ (seat) được phép chọn từ loại vé
+  // - Vé thường: 1 chỗ
+  // - GHẾ ĐÔI (double): 2 chỗ
+  const totalTickets = useMemo(() => {
+    return ticketTypes.reduce((sum, t) => {
+      const factor = t.id === "double" ? 2 : 1; // ghế đôi = 2 chỗ
+      return sum + (t.quantity || 0) * factor;
+    }, 0);
+  }, [ticketTypes]);
 
-  const totalTickets = useMemo(
-    () => ticketTypes.reduce((sum, t) => sum + t.quantity, 0),
-    [ticketTypes]
-  );
+  // Số CHỖ ĐƠN (NORMAL/VIP) được phép chọn
+  const singleSeatCapacity = useMemo(() => {
+    return ticketTypes
+      .filter((t) => t.id !== "double")
+      .reduce((sum, t) => sum + (t.quantity || 0), 0);
+  }, [ticketTypes]);
+
+  // Số CẶP GHẾ ĐÔI được phép chọn (1 vé double = 1 cặp)
+  const couplePairCapacity = useMemo(() => {
+    const doubleTicket = ticketTypes.find((t) => t.id === "double");
+    return doubleTicket?.quantity || 0;
+  }, [ticketTypes]);
 
   const isSelectedSeat = (seatId) =>
     selectedSeats.some((s) => s.seat_id === seatId);
 
   const resetBookingState = () => {
-  setActiveShowtime(null);
-  setSeatLayout([]);
-  setSelectedSeats([]);
+    setActiveShowtime(null);
+    setSeatLayout([]);
+    setSelectedSeats([]);
 
-  // Reset quantity về 0 nhưng giữ nguyên danh sách loại vé đã load từ API
-  setTicketTypes((prev) => prev.map((t) => ({ ...t, quantity: 0 })));
+    // Reset quantity về 0 nhưng giữ nguyên danh sách loại vé đã load từ API
+    setTicketTypes((prev) => prev.map((t) => ({ ...t, quantity: 0 })));
 
-  setSnacks([]);
-  setSelectedSnacks({});
-  setHoldExpireAt(null);
-};
-
-
+    setSnacks([]);
+    setSelectedSnacks({});
+    setHoldExpireAt(null);
+  };
 
   const handleSelectShowtime = async (cinema, s) => {
     // chọn suất mới → reset rồi set lại
@@ -289,13 +273,18 @@ useEffect(() => {
           : t
       );
 
-      // Nếu giảm số vé < số ghế đang chọn -> cắt bớt ghế cuối
-      const newTotal = next.reduce((sum, t) => sum + t.quantity, 0);
+      // Tính tổng SỐ CHỖ mới
+      const newTotal = next.reduce((sum, t) => {
+        const factor = t.id === "double" ? 2 : 1;
+        return sum + (t.quantity || 0) * factor;
+      }, 0);
+
+      // Nếu giảm tổng chỗ < số ghế đang chọn -> cắt bớt ghế cuối
       if (newTotal < selectedSeats.length) {
         setSelectedSeats((old) => old.slice(0, newTotal));
       }
 
-      // Nếu về 0 vé -> release hết seat & huỷ hold
+      // Nếu hết sạch vé -> release hết ghế & reset hold
       if (newTotal === 0 && activeShowtime && selectedSeats.length > 0) {
         releaseSeats(
           activeShowtime.showtimeId,
@@ -309,29 +298,180 @@ useEffect(() => {
     });
   };
 
+  //logic chọn ghế
+  function countSelectedSingles(seats) {
+    // Đếm ghế loại NORMAL/VIP
+    return seats.filter((s) => s.type !== "COUPLE").length;
+  }
+
+  function countSelectedCouplePairs(seats) {
+    // Đếm số CẶP ghế đôi đang chọn (2 ghế COUPLE = 1 cặp)
+    const coupleSeats = seats.filter((s) => s.type === "COUPLE");
+    return Math.floor(coupleSeats.length / 2);
+  }
+
+  // chọn ghế
   const handleToggleSeat = async (seat) => {
     if (!activeShowtime) return;
     if (seat.status === "BOOKED") return;
 
     // Bắt buộc chọn vé trước
     if (totalTickets === 0) {
-      alert("Vui lòng chọn số lượng vé trước khi chọn ghế.");
+      showWarning("Vui lòng chọn số lượng vé trước khi chọn ghế.");
       return;
     }
 
+    // ===== GHẾ ĐÔI (COUPLE) =====
+    if (seat.type === "COUPLE") {
+      // Phải có vé GHẾ ĐÔI
+      const doubleTicket = ticketTypes.find((t) => t.id === "double");
+      const doubleQty = doubleTicket?.quantity || 0;
+
+      if (doubleQty === 0) {
+        showWarning(
+          "Hàng ghế cuối là GHẾ ĐÔI. Vui lòng chọn ít nhất 1 vé 'GHẾ ĐÔI (2 NGƯỜI)' trước."
+        );
+        return;
+      }
+
+      const partnerSeat = findPartnerSeat(seatLayout, seat);
+      if (!partnerSeat) {
+        showWarning("Không tìm thấy ghế đôi đi kèm. Vui lòng chọn cặp khác.");
+        return;
+      }
+      if (partnerSeat.status === "BOOKED") {
+        showWarning(
+          "Một trong hai ghế đôi của cặp này đã được đặt. Vui lòng chọn cặp khác."
+        );
+        return;
+      }
+
+      const pairIds = [seat.seat_id, partnerSeat.seat_id];
+
+      const isSeatSelected = isSelectedSeat(seat.seat_id);
+      const isPartnerSelected = isSelectedSeat(partnerSeat.seat_id);
+      const pairFullySelected = isSeatSelected && isPartnerSelected;
+
+      if (pairFullySelected) {
+        // 👉 BỎ CHỌN CẢ CẶP
+        const newSelected = selectedSeats.filter(
+          (s) => !pairIds.includes(s.seat_id)
+        );
+
+        const violates = violatesSeatGapRuleForRow(
+          seatLayout,
+          newSelected,
+          seat.row
+        );
+        if (violates) {
+          showWarning(
+            "Không thể bỏ cặp ghế này vì sẽ để lại 1 ghế trống lẻ giữa các ghế. Vui lòng chọn lại."
+          );
+          return;
+        }
+
+        setSelectedSeats(newSelected);
+        await releaseSeats(activeShowtime.showtimeId, pairIds);
+
+        if (newSelected.length === 0) {
+          setHoldExpireAt(null);
+        }
+        return;
+      } else {
+        // 👉 CHỌN CẢ CẶP
+
+        // 1️⃣ Không cho vượt quá số CẶP ghế đôi từ vé double
+        const selectedPairCount = countSelectedCouplePairs(selectedSeats);
+        if (selectedPairCount + 1 > couplePairCapacity) {
+          showWarning(
+            "Số cặp ghế đôi không được vượt quá số vé 'GHẾ ĐÔI (2 NGƯỜI)' đã chọn."
+          );
+          return;
+        }
+
+        // (trong UI chuẩn thì không bao giờ có trạng thái chỉ 1 ghế được chọn,
+        // nhưng mình vẫn xử lý cho chắc)
+        const seatsToAdd = [];
+        if (!isSeatSelected) seatsToAdd.push(seat);
+        if (!isPartnerSelected) seatsToAdd.push(partnerSeat);
+
+        const newSelected = [...selectedSeats, ...seatsToAdd];
+
+        // 2️⃣ Check tổng SỐ CHỖ
+        if (newSelected.length > totalTickets) {
+          showWarning("Số ghế không được vượt quá số chỗ từ loại vé đã chọn.");
+          return;
+        }
+
+        const violates = violatesSeatGapRuleForRow(
+          seatLayout,
+          newSelected,
+          seat.row
+        );
+        if (violates) {
+          showWarning(
+            "Không được để lại 1 ghế trống lẻ giữa các ghế đã chọn. Vui lòng chọn lại."
+          );
+          return;
+        }
+
+        setSelectedSeats(newSelected);
+
+        const res = await holdSeats(
+          activeShowtime.showtimeId,
+          pairIds,
+          HOLD_SECONDS
+        );
+        if (res?.data?.expires_at) {
+          setHoldExpireAt(res.data.expires_at);
+        }
+
+        return;
+      }
+    }
+
+    // ===== GHẾ THƯỜNG (NORMAL / VIP) =====
     const already = isSelectedSeat(seat.seat_id);
 
     if (already) {
+      // BỎ CHỌN GHẾ THƯỜNG
       const newSelected = selectedSeats.filter(
         (s) => s.seat_id !== seat.seat_id
       );
+
+      const violates = violatesSeatGapRuleForRow(
+        seatLayout,
+        newSelected,
+        seat.row
+      );
+      if (violates) {
+        showWarning(
+          "Không thể bỏ ghế này vì sẽ để lại 1 ghế trống lẻ giữa các ghế. Vui lòng chọn lại."
+        );
+        return;
+      }
+
       setSelectedSeats(newSelected);
       await releaseSeats(activeShowtime.showtimeId, [seat.seat_id]);
-      if (newSelected.length === 0) setHoldExpireAt(null);
+
+      if (newSelected.length === 0) {
+        setHoldExpireAt(null);
+      }
     } else {
-      // không cho chọn quá số vé
-      if (selectedSeats.length >= totalTickets) {
-        alert("Số ghế không được vượt quá số vé đã chọn.");
+      // CHỌN GHẾ THƯỜNG (NORMAL/VIP)
+
+      // 1️⃣ Không cho vượt quá SỐ GHẾ ĐƠN cho phép
+      const currentSingles = countSelectedSingles(selectedSeats);
+      if (currentSingles + 1 > singleSeatCapacity) {
+        showWarning(
+          "Số ghế đơn (NORMAL/VIP) không được vượt quá tổng vé đơn đã chọn (NGƯỜI LỚN / HSSV / THÀNH VIÊN / ...)."
+        );
+        return;
+      }
+
+      // 2️⃣ Không cho vượt quá tổng SỐ CHỖ từ mọi loại vé
+      if (selectedSeats.length + 1 > totalTickets) {
+        showWarning("Số ghế không được vượt quá số chỗ từ loại vé đã chọn.");
         return;
       }
 
@@ -342,6 +482,19 @@ useEffect(() => {
           // price: seat.price || activeShowtime.price || 0,
         },
       ];
+
+      const violates = violatesSeatGapRuleForRow(
+        seatLayout,
+        newSelected,
+        seat.row
+      );
+      if (violates) {
+        showWarning(
+          "Không được để lại 1 ghế trống lẻ giữa các ghế đã chọn. Vui lòng chọn lại."
+        );
+        return;
+      }
+
       setSelectedSeats(newSelected);
 
       const res = await holdSeats(
@@ -349,7 +502,9 @@ useEffect(() => {
         [seat.seat_id],
         HOLD_SECONDS
       );
-      if (res?.data?.expires_at) setHoldExpireAt(res.data.expires_at);
+      if (res?.data?.expires_at) {
+        setHoldExpireAt(res.data.expires_at);
+      }
     }
   };
 
@@ -374,20 +529,20 @@ useEffect(() => {
   const handleProceedBooking = () => {
     if (!activeShowtime) return;
     if (totalTickets === 0) {
-      alert("Vui lòng chọn vé.");
+      showWarning("Vui lòng chọn vé.");
       return;
     }
     if (selectedSeats.length === 0) {
-      alert("Vui lòng chọn ghế.");
+      showWarning("Vui lòng chọn ghế.");
       return;
     }
     if (remainSeconds === 0) {
-      alert("Hết thời gian giữ ghế, vui lòng chọn lại.");
+      showWarning("Hết thời gian giữ ghế, vui lòng chọn lại.");
       return;
     }
 
     // Mock submit
-    alert(
+    showWarning(
       `Mock đặt vé:
 Phim: ${movie?.title}
 Rạp: ${activeShowtime.cinemaName}
@@ -423,7 +578,7 @@ Tổng tiền: ${priceSummary.total.toLocaleString()}đ`
 
       <Navbar />
 
-      <main className="relative z-10 pb-10">
+      <main className="relative z-10 pb-4 md:pb-6">
         {/* Back home */}
         <div className="max-w-6xl mx-auto px-4 pt-4">
           <HomeButton />
@@ -459,52 +614,90 @@ Tổng tiền: ${priceSummary.total.toLocaleString()}đ`
 
         {/* BOTTOM BAR: sticky, nằm TRONG main, phía trên Footer */}
         {activeShowtime && (
-          <div className="sticky bottom-0 inset-x-0 z-30 bg-[#050018] border-t border-white/10">
-            <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col md:flex-row items-center justify-between gap-2 text-[10px] md:text-[11px]">
+          <div className="sticky bottom-0 inset-x-0 z-30 bg-[#040015]/95 backdrop-blur-xl border-t border-white/10 shadow-[0_-18px_45px_rgba(0,0,0,0.95)]">
+            <div className="max-w-6xl mx-auto px-4 py-3 md:py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] md:text-[12px]">
               {/* Info suất + ghế */}
-              <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 text-white/80 w-full md:w-auto">
-                <span className="font-semibold text-[#ffe700] line-clamp-1">
-                  {movie?.title}
-                </span>
-                <span className="line-clamp-1">
-                  {activeShowtime.cinemaName} • {activeShowtime.startTime} •{" "}
-                  {activeShowtime.room}
-                </span>
-                <span className="line-clamp-1">
-                  Ghế:{" "}
-                  {selectedSeats.length
-                    ? selectedSeats.map((s) => `${s.row}${s.number}`).join(", ")
-                    : "Chưa chọn"}
-                </span>
-              </div>
-
-              {/* Timer + Tổng tiền + Button */}
-              <div className="flex flex-wrap md:flex-nowrap items-center gap-3 justify-between w-full md:w-auto">
-                <div className="text-[#ffed4a] font-semibold min-w-[96px]">
-                  {remainSeconds > 0 && selectedSeats.length > 0
-                    ? `Giữ ghế: ${formatTime(remainSeconds)}`
-                    : selectedSeats.length > 0
-                    ? "Hết thời gian giữ ghế"
-                    : ""}
+              <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-4 w-full md:w-auto text-white/85">
+                {/* Tiêu đề + tag nhỏ */}
+                <div className="flex items-center gap-2 min-w-0">
+                  {/* Nếu sau này có format 2D/3D/IMAX thì thay cứng "2D" bằng activeShowtime.format */}
+                  <span className="px-2 py-0.5 rounded-md bg-[#7b5cff] text-[9px] uppercase tracking-[0.18em] text-white/95">
+                    {activeShowtime.format || "2D"}
+                  </span>
+                  <span className="font-semibold text-[#ffe700] text-[12px] md:text-[13px] truncate">
+                    {movie?.title}
+                  </span>
                 </div>
 
-                <div className="flex items-baseline gap-1">
-                  <span className="text-white/60 text-[9px]">Tạm tính</span>
-                  <span className="text-[#ffe700] font-extrabold text-sm md:text-base">
-                    {priceSummary.total.toLocaleString()}đ
+                {/* Thông tin rạp + giờ + ghế */}
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] md:text-[11px] text-white/70">
+                  <span className="truncate">
+                    {activeShowtime.cinemaName} • {activeShowtime.room}
                   </span>
+                  <span className="truncate">
+                    Suất: {activeShowtime.startTime}
+                  </span>
+                  <span className="truncate">
+                    Ghế:{" "}
+                    {selectedSeats.length
+                      ? selectedSeats
+                          .map((s) => `${s.row}${s.number}`)
+                          .join(", ")
+                      : "Chưa chọn"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Tổng tiền + Button */}
+              <div className="flex items-center gap-5 w-full md:w-auto justify-between md:justify-end">
+                <div className="text-right">
+                  <p className="text-[10px] md:text-[11px] text-white/60 uppercase tracking-[0.18em]">
+                    Tạm tính
+                  </p>
+                  <p className="text-[#ffe700] font-extrabold text-[20px] md:text-[22px] leading-none">
+                    {priceSummary.total.toLocaleString()}đ
+                  </p>
                 </div>
 
                 <button
                   onClick={handleProceedBooking}
-                  disabled={
-                    totalTickets === 0 ||
-                    selectedSeats.length === 0 ||
-                    remainSeconds === 0
-                  }
-                  className="px-4 py-2 rounded-lg text-[10px] md:text-xs font-extrabold bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={totalTickets === 0 || selectedSeats.length === 0}
+                  className="px-6 md:px-8 py-3 rounded-2xl text-[12px] md:text-[14px] font-extrabold uppercase tracking-[0.2em]
+                    bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6]
+                    text-white shadow-[0_0_22px_rgba(123,92,255,0.95)]
+                    hover:shadow-[0_0_34px_rgba(123,92,255,1)]
+                    hover:brightness-110 hover:-translate-y-[1px]
+                    active:translate-y-0 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  ĐẶT VÉ
+                  ĐẶT VÉ NGAY
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* POPUP CẢNH BÁO THAY alert() */}
+        {warning.open && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <div className="w-[90%] max-w-md rounded-3xl bg-gradient-to-r from-[#4f46e5] via-[#7b5cff] to-[#ec4899] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.95)]">
+              <div className="rounded-3xl bg-[#050018]/95 px-6 py-6 text-center">
+                <h3 className="text-[13px] sm:text-[14px] font-extrabold tracking-[0.28em] text-white uppercase mb-2">
+                  {warning.title}
+                </h3>
+                <p className="text-xs sm:text-[13px] text-white/80 mb-6 leading-relaxed">
+                  {warning.message}
+                </p>
+                <button
+                  onClick={closeWarning}
+                  className="inline-flex items-center justify-center px-10 py-2.5 rounded-full
+                     text-[11px] sm:text-[12px] font-extrabold tracking-[0.2em] uppercase
+                     bg-gradient-to-r from-[#ffe700] to-[#facc15] text-black
+                     shadow-[0_0_18px_rgba(255,231,0,0.95)]
+                     hover:brightness-110 hover:-translate-y-[1px]
+                     active:translate-y-0 transition-all"
+                >
+                  OK
                 </button>
               </div>
             </div>
@@ -519,12 +712,114 @@ Tổng tiền: ${priceSummary.total.toLocaleString()}đ`
 
 /* ========= SUB COMPONENTS ========= */
 
+// function HeroSection({ movie }) {
+//   return (
+//     <section className="max-w-7xl mx-auto px-4 pt-6 pb-10 flex flex-col lg:flex-row gap-10 lg:gap-14 items-center lg:items-start">
+//       {/* Poster to hơn */}
+//       <div className="w-[260px] sm:w-[300px] lg:w-[340px] flex-shrink-0">
+//         <div className="rounded-[28px] overflow-hidden border border-white/18 shadow-[0_28px_80px_rgba(0,0,0,0.95)] bg-black/50">
+//           {movie?.posterUrl ? (
+//             <img
+//               src={movie.posterUrl}
+//               alt={movie.title}
+//               className="w-full h-full object-cover"
+//             />
+//           ) : (
+//             <div className="w-full h-[420px] flex items-center justify-center text-white/40 text-sm">
+//               No Poster
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* Info */}
+//       <div className="flex-1 max-w-3xl">
+//         <p className="text-[11px] tracking-[0.26em] text-[#9ca3ff] uppercase">
+//           Movie Detail • CinesVerse
+//         </p>
+
+//         <h1 className="mt-4 text-[32px] sm:text-[40px] lg:text-[46px] font-extrabold leading-tight bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(123,92,255,0.95)]">
+//           {movie?.title || "..."}
+//         </h1>
+
+//         {/* Tag info to hơn */}
+//         <div className="mt-5 flex flex-wrap gap-2.5 text-[12px] text-[#cbd5ff]/90">
+//           {movie?.minimumAge && (
+//             <span className="px-2.5 py-0.5 rounded-md bg-[#ff4b4b] text-white text-[11px] font-bold">
+//               T{movie.minimumAge}
+//             </span>
+//           )}
+//           {movie?.genre && (
+//             <span className="px-3.5 py-1 rounded-2xl bg-white/5 border border-white/10">
+//               {movie.genre}
+//             </span>
+//           )}
+//           {movie?.duration && (
+//             <span className="px-3.5 py-1 rounded-2xl bg-white/5 border border-white/10">
+//               {movie.duration} phút
+//             </span>
+//           )}
+//           {movie?.language && (
+//             <span className="px-3.5 py-1 rounded-2xl bg-white/5 border border-white/10">
+//               {movie.language}
+//             </span>
+//           )}
+//           {movie?.releaseDate && (
+//             <span className="px-3.5 py-1 rounded-2xl bg-white/5 border border-white/10">
+//               Khởi chiếu: {movie.releaseDate}
+//             </span>
+//           )}
+//         </div>
+
+//         {/* Mô tả to hơn, dễ đọc hơn */}
+//         {movie?.description && (
+//           <p className="mt-5 text-[14px] sm:text-[15px] text-[#e5e7ff]/85 leading-relaxed">
+//             {movie.description}
+//           </p>
+//         )}
+
+//         {/* Director / Cast cards to hơn */}
+//         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 text-[12px] text-[#cbd5ff]/92">
+//           {movie?.director && (
+//             <div className="bg-white/5 border border-white/12 rounded-2xl p-3.5 sm:p-4">
+//               <p className="text-white/60 text-[10px] uppercase tracking-[0.16em] mb-1.5">
+//                 Đạo diễn
+//               </p>
+//               <p className="text-[13px] sm:text-[14px]">{movie.director}</p>
+//             </div>
+//           )}
+//           {movie?.cast && (
+//             <div className="bg-white/5 border border-white/12 rounded-2xl p-3.5 sm:p-4">
+//               <p className="text-white/60 text-[10px] uppercase tracking-[0.16em] mb-1.5">
+//                 Diễn viên
+//               </p>
+//               <p className="text-[13px] sm:text-[14px]">{movie.cast}</p>
+//             </div>
+//           )}
+//         </div>
+
+//         {/* Nút trailer to hơn */}
+//         {movie?.trailerUrl && (
+//           <div className="mt-7">
+//             <button
+//               onClick={() => window.open(movie.trailerUrl, "_blank")}
+//               className="inline-flex items-center gap-2.5 px-9 py-3.5 rounded-2xl text-[13px] font-semibold text-white bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] shadow-[0_0_28px_rgba(123,92,255,0.95)] hover:shadow-[0_0_40px_rgba(123,92,255,1)] hover:scale-[1.04] active:scale-100 transition-all"
+//             >
+//               🎬 XEM TRAILER
+//             </button>
+//           </div>
+//         )}
+//       </div>
+//     </section>
+//   );
+// }
+
 function HeroSection({ movie }) {
   return (
-    <section className="max-w-6xl mx-auto px-4 pt-4 pb-8 flex flex-col lg:flex-row gap-8 lg:gap-10 items-center lg:items-start">
-      {/* Poster */}
-      <div className="w-[240px] sm:w-[260px] lg:w-[280px] flex-shrink-0">
-        <div className="rounded-3xl overflow-hidden border border-white/16 shadow-[0_20px_60px_rgba(0,0,0,0.9)] bg-black/40">
+    <section className="max-w-6xl mx-auto px-4 pt-6 pb-10 flex flex-col lg:flex-row gap-8 lg:gap-10 items-center lg:items-start">
+      {/* Poster, tỷ lệ 2:3 */}
+      <div className="relative w-[260px] sm:w-[300px] lg:w-[340px] aspect-[2/3] flex-shrink-0">
+        <div className="absolute inset-0 rounded-3xl overflow-hidden border border-white/16 shadow-[0_24px_70px_rgba(0,0,0,0.9)] bg-black/40">
           {movie?.posterUrl ? (
             <img
               src={movie.posterUrl}
@@ -532,7 +827,7 @@ function HeroSection({ movie }) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-[360px] flex items-center justify-center text-white/40 text-xs">
+            <div className="w-full h-full flex items-center justify-center text-white/40 text-xs">
               No Poster
             </div>
           )}
@@ -540,15 +835,19 @@ function HeroSection({ movie }) {
       </div>
 
       {/* Info */}
-      <div className="flex-1 max-w-2xl">
-        <p className="text-[10px] tracking-[0.22em] text-[#9ca3ff] uppercase">
+      <div className="flex-1 max-w-3xl">
+        {/* Sub heading */}
+        <p className="text-[11px] sm:text-xs tracking-[0.22em] text-[#9ca3ff] uppercase">
           Movie Detail • CinesVerse
         </p>
-        <h1 className="mt-3 text-3xl sm:text-4xl font-extrabold leading-snug bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_26px_rgba(123,92,255,0.9)]">
+
+        {/* Title */}
+        <h1 className="mt-3 text-3xl sm:text-4xl md:text-[40px] lg:text-[44px] font-extrabold leading-snug bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_26px_rgba(123,92,255,0.9)]">
           {movie?.title || "..."}
         </h1>
 
-        <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-[#cbd5ff]/90">
+        {/* Meta tags */}
+        <div className="mt-4 flex flex-wrap gap-2 text-[11px] sm:text-xs text-[#e5e7ff]/90">
           {movie?.minimumAge && (
             <span className="px-2 py-0.5 rounded-md bg-[#ff4b4b] text-white text-[10px] font-bold">
               T{movie.minimumAge}
@@ -560,7 +859,7 @@ function HeroSection({ movie }) {
             </span>
           )}
           {movie?.duration && (
-            <span className="px-3 py-1 rounded-xl bg白/5 border border-white/10">
+            <span className="px-3 py-1 rounded-xl bg-white/5 border border-white/10">
               {movie.duration} phút
             </span>
           )}
@@ -576,16 +875,18 @@ function HeroSection({ movie }) {
           )}
         </div>
 
+        {/* Description */}
         {movie?.description && (
-          <p className="mt-4 text-[13px] text-[#e5e7ff]/85 leading-relaxed">
+          <p className="mt-4 text-sm sm:text-[15px] text-[#e5e7ff]/90 leading-relaxed md:leading-relaxed">
             {movie.description}
           </p>
         )}
 
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-[11px] text-[#cbd5ff]/90">
+        {/* Director / Cast cards */}
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-[12px] sm:text-[13px] text-[#e5e7ff]/90">
           {movie?.director && (
             <div className="bg-white/4 border border-white/10 rounded-2xl p-3">
-              <p className="text-white/60 text-[9px] uppercase tracking-wide mb-1">
+              <p className="text-white/60 text-[10px] uppercase tracking-wide mb-1">
                 Đạo diễn
               </p>
               <p>{movie.director}</p>
@@ -593,7 +894,7 @@ function HeroSection({ movie }) {
           )}
           {movie?.cast && (
             <div className="bg-white/4 border border-white/10 rounded-2xl p-3">
-              <p className="text-white/60 text-[9px] uppercase tracking-wide mb-1">
+              <p className="text-white/60 text-[10px] uppercase tracking-wide mb-1">
                 Diễn viên
               </p>
               <p>{movie.cast}</p>
@@ -601,11 +902,12 @@ function HeroSection({ movie }) {
           )}
         </div>
 
+        {/* Trailer button */}
         {movie?.trailerUrl && (
           <div className="mt-6">
             <button
               onClick={() => window.open(movie.trailerUrl, "_blank")}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl text-[12px] font-semibold text-white bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] shadow-[0_0_24px_rgba(123,92,255,0.9)] hover:shadow-[0_0_34px_rgba(123,92,255,1)] hover:scale-[1.03] active:scale-100 transition-all"
+              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl text-[12px] sm:text-[13px] font-semibold text-white bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] shadow-[0_0_24px_rgba(123,92,255,0.9)] hover:shadow-[0_0_34px_rgba(123,92,255,1)] hover:scale-[1.03] active:scale-100 transition-all"
             >
               🎬 XEM TRAILER
             </button>
@@ -625,13 +927,14 @@ function ShowtimeSection({
   onSelectShowtime,
 }) {
   return (
-    <section className="max-w-5xl mx-auto px-4 pb-10">
-      <h2 className="text-center text-sm md:text-base font-semibold text-[#e5e7ff] mb-4 tracking-[0.16em]">
+    <section className="mx-auto max-w-6xl px-4 pb-12 mt-8">
+      {/* TIÊU ĐỀ */}
+      <h2 className="text-center text-lg md:text-2xl font-extrabold text-[#e5e7ff] mb-6 tracking-[0.24em]">
         LỊCH CHIẾU THEO RẠP
       </h2>
 
-      {/* chọn ngày */}
-      <div className="flex justify-center gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+      {/* CHỌN NGÀY */}
+      <div className="flex justify-center gap-3 overflow-x-auto pb-3 mb-8 scrollbar-hide">
         {Array.from({ length: DAYS }).map((_, idx) => {
           const d = getDateByOffset(idx);
           const isActive = d.value === selectedDate;
@@ -639,57 +942,80 @@ function ShowtimeSection({
             <button
               key={d.value}
               onClick={() => setSelectedDate(d.value)}
-              className={`px-3.5 py-2 rounded-2xl text-[10px] border transition-all ${
-                isActive
-                  ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white border-transparent shadow-[0_0_14px_rgba(123,92,255,0.9)]"
-                  : "bg-white/5 border-white/10 text-[#cbd5ff]/85 hover:bg-white/10"
-              }`}
+              className={`px-4 py-2.5 rounded-3xl text-[11px] md:text-xs border transition-all min-w-[86px] text-center
+                ${
+                  isActive
+                    ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white border-transparent shadow-[0_0_18px_rgba(123,92,255,0.95)]"
+                    : "bg-white/5 border-white/12 text-[#cbd5ff]/90 hover:bg-white/10"
+                }
+              `}
             >
-              <div className="font-semibold">{d.label}</div>
-              <div className="text-[9px] opacity-80">{d.display}</div>
+              <div className="font-semibold mb-0.5">{d.label}</div>
+              <div className="text-[10px] opacity-80">{d.display}</div>
             </button>
           );
         })}
       </div>
 
+      {/* NỘI DUNG LỊCH CHIẾU */}
       {loadingShowtimes ? (
-        <p className="text-center text-xs text-white/70">
+        <p className="text-center text-sm text-white/70">
           Đang tải lịch chiếu...
         </p>
       ) : showtimes.length === 0 ? (
-        <p className="text-center text-xs text-white/60">
+        <p className="text-center text-sm text-white/60">
           Hiện chưa có lịch chiếu cho ngày này.
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {showtimes.map((c) => (
             <div
               key={c.cinemaId}
-              className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm shadow-[0_12px_40px_rgba(0,0,0,0.9)]"
+              className="
+                rounded-[24px]
+                bg-white/6 border border-white/12 backdrop-blur-md
+                px-4 py-4 md:px-6 md:py-5
+                shadow-[0_22px_70px_rgba(0,0,0,0.9)]
+              "
             >
-              <p className="text-[12px] font-semibold text-white">
-                {c.cinemaName}
-              </p>
-              <p className="text-[10px] text-white/60">{c.address}</p>
+              {/* Tên rạp + địa chỉ */}
+              <div className="mb-4">
+                <p className="text-sm md:text-base font-semibold text-white">
+                  {c.cinemaName}
+                </p>
+                <p className="text-[11px] md:text-xs text-white/60 mt-0.5">
+                  {c.address}
+                </p>
+              </div>
 
-              <div className="mt-3 flex flex-wrap gap-2">
+              {/* CÁC SUẤT CHIẾU */}
+              <div className="flex flex-wrap gap-2.5 md:gap-3">
                 {c.showtimes.map((s) => {
                   const isActive = activeShowtime?.showtimeId === s.showtimeId;
                   return (
                     <button
                       key={s.showtimeId}
                       onClick={() => onSelectShowtime(c, s)}
-                      className={`px-3 py-1.5 rounded-xl text-[10px] border transition-all ${
-                        isActive
-                          ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white border-transparent shadow-[0_0_12px_rgba(123,92,255,0.9)]"
-                          : "bg-[#050018] border-[#7b5cff66] text-[#e5e7ff] hover:bg-[#7b5cff33] hover:shadow-[0_0_10px_rgba(123,92,255,0.7)]"
-                      }`}
+                      className={`
+                        px-4 py-2 md:px-5 md:py-2.5
+                        rounded-xl border transition-all
+                        text-xs md:text-sm font-semibold
+                        flex items-center gap-1.5
+                        ${
+                          isActive
+                            ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white border-transparent shadow-[0_0_16px_rgba(123,92,255,0.9)]"
+                            : "bg-[#020617] border-[#7b5cff66] text-[#e5e7ff] hover:bg-[#7b5cff33] hover:shadow-[0_0_14px_rgba(123,92,255,0.75)]"
+                        }
+                      `}
                     >
-                      <span className="font-semibold mr-1">{s.startTime}</span>
-                      <span className="text-[9px] opacity-80">
+                      <span className="text-sm md:text-base font-bold">
+                        {s.startTime}
+                      </span>
+                      <span className="text-[10px] md:text-[11px] opacity-85">
                         {s.format} • {s.room}
                       </span>
-                      {/* <span className="ml-1 text-[#ffe700] font-semibold">
+                      {/* Nếu sau này có price: mở comment bên dưới */}
+                      {/* <span className="ml-1 text-[#ffe700] font-semibold text-[11px]">
                         {s.price.toLocaleString()}đ
                       </span> */}
                     </button>
@@ -723,34 +1049,38 @@ function BookingPanel({
           CHỌN LOẠI VÉ
         </h3>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 text-[11px]">
+        <div
+          className="
+  grid grid-cols-2 md:grid-cols-4 gap-5 text-[11px]
+"
+        >
           {ticketTypes.map((t) => (
             <div
               key={t.id}
               className={`
-          relative flex flex-col items-center justify-between
-          rounded-2xl px-4 py-4
-          bg-[#0b0a26]/70
-          border border-white/10
-          shadow-[0_8px_20px_rgba(0,0,0,0.7)]
-          hover:bg-[#18163d]/90
-          hover:border-[#7b5cff]
-          hover:shadow-[0_0_20px_rgba(123,92,255,0.45)]
-          hover:scale-[1.03]
-          transition-all duration-300
-          ${
-            t.quantity > 0
-              ? "ring-1 ring-[#ffe700] shadow-[0_0_24px_rgba(255,231,0,0.5)]"
-              : ""
-          }
-        `}
+        relative flex flex-col items-center justify-between
+        rounded-2xl px-4 py-4
+        bg-[#0b0a26]/70
+        border border-white/10
+        shadow-[0_8px_20px_rgba(0,0,0,0.7)]
+        hover:bg-[#18163d]/90
+        hover:border-[#7b5cff]
+        hover:shadow-[0_0_20px_rgba(123,92,255,0.45)]
+        hover:scale-[1.03]
+        transition-all duration-300
+        ${
+          t.quantity > 0
+            ? "ring-1 ring-[#ffe700] shadow-[0_0_24px_rgba(255,231,0,0.5)]"
+            : ""
+        }
+      `}
             >
-              {/* LOẠI VÉ */}
               <div className="text-[10px] text-white/50 mb-1 tracking-[0.1em] uppercase">
                 Loại vé
               </div>
 
-              <div className="text-[13px] font-semibold text-white">
+              {/* 🔥 label căn giữa, hỗ trợ xuống 2 dòng */}
+              <div className="text-[13px] font-semibold text-white text-center leading-snug px-1 min-h-[34px] flex items-center justify-center">
                 {t.label}
               </div>
 
@@ -758,19 +1088,16 @@ function BookingPanel({
                 {t.price.toLocaleString()} VND
               </div>
 
-              {/* Nút + - */}
               <div className="mt-3 flex items-center justify-center gap-2">
                 <button
                   onClick={() => onChangeTicket(t.id, -1)}
                   className="
-              w-6 h-6
-              flex items-center justify-center
-              rounded-md
-              border border-white/35
-              text-[11px] text-white/85
-              hover:bg-white/15
-              transition-all
-            "
+            w-6 h-6 flex items-center justify-center
+            rounded-md border border-white/35
+            text-[11px] text-white/85
+            hover:bg-white/15
+            transition-all
+          "
                 >
                   −
                 </button>
@@ -782,15 +1109,14 @@ function BookingPanel({
                 <button
                   onClick={() => onChangeTicket(t.id, 1)}
                   className="
-              w-6 h-6
-              flex items-center justify-center
-              rounded-md
-              bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6]
-              text-[11px] text-white
-              shadow-[0_0_10px_rgba(123,92,255,0.8)]
-              hover:shadow-[0_0_16px_rgba(123,92,255,1)]
-              transition-all
-            "
+            w-6 h-6 flex items-center justify-center
+            rounded-md
+            bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6]
+            text-[11px] text-white
+            shadow-[0_0_10px_rgba(123,92,255,0.8)]
+            hover:shadow-[0_0_16px_rgba(123,92,255,1)]
+            transition-all
+          "
                 >
                   +
                 </button>
@@ -800,185 +1126,378 @@ function BookingPanel({
         </div>
       </section>
 
-      {/* CHỌN GHẾ */}
-      <div>
-        <h3 className="text-center text-lg font-extrabold tracking-[0.12em] mb-3">
-          CHỌN GHẾ - {activeShowtime.room || "RẠP"}
-        </h3>
-        <p className="text-center text-[10px] text-white/60 mb-3">Màn hình</p>
-        <div className="mx-auto mb-4 h-1 w-80 bg-gradient-to-r from-transparent via-white/80 to-transparent rounded-full" />
+      {/* CHỌN GHẾ – phỏng theo Cinestar */}
+      <div className="pt-4">
+        {/* Heading + màn hình */}
+        <div className="text-center mb-6">
+          <h3
+            className="
+    text-center
+    text-[22px] sm:text-[24px] md:text-[26px]
+    font-extrabold
+    tracking-[0.30em]
+    uppercase
+    text-white
+    mb-6
+  "
+          >
+            CHỌN GHẾ - {activeShowtime.room || "RẠP"}
+          </h3>
 
-        <div className="flex flex-col items-center gap-1 text-[9px]">
-          {layoutByRow.map(([row, seats]) => (
-            <div key={row} className="flex items-center gap-1">
-              <span className="w-4 text-right text-white/60">{row}</span>
-              {seats.map((seat) => {
-                const selected = isSelectedSeat(seat.seat_id);
-                const booked = seat.status === "BOOKED";
-                return (
-                  <button
-                    key={seat.seat_id}
-                    onClick={() => onToggleSeat(seat)}
-                    disabled={booked}
-                    className={`w-6 h-6 rounded-[4px] text-[8px] flex items-center justify-center border transition-all ${
-                      booked
-                        ? "bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed"
-                        : selected
-                        ? "bg-[#ffe700] border-[#ffe700] text-black font-bold shadow-[0_0_10px_rgba(255,231,0,0.9)]"
-                        : "bg-[#111827] border-[#374151] text-white/80 hover:bg-[#312e81]"
-                    }`}
-                  >
-                    {seat.number}
-                  </button>
-                );
-              })}
+          {/* Thanh màn hình cong (ảnh Cinestar) */}
+          <div className="mx-auto flex justify-center w-full">
+            <div className="relative w-full max-w-[960px]">
+              <img
+                src="https://cinestar.com.vn/assets/images/img-screen.png"
+                alt="Screen"
+                className="w-full mx-auto pointer-events-none select-none"
+              />
+              <p
+                className="
+    mt-6
+    text-[16px] sm:text-sm md:text-base
+    text-white/70
+    tracking-[0.25em]
+    uppercase
+  "
+              >
+                Màn hình
+              </p>
             </div>
-          ))}
+          </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap justify-center gap-4 text-[9px] text-white/60">
-          <Legend color="bg-[#111827]" label="Ghế trống" />
-          <Legend color="bg-[#ffe700]" label="Ghế đang chọn" />
-          <Legend color="bg-gray-700" label="Ghế đã đặt" />
-        </div>
-      </div>
+        {/* KHUNG GHẾ – không còn viền to, width = thanh cong */}
+        <div className="mx-auto w-full max-w-[960px]">
+          <div className="flex flex-col items-center gap-2 text-[9px] sm:text-[10px]">
+            {layoutByRow.map(([row, seats]) => {
+              const isCoupleRow =
+                seats.length > 0 && seats[0].type === "COUPLE";
 
-    {/* 🎬 CHỌN BẮP NƯỚC */}
-<section className="max-w-5xl mx-auto px-4 pb-20">
-  <h3 className="text-center text-xl md:text-2xl font-extrabold tracking-[0.24em] mb-8 text-white">
-    CHỌN BẮP NƯỚC
-  </h3>
+              // ===== HÀNG GHẾ ĐÔI (COUPLE) =====
+              if (isCoupleRow) {
+                const pairs = [];
+                for (let i = 0; i < seats.length; i += 2) {
+                  const s1 = seats[i];
+                  const s2 = seats[i + 1];
+                  if (!s1 || !s2) continue;
+                  pairs.push([s1, s2]);
+                }
 
-  {snacks.length === 0 ? (
-    <p className="text-center text-sm text-white/50">
-      Hiện chưa có dữ liệu bắp nước (mock).
-    </p>
-  ) : (
-    <div className="space-y-10">
-      {Object.entries(
-        snacks.reduce((acc, s) => {
-          const cat = s.category || "KHÁC";
-          if (!acc[cat]) acc[cat] = [];
-          acc[cat].push(s);
-          return acc;
-        }, {})
-      ).map(([category, items]) => (
-        <div key={category} className="flex flex-col items-center">
-          {/* Tiêu đề nhóm */}
-          <h4 className="mb-4 text-[10px] md:text-xs font-semibold text-[#ffdf7b] tracking-[0.22em] uppercase text-center">
-            {category}
-          </h4>
+                return (
+                  <div key={row} className="flex items-center gap-2">
+                    {/* Ký tự hàng A, B, C... */}
+                    <span className="w-4 text-right text-white/60">{row}</span>
 
-          {/* Các item căn giữa */}
-          <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-            {items.map((snack) => {
-              const selected = selectedSnacks[snack.snack_id];
-              const qty = selected?.quantity || 0;
+                    <div className="flex gap-1.5">
+                      {pairs.map(([s1, s2]) => {
+                        const pairSelected =
+                          isSelectedSeat(s1.seat_id) &&
+                          isSelectedSeat(s2.seat_id);
+                        const pairBooked =
+                          s1.status === "BOOKED" || s2.status === "BOOKED";
 
-              return (
-                <div
-                  key={snack.snack_id}
-                  className={`
-                    w-[140px] md:w-[160px]
-                    flex flex-col items-center text-center
-                    px-3 pt-3 pb-2
-                    rounded-2xl
-                    bg-[#0b0a26]/80
-                    border border-white/10
-                    shadow-[0_8px_20px_rgba(0,0,0,0.7)]
-                    hover:bg-[#18163d]/95
-                    hover:border-[#7b5cff]
-                    hover:shadow-[0_0_20px_rgba(123,92,255,0.5)]
-                    transition-all duration-300
-                    ${
-                      qty > 0
-                        ? "ring-1 ring-[#ffe700] shadow-[0_0_26px_rgba(255,231,0,0.6)]"
-                        : ""
-                    }
-                  `}
-                >
-                  {/* Ảnh */}
-                  {snack.image_url && (
-                    <div className="w-full h-20 flex items-center justify-center mb-2">
-                      <img
-                        src={snack.image_url}
-                        alt={snack.name}
-                        className="max-h-full max-w-full object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]"
-                      />
+                        return (
+                          <button
+                            key={s1.seat_id}
+                            onClick={() => onToggleSeat(s1)} // handleToggleSeat lo cả cặp
+                            disabled={pairBooked}
+                            className={`
+      h-7 sm:h-8 px-4 sm:px-5
+      rounded-[6px]
+      text-[9px] sm:text-[10px]
+      flex items-center justify-center
+      border transition-all
+      ${
+        pairBooked
+          ? "bg-slate-800 border border-slate-700 text-slate-400 cursor-not-allowed"
+          : pairSelected
+          ? "bg-[#facc15] border border-[#facc15] text-black font-bold shadow-[0_0_10px_rgba(250,204,21,0.9)]"
+          : "bg-white border border-white/80 text-black hover:bg-slate-100"
+      }
+    `}
+                          >
+                            {row}
+                            {s1.number}-{s2.number}
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
+                );
+              }
 
-                  {/* Tên + giá */}
-                  <p className="text-[9px] md:text-[10px] font-semibold text-white leading-snug line-clamp-2 min-h-[24px]">
-                    {snack.name}
-                  </p>
-                  <p className="mt-1 text-[10px] md:text-[11px] font-semibold text-[#ffe700]">
-                    {snack.price.toLocaleString()}đ
-                  </p>
+              // ===== HÀNG GHẾ THƯỜNG / VIP =====
+              return (
+                <div key={row} className="flex items-center gap-2">
+                  {/* Ký tự hàng A, B, C... */}
+                  <span className="w-4 text-right text-white/60">{row}</span>
 
-                  {/* Nút +/- */}
-                  <div className="mt-2 flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => onChangeSnack(snack, -1)}
-                      className="
-                        w-6 h-6 flex items-center justify-center
-                        rounded-md border border-white/35
-                        text-[11px] text-white/85
-                        hover:bg-white/15
-                        transition-all
-                      "
-                    >
-                      −
-                    </button>
+                  <div className="flex gap-1.5">
+                    {seats.map((seat) => {
+                      const selected = isSelectedSeat(seat.seat_id);
+                      const booked = seat.status === "BOOKED";
 
-                    <span className="min-w-[22px] text-center text-[11px] text-white">
-                      {qty}
-                    </span>
-
-                    <button
-                      onClick={() => onChangeSnack(snack, 1)}
-                      className="
-                        w-6 h-6 flex items-center justify-center
-                        rounded-md
-                        bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6]
-                        text-[11px] text-white
-                        shadow-[0_0_10px_rgba(123,92,255,0.8)]
-                        hover:shadow-[0_0_16px_rgba(123,92,255,1)]
-                        transition-all
-                      "
-                    >
-                      +
-                    </button>
+                      return (
+                        <button
+                          key={seat.seat_id}
+                          onClick={() => onToggleSeat(seat)}
+                          disabled={booked}
+                          className={`
+                      w-7 h-7 sm:w-8 sm:h-8
+                      rounded-[4px]
+                      text-[9px] sm:text-[10px]
+                      flex items-center justify-center
+                      border transition-all
+                      ${
+                        booked
+                          ? "bg-slate-800 border border-slate-700 text-slate-400 cursor-not-allowed"
+                          : selected
+                          ? "bg-[#facc15] border border-[#facc15] text-black font-bold shadow-[0_0_10px_rgba(250,204,21,0.9)]"
+                          : "bg-white border border-white/80 text-black hover:bg-slate-100"
+                      }
+                    `}
+                        >
+                          {seat.number}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      ))}
-    </div>
-  )}
-</section>
 
+        {/* Legend dưới giống Cinestar */}
+        <div className="mt-5 flex flex-wrap justify-center gap-6 text-[9px] sm:text-[10px] text-white/75">
+          {/* Ghế thường / trống */}
+          <Legend
+            color="bg-white border border-white/80"
+            label="Ghế thường / trống"
+          />
 
+          {/* Ghế đôi (2 người) – dùng icon SVG */}
+          <Legend
+            imageSrc="https://cinestar.com.vn/assets/images/seat-couple-w.svg"
+            label="Ghế đôi (2 người)"
+          />
+
+          {/* Ghế đang chọn */}
+          <Legend
+            color="bg-[#facc15] border border-[#facc15]"
+            label="Ghế đang chọn"
+          />
+
+          {/* Ghế đã đặt */}
+          <Legend
+            color="bg-slate-800 border border-slate-700"
+            label="Ghế đã đặt"
+          />
+        </div>
+      </div>
+      {/* 🎬 CHỌN BẮP NƯỚC */}
+      <section className="max-w-6xl mx-auto px-4 pb-24 mt-16 md:mt-20 lg:mt-24">
+        <h3 className="text-center text-2xl md:text-3xl font-extrabold tracking-[0.24em] mb-10 text-white">
+          CHỌN BẮP NƯỚC
+        </h3>
+
+        {snacks.length === 0 ? (
+          <p className="text-center text-sm md:text-base text-white/50">
+            Hiện chưa có dữ liệu bắp nước (mock).
+          </p>
+        ) : (
+          <div className="space-y-12">
+            {Object.entries(
+              snacks.reduce((acc, s) => {
+                const cat = s.category || "KHÁC";
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(s);
+                return acc;
+              }, {})
+            ).map(([category, items]) => (
+              <div key={category} className="flex flex-col items-center">
+                {/* Tiêu đề nhóm */}
+                <h4 className="mb-5 text-xs md:text-sm font-semibold text-[#ffdf7b] tracking-[0.22em] uppercase text-center">
+                  {category}
+                </h4>
+
+                {/* Các item căn giữa – PHÓNG TO */}
+                <div className="flex flex-wrap justify-center gap-5 md:gap-7">
+                  {items.map((snack) => {
+                    const selected = selectedSnacks[snack.snack_id];
+                    const qty = selected?.quantity || 0;
+
+                    return (
+                      <div
+                        key={snack.snack_id}
+                        className={`
+                    w-[160px] sm:w-[190px] lg:w-[210px]
+                    flex flex-col items-center text-center
+                    px-4 pt-4 pb-3
+                    rounded-3xl
+                    bg-[#0b0a26]/85
+                    border border-white/12
+                    shadow-[0_16px_40px_rgba(0,0,0,0.85)]
+                    hover:bg-[#18163d]/95
+                    hover:border-[#7b5cff]
+                    hover:shadow-[0_0_30px_rgba(123,92,255,0.6)]
+                    transition-all duration-300
+                    ${
+                      qty > 0
+                        ? "ring-2 ring-[#ffe700] shadow-[0_0_32px_rgba(255,231,0,0.7)]"
+                        : ""
+                    }
+                  `}
+                      >
+                        {/* Ảnh */}
+                        {snack.image_url && (
+                          <div className="w-full h-24 md:h-28 flex items-center justify-center mb-3">
+                            <img
+                              src={snack.image_url}
+                              alt={snack.name}
+                              className="max-h-full max-w-full object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.9)]"
+                            />
+                          </div>
+                        )}
+
+                        {/* Tên + giá */}
+                        <p className="text-[11px] md:text-[12px] font-semibold text-white leading-snug line-clamp-2 min-h-[30px]">
+                          {snack.name}
+                        </p>
+                        <p className="mt-1.5 text-[12px] md:text-[13px] font-semibold text-[#ffe700]">
+                          {snack.price.toLocaleString()}đ
+                        </p>
+
+                        {/* Nút +/- */}
+                        <div className="mt-3 flex items-center justify-center gap-2.5">
+                          <button
+                            onClick={() => onChangeSnack(snack, -1)}
+                            className="
+                        w-7 h-7 flex items-center justify-center
+                        rounded-md border border-white/40
+                        text-[12px] text-white/85
+                        hover:bg-white/15
+                        transition-all
+                      "
+                          >
+                            −
+                          </button>
+
+                          <span className="min-w-[26px] text-center text-[12px] md:text-[13px] text-white">
+                            {qty}
+                          </span>
+
+                          <button
+                            onClick={() => onChangeSnack(snack, 1)}
+                            className="
+                        w-7 h-7 flex items-center justify-center
+                        rounded-md
+                        bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6]
+                        text-[12px] text-white
+                        shadow-[0_0_14px_rgba(123,92,255,0.9)]
+                        hover:shadow-[0_0_20px_rgba(123,92,255,1)]
+                        transition-all
+                      "
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </section>
   );
 }
 
 /* ===== COMMON ===== */
 
-function Legend({ color, label }) {
+function Legend({ color, label, imageSrc }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <span
-        className={`w-4 h-3 rounded-[3px] border border-white/20 ${color}`}
-      />
-      <span>{label}</span>
+    <div className="flex items-center gap-2">
+      {imageSrc ? (
+        <img src={imageSrc} alt={label} className="w-7 h-7 object-contain" />
+      ) : (
+        <span className={`inline-block w-4 h-4 rounded-[4px] ${color}`} />
+      )}
+      <span className="text-white/80">{label}</span>
     </div>
   );
 }
 
 /* ===== HELPERS ===== */
+
+// Tìm ghế partner cho ghế đôi: pattern 1-2, 3-4, 5-6, 7-8, 9-10 chọn ghế đôi auto pick 2 ghế
+function findPartnerSeat(seatLayout, seat) {
+  if (!seat || seat.type !== "COUPLE") return null;
+
+  const partnerNumber =
+    seat.number % 2 === 1 ? seat.number + 1 : seat.number - 1;
+
+  return seatLayout.find(
+    (s) => s.row === seat.row && s.number === partnerNumber
+  );
+}
+
+// Đếm số "cụm 1 ghế trống lẻ" trong 1 hàng: A...A, R...R
+function countLonelyA(statusArr) {
+  const extended = ["R", ...statusArr, "R"];
+  let countA = 0;
+  let lonely = 0;
+
+  for (let i = 0; i < extended.length; i++) {
+    const c = extended[i];
+    if (c === "A") {
+      countA++;
+    } else {
+      if (countA === 1) {
+        lonely++;
+      }
+      countA = 0;
+    }
+  }
+
+  return lonely;
+}
+
+// Check rule cho 1 hàng (row) cụ thể
+// seatLayout: toàn bộ ghế từ getSeatLayout()
+// selectedSeats: ghế đang chọn
+// rowName: ví dụ "A", "B", ...
+//logic check chỗ ngồi tránh để trống ghế khó bán
+function violatesSeatGapRuleForRow(seatLayout, selectedSeats, rowName) {
+  const rowSeats = seatLayout
+    .filter((s) => s.row === rowName)
+    .sort((a, b) => a.number - b.number);
+
+  if (rowSeats.length === 0) return false;
+
+  const selectedIds = new Set(selectedSeats.map((s) => s.seat_id));
+
+  // Trạng thái ban đầu: chỉ BOOKED là R
+  const originalStatus = rowSeats.map((seat) =>
+    seat.status === "BOOKED" ? "R" : "A"
+  );
+
+  // Trạng thái mới: BOOKED + ghế đang SELECTED đều là R
+  const newStatus = rowSeats.map((seat) => {
+    if (seat.status === "BOOKED") return "R";
+    if (selectedIds.has(seat.seat_id)) return "R";
+    return "A";
+  });
+
+  const originalLonely = countLonelyA(originalStatus);
+  const newLonely = countLonelyA(newStatus);
+
+  // Chỉ coi là VI PHẠM nếu số ghế lẻ mới > ban đầu
+  return newLonely > originalLonely;
+}
 
 function getToday() {
   const d = new Date();

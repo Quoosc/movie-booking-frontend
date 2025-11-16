@@ -21,3 +21,5 @@ export async function getShowtimeDetail(id) {
   const res = await apiFetch(`/showtimes/${id}`);
   return res.data || res;
 }
+
+
