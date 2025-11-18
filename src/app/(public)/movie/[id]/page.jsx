@@ -36,7 +36,6 @@ export default function MovieDetailPage() {
   const currentUser = null; // sau này có tài khoản thì bỏ đi mở comment dưới
   //const { currentUser } = useAuth();
 
-
   const [movie, setMovie] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getToday());
   const [showtimes, setShowtimes] = useState([]);
@@ -89,62 +88,56 @@ export default function MovieDetailPage() {
     fetchMovie();
   }, [id]);
 
-
   /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) ===== */
   /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) ===== */
-useEffect(() => {
-  const fetchTicketTypes = async () => {
-    try {
-      const data = await getTicketTypes();
-      const list =
-        Array.isArray(data) && data.length > 0
-          ? data
-          : DEFAULT_TICKET_TYPES;
+  useEffect(() => {
+    const fetchTicketTypes = async () => {
+      try {
+        const data = await getTicketTypes();
+        const list =
+          Array.isArray(data) && data.length > 0 ? data : DEFAULT_TICKET_TYPES;
 
-      // Gắn thêm quantity = 0 cho UI
-      setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
-    } catch (err) {
-      console.error("getTicketTypes error, dùng DEFAULT_TICKET_TYPES", err);
-      setTicketTypes(
-        DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
-      );
-    }
-  };
+        // Gắn thêm quantity = 0 cho UI
+        setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
+      } catch (err) {
+        console.error("getTicketTypes error, dùng DEFAULT_TICKET_TYPES", err);
+        setTicketTypes(
+          DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
+        );
+      }
+    };
 
-  fetchTicketTypes();
-}, []);
-/* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ) ===== */
-// useEffect(() => {
-//   // Chưa chọn suất chiếu thì không cần load
-//   if (!activeShowtime) return;
+    fetchTicketTypes();
+  }, []);
+  /* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ) ===== */
+  // useEffect(() => {
+  //   // Chưa chọn suất chiếu thì không cần load
+  //   if (!activeShowtime) return;
 
-//   const fetchTicketTypes = async () => {
-//     try {
-//       const data = await getTicketTypes({
-//         showtimeId: activeShowtime.showtimeId,      // ✅ bắt buộc
-//         userId: currentUser?.id || null,           // ✅ member thì gửi, guest thì null
-//       });
+  //   const fetchTicketTypes = async () => {
+  //     try {
+  //       const data = await getTicketTypes({
+  //         showtimeId: activeShowtime.showtimeId,      // ✅ bắt buộc
+  //         userId: currentUser?.id || null,           // ✅ member thì gửi, guest thì null
+  //       });
 
-//       const list =
-//         Array.isArray(data) && data.length > 0
-//           ? data
-//           : DEFAULT_TICKET_TYPES;
+  //       const list =
+  //         Array.isArray(data) && data.length > 0
+  //           ? data
+  //           : DEFAULT_TICKET_TYPES;
 
-//       // luôn gắn quantity = 0 cho UI
-//       setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
-//     } catch (err) {
-//       console.error("getTicketTypes error, dùng DEFAULT_TICKET_TYPES", err);
-//       setTicketTypes(
-//         DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
-//       );
-//     }
-//   };
+  //       // luôn gắn quantity = 0 cho UI
+  //       setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
+  //     } catch (err) {
+  //       console.error("getTicketTypes error, dùng DEFAULT_TICKET_TYPES", err);
+  //       setTicketTypes(
+  //         DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
+  //       );
+  //     }
+  //   };
 
-//   fetchTicketTypes();
-// }, [activeShowtime?.showtimeId, currentUser?.id]);
-
-
-
+  //   fetchTicketTypes();
+  // }, [activeShowtime?.showtimeId, currentUser?.id]);
 
   /* ===== LOAD SHOWTIMES THEO NGÀY ===== */
   useEffect(() => {
@@ -192,85 +185,84 @@ useEffect(() => {
   /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC ===== */
 
   useEffect(() => {
-  if (!activeShowtime) {
-    setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-    return;
-  }
+    if (!activeShowtime) {
+      setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+      return;
+    }
 
-  const ticketPayload = ticketTypes
-    .filter((t) => t.quantity > 0)
-    .map((t) => ({
-      id: t.id,
-      label: t.label,
-      price: t.price,
-      quantity: t.quantity,
+    const ticketPayload = ticketTypes
+      .filter((t) => t.quantity > 0)
+      .map((t) => ({
+        id: t.id,
+        label: t.label,
+        price: t.price,
+        quantity: t.quantity,
+      }));
+
+    const snackPayload = Object.values(selectedSnacks).map((s) => ({
+      snack_id: s.snack_id,
+      name: s.name,
+      price: s.price,
+      quantity: s.quantity,
     }));
 
-  const snackPayload = Object.values(selectedSnacks).map((s) => ({
-    snack_id: s.snack_id,
-    name: s.name,
-    price: s.price,
-    quantity: s.quantity,
-  }));
-
-  if (ticketPayload.length === 0 && snackPayload.length === 0) {
-    setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-    return;
-  }
-
-  let cancelled = false;
-
-  const fetchPrice = async () => {
-    try {
-      const seatIds = selectedSeats.map((s) => s.seat_id);
-
-      const res = await previewPrice({
-        showtimeId: activeShowtime.showtimeId,
-        seatIds,
-        ticketTypes: ticketPayload,
-        snacks: snackPayload,
-        promotionCode: null,
-        userId: null,
-      });
-
-      const data = res.data || res;
-
-      if (!cancelled) {
-        setPriceSummary({
-          subtotal: data.subtotal ?? 0,
-          discount: data.discount ?? 0,
-          total: data.total ?? 0,
-        });
-      }
-    } catch (error) {
-      console.error("previewPrice failed, fallback local calc", error);
-
-      // fallback: dùng logic cũ để không chết UI
-      const ticketTotal = ticketTypes.reduce(
-        (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
-        0
-      );
-      const snackTotal = Object.values(selectedSnacks).reduce(
-        (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
-        0
-      );
-      const subtotal = ticketTotal + snackTotal;
-      const discount = 0;
-      const total = subtotal - discount;
-
-      if (!cancelled) {
-        setPriceSummary({ subtotal, discount, total });
-      }
+    if (ticketPayload.length === 0 && snackPayload.length === 0) {
+      setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+      return;
     }
-  };
 
-  fetchPrice();
+    let cancelled = false;
 
-  return () => {
-    cancelled = true;
-  };
-}, [activeShowtime, ticketTypes, selectedSnacks]);
+    const fetchPrice = async () => {
+      try {
+        const seatIds = selectedSeats.map((s) => s.seat_id);
 
+        const res = await previewPrice({
+          showtimeId: activeShowtime.showtimeId,
+          seatIds,
+          ticketTypes: ticketPayload,
+          snacks: snackPayload,
+          promotionCode: null,
+          userId: null,
+        });
+
+        const data = res.data || res;
+
+        if (!cancelled) {
+          setPriceSummary({
+            subtotal: data.subtotal ?? 0,
+            discount: data.discount ?? 0,
+            total: data.total ?? 0,
+          });
+        }
+      } catch (error) {
+        console.error("previewPrice failed, fallback local calc", error);
+
+        // fallback: dùng logic cũ để không chết UI
+        const ticketTotal = ticketTypes.reduce(
+          (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
+          0
+        );
+        const snackTotal = Object.values(selectedSnacks).reduce(
+          (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
+          0
+        );
+        const subtotal = ticketTotal + snackTotal;
+        const discount = 0;
+        const total = subtotal - discount;
+
+        if (!cancelled) {
+          setPriceSummary({ subtotal, discount, total });
+        }
+      }
+    };
+
+    fetchPrice();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeShowtime, ticketTypes, selectedSnacks]);
 
   /* ===== SEAT LAYOUT THEO ROW ===== */
   const layoutByRow = useMemo(() => {
@@ -351,56 +343,56 @@ useEffect(() => {
   };
 
   const handleChangeTicket = (ticketId, delta) => {
-  setTicketTypes((prev) => {
-    // Tính state mới nếu user bấm +/-
-    const next = prev.map((t) =>
-      t.id === ticketId
-        ? { ...t, quantity: Math.max(0, t.quantity + delta) }
-        : t
-    );
-
-    // Sức chứa mới
-    const newTotalSeats = next.reduce((sum, t) => {
-      const factor = t.id === "double" ? 2 : 1;
-      return sum + (t.quantity || 0) * factor;
-    }, 0);
-
-    const newSingleCapacity = next
-      .filter((t) => t.id !== "double")
-      .reduce((sum, t) => sum + (t.quantity || 0), 0);
-
-    const newCoupleCapacity = (next.find((t) => t.id === "double")?.quantity || 0);
-
-    // Đang chọn bao nhiêu ghế đơn / cặp đôi
-    const currentSingles = countSelectedSingles(selectedSeats);
-    const currentCouplePairs = countSelectedCouplePairs(selectedSeats);
-
-    // Nếu giảm vé làm "sức chứa" < số ghế đang chọn → KHÔNG cho giảm
-    if (
-      newTotalSeats < selectedSeats.length ||
-      newSingleCapacity < currentSingles ||
-      newCoupleCapacity < currentCouplePairs
-    ) {
-      showWarning(
-        "Không thể giảm số vé vì số ghế đã chọn nhiều hơn. Vui lòng bỏ bớt ghế trước.",
+    setTicketTypes((prev) => {
+      // Tính state mới nếu user bấm +/-
+      const next = prev.map((t) =>
+        t.id === ticketId
+          ? { ...t, quantity: Math.max(0, t.quantity + delta) }
+          : t
       );
-      return prev; // giữ nguyên ticketTypes cũ
-    }
 
-    // Trường hợp hợp lệ → cập nhật bình thường
-    if (newTotalSeats === 0 && activeShowtime && selectedSeats.length > 0) {
-      releaseSeats(
-        activeShowtime.showtimeId,
-        selectedSeats.map((s) => s.seat_id)
-      );
-      setSelectedSeats([]);
-      setHoldExpireAt(null);
-    }
+      // Sức chứa mới
+      const newTotalSeats = next.reduce((sum, t) => {
+        const factor = t.id === "double" ? 2 : 1;
+        return sum + (t.quantity || 0) * factor;
+      }, 0);
 
-    return next;
-  });
-};
+      const newSingleCapacity = next
+        .filter((t) => t.id !== "double")
+        .reduce((sum, t) => sum + (t.quantity || 0), 0);
 
+      const newCoupleCapacity =
+        next.find((t) => t.id === "double")?.quantity || 0;
+
+      // Đang chọn bao nhiêu ghế đơn / cặp đôi
+      const currentSingles = countSelectedSingles(selectedSeats);
+      const currentCouplePairs = countSelectedCouplePairs(selectedSeats);
+
+      // Nếu giảm vé làm "sức chứa" < số ghế đang chọn → KHÔNG cho giảm
+      if (
+        newTotalSeats < selectedSeats.length ||
+        newSingleCapacity < currentSingles ||
+        newCoupleCapacity < currentCouplePairs
+      ) {
+        showWarning(
+          "Không thể giảm số vé vì số ghế đã chọn nhiều hơn. Vui lòng bỏ bớt ghế trước."
+        );
+        return prev; // giữ nguyên ticketTypes cũ
+      }
+
+      // Trường hợp hợp lệ → cập nhật bình thường
+      if (newTotalSeats === 0 && activeShowtime && selectedSeats.length > 0) {
+        releaseSeats(
+          activeShowtime.showtimeId,
+          selectedSeats.map((s) => s.seat_id)
+        );
+        setSelectedSeats([]);
+        setHoldExpireAt(null);
+      }
+
+      return next;
+    });
+  };
 
   //logic chọn ghế
   function countSelectedSingles(seats) {
@@ -417,7 +409,7 @@ useEffect(() => {
   // chọn ghế
   const handleToggleSeat = async (seat) => {
     if (!activeShowtime) return;
-    if (seat.status === "BOOKED") return;
+    if (seat.status === "BOOKED" || seat.status === "LOCKED" ) return;
 
     // Bắt buộc chọn vé trước
     if (totalTickets === 0) {
@@ -527,7 +519,7 @@ useEffect(() => {
           HOLD_SECONDS
         );
         if (res?.data?.expires_at) {
-          setHoldExpireAt(res.data.expires_at);
+          setHoldExpireAt(res.data.expiresAt);
         }
 
         return;
@@ -607,7 +599,7 @@ useEffect(() => {
         HOLD_SECONDS
       );
       if (res?.data?.expires_at) {
-        setHoldExpireAt(res.data.expires_at);
+        setHoldExpireAt(res.data.expiresAt);
       }
     }
   };
@@ -1239,12 +1231,13 @@ function BookingPanel({
                     {seats.map((seat) => {
                       const selected = isSelectedSeat(seat.seat_id);
                       const booked = seat.status === "BOOKED";
+                      const locked = seat.status === "LOCKED";
 
                       return (
                         <button
                           key={seat.seat_id}
                           onClick={() => onToggleSeat(seat)}
-                          disabled={booked}
+                          disabled={booked || locked}
                           className={`
                       w-7 h-7 sm:w-8 sm:h-8
                       rounded-[4px]
@@ -1254,6 +1247,8 @@ function BookingPanel({
                       ${
                         booked
                           ? "bg-slate-800 border border-slate-700 text-slate-400 cursor-not-allowed"
+                          : locked
+                          ? "bg-slate-500 border border-slate-500 text-slate-200 cursor-not-allowed" // ✅ ghế người khác giữ (xám)
                           : selected
                           ? "bg-[#facc15] border border-[#facc15] text-black font-bold shadow-[0_0_10px_rgba(250,204,21,0.9)]"
                           : "bg-white border border-white/80 text-black hover:bg-slate-100"
@@ -1289,6 +1284,12 @@ function BookingPanel({
           <Legend
             color="bg-[#facc15] border border-[#facc15]"
             label="Ghế đang chọn"
+          />
+
+          {/* Ghế đang được chọn bởi người khác */}
+          <Legend
+            color="bg-slate-500 border border-slate-500 text-slate-200 cursor-not-allowed"
+            label="Ghế đang được giữ"
           />
 
           {/* Ghế đã đặt */}
@@ -1545,7 +1546,6 @@ function getDateByOffset(offset) {
     display: `${day}/${month}`,
   };
 }
-
 
 function formatTime(sec) {
   const m = Math.floor(sec / 60)

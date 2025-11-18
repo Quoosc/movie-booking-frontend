@@ -1,12 +1,10 @@
 // src/api/bookingService.js
 // Toàn bộ logic mock + chuẩn bị cho API thật
 
+// Khi nối BE thật thì chỉ cần:
+// import { apiFetch, USE_MOCK } from "./fetchConfig";
 
-// src/api/bookingService.js
-//import { apiFetch, USE_MOCK } from "./fetchConfig";
-
-
-// TẠM THỜI: booking vẫn luôn dùng mock
+// TẠM THỜI: booking vẫn luôn dùng mock (không gọi BE)
 const USE_MOCK = true;
 
 /* ======================================================
@@ -31,7 +29,7 @@ function genMockSeats(showtimeId) {
 
     // 🔹 HÀNG GHẾ ĐÔI (J): xử lý theo CẶP
     if (isLastRow) {
-      const count = 10;           // 10 chỗ = 5 cặp
+      const count = 10; // 10 chỗ = 5 cặp
       const type = "COUPLE";
       const basePrice = 200000;
 
@@ -39,6 +37,7 @@ function genMockSeats(showtimeId) {
       for (let i = 1; i <= count; i += 2) {
         // random 1 lần cho CẢ CẶP
         const pairBooked = Math.random() < 0.08;
+        const pairLocked = !pairBooked && Math.random() < 0.08; // mock ghế bị giữ
 
         [0, 1].forEach((offset) => {
           const number = i + offset;
@@ -46,16 +45,19 @@ function genMockSeats(showtimeId) {
 
           seats.push({
             seat_id: id,
-            row,                  // "J"
-            number,               // 1..10
-            type,                 // "COUPLE"
-            status: pairBooked ? "BOOKED" : "AVAILABLE",
+            row, // "J"
+            number, // 1..10
+            type, // "COUPLE"
+            status: pairBooked
+              ? "BOOKED"
+              : pairLocked
+              ? "LOCKED"
+              : "AVAILABLE",
             price: basePrice,
           });
         });
       }
 
-      // xong hàng J thì sang hàng tiếp theo
       return;
     }
 
@@ -73,13 +75,15 @@ function genMockSeats(showtimeId) {
       }
 
       const basePrice = type === "VIP" ? 120000 : 90000;
+      const isBooked = Math.random() < 0.08;
+      const isLocked = !isBooked && Math.random() < 0.08;
 
       seats.push({
         seat_id: id,
-        row,          // "A".."I"
-        number: i,    // 1..14
-        type,         // "NORMAL" | "VIP"
-        status: Math.random() < 0.08 ? "BOOKED" : "AVAILABLE",
+        row, // "A".."I"
+        number: i, // 1..14
+        type, // "NORMAL" | "VIP"
+        status: isBooked ? "BOOKED" : isLocked ? "LOCKED" : "AVAILABLE",
         price: basePrice,
       });
     }
@@ -88,7 +92,33 @@ function genMockSeats(showtimeId) {
   return seats;
 }
 
+/* ======================================================
+ *  MAP SEAT BE → FE
+ *  BE:  GET /seats/layout?showtime_id=UUID
+ *       data[]: {
+ *         seatId, row, number, type, status, price
+ *       }
+ *
+ *  FE dùng: { seat_id, row, number, type, status, price }
+ * ==================================================== */
 
+function mapSeatFromApi(seat) {
+  if (!seat) return null;
+  return {
+    seat_id: seat.seatId || seat.seat_id || seat.id,
+    row: seat.row || seat.rowLabel,
+    number:
+      typeof seat.number === "number" ? seat.number : seat.seatNumber ?? 0,
+    type: seat.type || seat.seatType, // NORMAL | VIP | COUPLE
+    status: seat.status, // AVAILABLE | BOOKED | LOCKED
+    price:
+      typeof seat.price === "number"
+        ? seat.price
+        : typeof seat.basePrice === "number"
+        ? seat.basePrice
+        : 0,
+  };
+}
 
 /**
  * Lấy sơ đồ ghế theo showtime
@@ -104,20 +134,13 @@ export async function getSeatLayout(showtimeId) {
     return MOCK_SEATS[showtimeId];
   }
 
-  // 🚀 API thật sau này (đã chuẩn theo BE):
-  // const res = await apiFetch(`/seats/layout?showtimeId=${showtimeId}`);
-  // const data = res.data || res;
+  // 🚀 API thật sau này (đã chuẩn theo BE mới):
   //
-  // // Nếu BE trả về kiểu:
-  // // { seatId, row, number, type, status, price }
-  // return (Array.isArray(data) ? data : []).map((s) => ({
-  //   seat_id: s.seatId,
-  //   row: s.row,
-  //   number: s.number,
-  //   type: s.type,
-  //   status: s.status,
-  //   price: s.price,
-  // }));
+  // const res = await apiFetch(`/seats/layout?showtime_id=${showtimeId}`);
+  // const data = res.data || res;
+  // return (Array.isArray(data) ? data : [])
+  //   .map(mapSeatFromApi)
+  //   .filter(Boolean);
 }
 
 /* ======================================================
@@ -125,7 +148,7 @@ export async function getSeatLayout(showtimeId) {
  * ==================================================== */
 /**
  * BE đã chốt 100%:
- * GET /cinemas/snacks
+ * GET /cinemas/snacks?cinemaId=UUID
  * → mỗi item:
  * {
  *   "snackId": "UUID",
@@ -137,11 +160,8 @@ export async function getSeatLayout(showtimeId) {
  *   "imageUrl": "https://...snacks/popcorn.jpg",
  *   "imageCloudinaryId": "snacks/popcorn"
  * }
- *
- * Mock dưới đây GIỮ ĐÚNG TÊN FIELD như vậy.
  */
 
-// Mock danh sách snack theo format BE
 const BASE_SNACKS_API = [
   // ===== COMBO 2 NGĂN =====
   {
@@ -458,9 +478,12 @@ function mapSnackFromApiToUi(apiSnack) {
  *   const snacks = await getSnacksByCinema(activeShowtime.cinemaId);
  * Trả về list đã map sang format FE.
  */
+// Nhớ ở đầu file (hoặc fetchConfig.js) đã có:
+// import { apiFetch, USE_MOCK } from "./fetchConfig";
+
 export async function getSnacksByCinema(cinemaId) {
   if (USE_MOCK) {
-    // Mọi rạp cùng 1 menu, nhưng cinema_id gán theo tham số
+    // Mọi rạp cùng 1 menu, nhưng cinema_id gán theo tham số để UI vẫn "có vẻ" theo rạp
     const apiSnacks = BASE_SNACKS_API.map((s) => ({
       ...s,
       cinemaId: cinemaId || s.cinemaId || "mock-cinema",
@@ -469,58 +492,94 @@ export async function getSnacksByCinema(cinemaId) {
     return apiSnacks.map(mapSnackFromApiToUi).filter(Boolean);
   }
 
-  // 🚀 API thật sau này (đã chốt contract BE):
-  // const res = await apiFetch(`/cinemas/snacks?cinemaId=${cinemaId}`);
-  // const data = res.data || res;
-  // return (Array.isArray(data) ? data : []).map(mapSnackFromApiToUi).filter(Boolean);
+  const res = await apiFetch("/cinemas/snacks");
+  const data = res.data || res;
+
+  return (Array.isArray(data) ? data : [])
+    .map(mapSnackFromApiToUi)
+    .filter(Boolean);
 }
+
 
 /* ======================================================
  *  HOLD / RELEASE SEATS + PREVIEW PRICE
+ *  PHÙ HỢP API MỚI:
+ *
+ *  POST   /bookings/lock
+ *  DELETE /bookings/lock/release?showtimeId=...&userId=...
+ *  POST   /bookings/price-preview
  * ==================================================== */
 
 /**
- * Giữ ghế tạm thời
+ * Giữ ghế tạm thời (tạo / cập nhật lock)
+ *
+ * FE đang gọi:
+ *   holdSeats(showtimeId, seatIds, HOLD_SECONDS)
+ *
+ * Sau này nối auth thật thì nên truyền thêm userId:
+ *   holdSeats(showtimeId, seatIds, HOLD_SECONDS, currentUser?.id)
  */
-export async function holdSeats(showtimeId, seatIds, holdSeconds = 300) {
+export async function holdSeats(
+  showtimeId,
+  seatIds,
+  holdSeconds = 300,
+  userId = null
+) {
   if (USE_MOCK) {
-    const expires_at = new Date(
+    const expiresAt = new Date(
       Date.now() + holdSeconds * 1000
     ).toISOString();
+
     return {
-      code: 200,
-      message: "Seats held (mock)",
-      data: { expires_at },
+      code: 201,
+      message: "Seats locked (mock)",
+      data: {
+        lockId: `mock-lock-${Date.now()}`,
+        status: "LOCKED",
+        showtimeId,
+        seats: (seatIds || []).map((id) => ({ seatId: id })),
+        totalPrice: 0,
+        expiresAt,
+        remainingSeconds: holdSeconds,
+        message: `Seats locked for ${holdSeconds} seconds (mock)`,
+      },
     };
   }
 
-  // 🚀 API thật:
-  // return apiFetch("/seats/hold", {
+  // 🚀 API thật (API mới /bookings/lock):
+  //
+  // return apiFetch("/bookings/lock", {
   //   method: "POST",
   //   body: JSON.stringify({
   //     showtimeId,
+  //     userId,
   //     seatIds,
-  //     holdSeconds,
   //   }),
   // });
 }
 
 /**
- * Release ghế
+ * Release ghế (huỷ toàn bộ lock của user cho showtime đó)
+ *
+ * FE hiện đang gọi:
+ *   releaseSeats(showtimeId, seatIds)
+ *
+ * Trong mock mình vẫn giữ signature này cho đỡ sửa code,
+ * nhưng API thật sẽ bỏ qua seatIds và dùng showtimeId + userId.
  */
-export async function releaseSeats(showtimeId, seatIds) {
+export async function releaseSeats(showtimeId, seatIds, userId = null) {
   if (USE_MOCK) {
     return { code: 200, message: "Seats released (mock)" };
   }
 
-  // 🚀 API thật:
-  // return apiFetch("/seats/release", {
-  //   method: "POST",
-  //   body: JSON.stringify({
-  //     showtimeId,
-  //     seatIds,
-  //   }),
-  // });
+  // 🚀 API thật ( /bookings/lock/release):
+  //
+  // return apiFetch(
+  //   `/bookings/lock/release?showtimeId=${showtimeId}&userId=${userId}`,
+  //   {
+  //     method: "DELETE",
+  //   }
+  // );
 }
 
 /**
@@ -529,6 +588,7 @@ export async function releaseSeats(showtimeId, seatIds) {
  * FE hiện tại đang gọi:
  * previewPrice({
  *   showtimeId,
+ *   seatIds,
  *   ticketTypes, // [{ id, label, price, quantity }]
  *   snacks: [{ snack_id, quantity, price }],
  *   promotionCode, // optional
@@ -576,7 +636,8 @@ export async function previewPrice({
     };
   }
 
-  // 🚀 API thật sau này:
+  // 🚀 API thật (API mới /bookings/price-preview):
+  //
   // return apiFetch("/bookings/price-preview", {
   //   method: "POST",
   //   body: JSON.stringify({
