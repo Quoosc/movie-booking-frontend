@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
@@ -31,6 +32,10 @@ const DEFAULT_TICKET_TYPES = [
 
 export default function MovieDetailPage() {
   const { id } = useParams();
+
+  const currentUser = null; // sau này có tài khoản thì bỏ đi mở comment dưới
+  //const { currentUser } = useAuth();
+
 
   const [movie, setMovie] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getToday());
@@ -91,8 +96,6 @@ useEffect(() => {
   const fetchTicketTypes = async () => {
     try {
       const data = await getTicketTypes();
-
-      // Nếu API / mock trả về rỗng thì fallback về DEFAULT_TICKET_TYPES
       const list =
         Array.isArray(data) && data.length > 0
           ? data
@@ -110,19 +113,16 @@ useEffect(() => {
 
   fetchTicketTypes();
 }, []);
-  
-  
-//   // (giả sử đã có user trong context)  load lại giá theo giờ k áp dụng toàn bộ suất chiếu
-// const { user } = useAuthContext();
-
+/* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ) ===== */
 // useEffect(() => {
-//   if (!activeShowtime) return;   // cần showtime trước
+//   // Chưa chọn suất chiếu thì không cần load
+//   if (!activeShowtime) return;
 
 //   const fetchTicketTypes = async () => {
 //     try {
 //       const data = await getTicketTypes({
-//         showtimeId: activeShowtime.showtimeId,
-//         userId: user?.id || null,
+//         showtimeId: activeShowtime.showtimeId,      // ✅ bắt buộc
+//         userId: currentUser?.id || null,           // ✅ member thì gửi, guest thì null
 //       });
 
 //       const list =
@@ -130,14 +130,19 @@ useEffect(() => {
 //           ? data
 //           : DEFAULT_TICKET_TYPES;
 
+//       // luôn gắn quantity = 0 cho UI
 //       setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
 //     } catch (err) {
-//       ...
+//       console.error("getTicketTypes error, dùng DEFAULT_TICKET_TYPES", err);
+//       setTicketTypes(
+//         DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
+//       );
 //     }
 //   };
 
 //   fetchTicketTypes();
-// }, [activeShowtime, user?.id]);
+// }, [activeShowtime?.showtimeId, currentUser?.id]);
+
 
 
 
@@ -217,8 +222,11 @@ useEffect(() => {
 
   const fetchPrice = async () => {
     try {
+      const seatIds = selectedSeats.map((s) => s.seat_id);
+
       const res = await previewPrice({
         showtimeId: activeShowtime.showtimeId,
+        seatIds,
         ticketTypes: ticketPayload,
         snacks: snackPayload,
         promotionCode: null,

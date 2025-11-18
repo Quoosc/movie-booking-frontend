@@ -537,6 +537,7 @@ export async function releaseSeats(showtimeId, seatIds) {
  */
 export async function previewPrice({
   showtimeId,
+  seatIds = [],
   ticketTypes = [],
   snacks = [],
   promotionCode = null,
@@ -580,6 +581,7 @@ export async function previewPrice({
   //   method: "POST",
   //   body: JSON.stringify({
   //     showtimeId,
+  //     seatIds,
   //     ticketTypes: ticketTypes.map((t) => ({
   //       ticketTypeId: t.id,
   //       quantity: t.quantity,
