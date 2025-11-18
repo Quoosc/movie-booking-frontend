@@ -2,6 +2,8 @@
 
 // 👉 Sau này bật khi có backend thật:
 // import { apiFetch, USE_MOCK } from "./fetchConfig";
+import { getShowtimesByMovie } from "./showtimeService";
+
 
 // Hiện tại: dùng mock hoàn toàn cho FE test UI
 const USE_MOCK = true;
@@ -298,139 +300,140 @@ const MOCK_MOVIES = [
  *  }
  * =======================================================*/
 
-const MOCK_MOVIE_SHOWTIMES = {
-  2: {
-    "2025-11-16": [
-      {
-        cinema_id: "c1",
-        cinema_name: "Cinestar Quốc Thanh (Q.1)",
-        address: "271 Nguyễn Trãi, Q.1, TP.HCM",
-        showtimes: [
-          {
-            showtime_id: "st1",
-            start_time: "2025-11-10T13:00:00",
-            format: "2D",
-            room_name: "Rạp 1",
-            // base_price: 90000,
-          },
-          {
-            showtime_id: "st2",
-            start_time: "2025-11-10T15:30:00",
-            format: "2D",
-            room_name: "Rạp 1",
-            // base_price: 90000,
-          },
-          {
-            showtime_id: "st3",
-            start_time: "2025-11-10T18:00:00",
-            format: "2D",
-            room_name: "Rạp 3",
-            // base_price: 100000,
-          },
-        ],
-      },
-      {
-        cinema_id: "c2",
-        cinema_name: "Cinestar Sinh Viên (Bình Dương)",
-        address: "Khu phố sinh viên, Bình Dương",
-        showtimes: [
-          {
-            showtime_id: "st4",
-            start_time: "2025-11-10T20:30:00",
-            format: "2D",
-            room_name: "Rạp 5",
-            // base_price: 80000,
-          },
-        ],
-      },
-    ],
-    "2025-11-16": [
-      {
-        cinema_id: "c1",
-        cinema_name: "Cinestar Quốc Thanh (Q.1)",
-        address: "271 Nguyễn Trãi, Q.1, TP.HCM",
-        showtimes: [
-          {
-            showtime_id: "st7",
-            start_time: "2025-11-11T14:15:00",
-            format: "2D",
-            room_name: "Rạp 9",
-            // base_price: 90000,
-          },
-          {
-            showtime_id: "st8",
-            start_time: "2025-11-11T17:00:00",
-            format: "2D",
-            room_name: "Rạp 2",
-            // base_price: 90000,
-          },
-          {
-            showtime_id: "st9",
-            start_time: "2025-11-11T19:45:00",
-            format: "2D",
-            room_name: "Rạp 2",
-            // base_price: 100000,
-          },
-        ],
-      },
-    ],
-  },
+// const MOCK_MOVIE_SHOWTIMES = {
+//   2: {
+//     "2025-11-17": [
+//       {
+//         cinema_id: "c1",
+//         cinema_name: "Cinestar Quốc Thanh (Q.1)",
+//         address: "271 Nguyễn Trãi, Q.1, TP.HCM",
+//         showtimes: [
+//           {
+//             showtime_id: "st1",
+//             start_time: "2025-11-10T13:00:00",
+//             format: "2D",
+//             room_name: "Rạp 1",
+//           },
+//           {
+//             showtime_id: "st2",
+//             start_time: "2025-11-10T15:30:00",
+//             format: "2D",
+//             room_name: "Rạp 1",
+//           },
+//           {
+//             showtime_id: "st3",
+//             start_time: "2025-11-10T18:00:00",
+//             format: "2D",
+//             room_name: "Rạp 3",
+//           },
+//         ],
+//       },
+//       {
+//         cinema_id: "c2",
+//         cinema_name: "Cinestar Sinh Viên (Bình Dương)",
+//         address: "Khu phố sinh viên, Bình Dương",
+//         showtimes: [
+//           {
+//             showtime_id: "st4",
+//             start_time: "2025-11-10T20:30:00",
+//             format: "2D",
+//             room_name: "Rạp 5",
+//           },
+//         ],
+//       },
+//     ],
+//     "2025-11-18": [
+//       {
+//         cinema_id: "c1",
+//         cinema_name: "Cinestar Quốc Thanh (Q.1)",
+//         address: "271 Nguyễn Trãi, Q.1, TP.HCM",
+//         showtimes: [
+//           {
+//             showtime_id: "st7",
+//             start_time: "2025-11-11T14:15:00",
+//             format: "2D",
+//             room_name: "Rạp 9",
+//           },
+//           {
+//             showtime_id: "st8",
+//             start_time: "2025-11-11T17:00:00",
+//             format: "2D",
+//             room_name: "Rạp 2",
+//           },
+//           {
+//             showtime_id: "st9",
+//             start_time: "2025-11-11T19:45:00",
+//             format: "2D",
+//             room_name: "Rạp 2",
+//           },
+//         ],
+//       },
+//     ],
+//   },
 
-  1: {
-    "2025-11-16": [
-      {
-        cinema_id: "c3",
-        cinema_name: "Cinestar Huỳnh Tấn Phát (Q.7)",
-        address: "Huỳnh Tấn Phát, Q.7, TP.HCM",
-        showtimes: [
-          {
-            showtime_id: "st10",
-            start_time: "2025-11-10T10:30:00",
-            format: "2D",
-            room_name: "Rạp 3",
-            // base_price: 70000,
-          },
-          {
-            showtime_id: "st11",
-            start_time: "2025-11-10T13:15:00",
-            format: "2D",
-            room_name: "Rạp 3",
-            // base_price: 70000,
-          },
-          {
-            showtime_id: "st12",
-            start_time: "2025-11-10T15:45:00",
-            format: "2D",
-            room_name: "Rạp 3",
-            // base_price: 80000,
-          },
-        ],
-      },
-    ],
-  },
-};
+//   1: {
+//     "2025-11-17": [
+//       {
+//         cinema_id: "c3",
+//         cinema_name: "Cinestar Huỳnh Tấn Phát (Q.7)",
+//         address: "Huỳnh Tấn Phát, Q.7, TP.HCM",
+//         showtimes: [
+//           {
+//             showtime_id: "st10",
+//             start_time: "2025-11-10T10:30:00",
+//             format: "2D",
+//             room_name: "Rạp 3",
+//             // base_price: 70000,
+//           },
+//           {
+//             showtime_id: "st11",
+//             start_time: "2025-11-10T13:15:00",
+//             format: "2D",
+//             room_name: "Rạp 3",
+//             // base_price: 70000,
+//           },
+//           {
+//             showtime_id: "st12",
+//             start_time: "2025-11-10T15:45:00",
+//             format: "2D",
+//             room_name: "Rạp 3",
+//             // base_price: 80000,
+//           },
+//         ],
+//       },
+//     ],
+//   },
+// };
 
 /* ======================= HELPERS ======================= */
 
+// src/api/movieService.js
+
 function mapMovie(m) {
   return {
-    id: m.movie_id,
+    // Ưu tiên camelCase (BE mới), fallback snake_case (mock cũ)
+    id: m.movieId || m.movie_id || m.id,
     title: m.title,
-    posterUrl: m.poster_url,
-    bannerUrl: m.banner_url || m.poster_url,
+    posterUrl: m.posterUrl || m.poster_url,
+    bannerUrl:
+      m.bannerUrl ||
+      m.banner_url ||
+      m.posterUrl ||
+      m.poster_url,
     description: m.description || "",
     genre: m.genre,
     language: m.language,
     duration: m.duration,
-    minimumAge: m.minimum_age,
-    releaseDate: m.release_date,
+    minimumAge: m.minimumAge ?? m.minimum_age,
+    releaseDate: m.releaseDate || m.release_date,
     director: m.director,
     cast: m.cast,
-    trailerUrl: m.trailer_url,
+    trailerUrl: m.trailerUrl || m.trailer_url,
     status: m.status,
-    ratingAvg: m.rating_avg,
+    ratingAvg: m.ratingAvg ?? m.rating_avg ?? null,
   };
 }
+
 
 /* ==================== PUBLIC SERVICES ==================== */
 
@@ -492,41 +495,67 @@ export async function getMovieById(id) {
  *     }
  *   ]
  */
+// export async function getMovieShowtimesByDate(movieId, date) {
+//   if (USE_MOCK) {
+//     const byMovie = MOCK_MOVIE_SHOWTIMES[String(movieId)] || {};
+//     const raw = byMovie[date] || [];
+
+//     return raw.map((c) => ({
+//       cinemaId: c.cinema_id,
+//       cinemaName: c.cinema_name,
+//       address: c.address,
+//       showtimes: (c.showtimes || []).map((s) => ({
+//         showtimeId: s.showtime_id,
+//         startTime: s.start_time.slice(11, 16), // HH:mm
+//         format: s.format || "2D",
+//         room: s.room_name || "Phòng 1",
+//         price: s.base_price || 80000,
+//       })),
+//     }));
+//   }
+
+//   // 👉 Khi backend implement API mới:
+// //
+// // const res = await apiFetch(`/movies/${movieId}/showtimes?date=${date}`);
+// // const data = res.data || res;
+// // return (data || []).map((c) => ({
+// //   cinemaId: c.cinemaId || c.cinema_id,
+// //   cinemaName: c.cinemaName || c.cinema_name,
+// //   address: c.address,
+// //   showtimes: (c.showtimes || []).map((s) => ({
+// //     showtimeId: s.showtimeId || s.showtime_id,
+// //     startTime: (s.startTime || s.start_time).slice(11, 16),
+// //     format: s.format,
+// //     room: s.roomName || s.room_name,
+// //     price: s.basePrice ?? s.base_price ?? s.price ?? 80000,
+// //   })),
+// // }));
+
+// }
+
+// export const getShowtimesByMovieAndDate = getMovieShowtimesByDate;
+
+
+/**
+ * GET /movies/{id}/showtimes?date=YYYY-MM-DD
+ *
+ * FE dùng trực tiếp cho trang chi tiết phim:
+ * - Input: movieId, date (YYYY-MM-DD)
+ * - Output:
+ *   [
+ *     {
+ *       cinemaId,
+ *       cinemaName,
+ *       address,
+ *       showtimes: [
+ *         { showtimeId, startTime, format, room, price }
+ *       ]
+ *     }
+ *   ]
+ */
 export async function getMovieShowtimesByDate(movieId, date) {
-  if (USE_MOCK) {
-    const byMovie = MOCK_MOVIE_SHOWTIMES[String(movieId)] || {};
-    const raw = byMovie[date] || [];
-
-    return raw.map((c) => ({
-      cinemaId: c.cinema_id,
-      cinemaName: c.cinema_name,
-      address: c.address,
-      showtimes: (c.showtimes || []).map((s) => ({
-        showtimeId: s.showtime_id,
-        startTime: s.start_time.slice(11, 16), // HH:mm
-        format: s.format || "2D",
-        room: s.room_name || "Phòng 1",
-        price: s.base_price || 80000,
-      })),
-    }));
-  }
-
-  // 👉 Khi backend implement API mới:
-  //
-  // const res = await apiFetch(`/movies/${movieId}/showtimes?date=${date}`);
-  // const data = res.data || res;
-  // return data.map((c) => ({
-  //   cinemaId: c.cinema_id,
-  //   cinemaName: c.cinema_name,
-  //   address: c.address,
-  //   showtimes: (c.showtimes || []).map((s) => ({
-  //     showtimeId: s.showtime_id,
-  //     startTime: s.start_time.slice(11, 16),
-  //     format: s.format,
-  //     room: s.room_name,
-  //     price: s.base_price,
-  //   })),
-  // }));
+  // Dù là MOCK hay BE thật, logic đều đi qua showtimeService
+  return getShowtimesByMovie(movieId, date);
 }
 
 export const getShowtimesByMovieAndDate = getMovieShowtimesByDate;

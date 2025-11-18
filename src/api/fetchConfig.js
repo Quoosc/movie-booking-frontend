@@ -1,10 +1,6 @@
-// src/api/fetchConfig.js
-
-// URL backend thật (sau này chỉnh ở .env)
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
-// Bật/tắt mock. Hiện tại nên set = 'true' trong .env
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 export { USE_MOCK };

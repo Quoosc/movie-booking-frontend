@@ -84,37 +84,62 @@ export default function MovieDetailPage() {
     fetchMovie();
   }, [id]);
 
-  /* ===== LOAD TICKET TYPES (GLOBAL) ===== */
-  // useEffect(() => {
-  //   const fetchTicketTypes = async () => {
-  //     try {
-  //       const data = await getTicketTypes(); // từ API mock
-  //       if (Array.isArray(data) && data.length > 0) {
-  //         setBaseTicketTypes(data);
-  //         setTicketTypes(data.map((t) => ({ ...t, quantity: 0 })));
-  //       }
-  //     } catch (err) {
-  //       console.error("Failed to load ticket types, using default", err);
-  //       // fallback: giữ DEFAULT_TICKET_TYPES
-  //       setBaseTicketTypes(DEFAULT_TICKET_TYPES);
-  //       setTicketTypes(
-  //         DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
-  //       );
-  //     }
-  //   };
 
-  //   fetchTicketTypes();
-  // }, []);
   /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) ===== */
-  useEffect(() => {
-    const fetchTicketTypes = async () => {
+  /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) ===== */
+useEffect(() => {
+  const fetchTicketTypes = async () => {
+    try {
       const data = await getTicketTypes();
-      // Gắn thêm quantity = 0 cho UI
-      setTicketTypes((data || []).map((t) => ({ ...t, quantity: 0 })));
-    };
 
-    fetchTicketTypes();
-  }, []);
+      // Nếu API / mock trả về rỗng thì fallback về DEFAULT_TICKET_TYPES
+      const list =
+        Array.isArray(data) && data.length > 0
+          ? data
+          : DEFAULT_TICKET_TYPES;
+
+      // Gắn thêm quantity = 0 cho UI
+      setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
+    } catch (err) {
+      console.error("getTicketTypes error, dùng DEFAULT_TICKET_TYPES", err);
+      setTicketTypes(
+        DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
+      );
+    }
+  };
+
+  fetchTicketTypes();
+}, []);
+  
+  
+//   // (giả sử đã có user trong context)  load lại giá theo giờ k áp dụng toàn bộ suất chiếu
+// const { user } = useAuthContext();
+
+// useEffect(() => {
+//   if (!activeShowtime) return;   // cần showtime trước
+
+//   const fetchTicketTypes = async () => {
+//     try {
+//       const data = await getTicketTypes({
+//         showtimeId: activeShowtime.showtimeId,
+//         userId: user?.id || null,
+//       });
+
+//       const list =
+//         Array.isArray(data) && data.length > 0
+//           ? data
+//           : DEFAULT_TICKET_TYPES;
+
+//       setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
+//     } catch (err) {
+//       ...
+//     }
+//   };
+
+//   fetchTicketTypes();
+// }, [activeShowtime, user?.id]);
+
+
 
   /* ===== LOAD SHOWTIMES THEO NGÀY ===== */
   useEffect(() => {
@@ -162,30 +187,82 @@ export default function MovieDetailPage() {
   /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC ===== */
 
   useEffect(() => {
-    if (!activeShowtime) {
-      setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-      return;
+  if (!activeShowtime) {
+    setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+    return;
+  }
+
+  const ticketPayload = ticketTypes
+    .filter((t) => t.quantity > 0)
+    .map((t) => ({
+      id: t.id,
+      label: t.label,
+      price: t.price,
+      quantity: t.quantity,
+    }));
+
+  const snackPayload = Object.values(selectedSnacks).map((s) => ({
+    snack_id: s.snack_id,
+    name: s.name,
+    price: s.price,
+    quantity: s.quantity,
+  }));
+
+  if (ticketPayload.length === 0 && snackPayload.length === 0) {
+    setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+    return;
+  }
+
+  let cancelled = false;
+
+  const fetchPrice = async () => {
+    try {
+      const res = await previewPrice({
+        showtimeId: activeShowtime.showtimeId,
+        ticketTypes: ticketPayload,
+        snacks: snackPayload,
+        promotionCode: null,
+        userId: null,
+      });
+
+      const data = res.data || res;
+
+      if (!cancelled) {
+        setPriceSummary({
+          subtotal: data.subtotal ?? 0,
+          discount: data.discount ?? 0,
+          total: data.total ?? 0,
+        });
+      }
+    } catch (error) {
+      console.error("previewPrice failed, fallback local calc", error);
+
+      // fallback: dùng logic cũ để không chết UI
+      const ticketTotal = ticketTypes.reduce(
+        (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
+        0
+      );
+      const snackTotal = Object.values(selectedSnacks).reduce(
+        (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
+        0
+      );
+      const subtotal = ticketTotal + snackTotal;
+      const discount = 0;
+      const total = subtotal - discount;
+
+      if (!cancelled) {
+        setPriceSummary({ subtotal, discount, total });
+      }
     }
+  };
 
-    // 1. Tiền vé = sum(price * quantity) theo ticketTypes
-    const ticketTotal = ticketTypes.reduce(
-      (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
-      0
-    );
+  fetchPrice();
 
-    // 2. Tiền snack
-    const snackList = Object.values(selectedSnacks);
-    const snackTotal = snackList.reduce(
-      (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
-      0
-    );
+  return () => {
+    cancelled = true;
+  };
+}, [activeShowtime, ticketTypes, selectedSnacks]);
 
-    const subtotal = ticketTotal + snackTotal;
-    const discount = 0; // hiện tại chưa áp promotion
-    const total = subtotal - discount;
-
-    setPriceSummary({ subtotal, discount, total });
-  }, [activeShowtime, ticketTypes, selectedSnacks]);
 
   /* ===== SEAT LAYOUT THEO ROW ===== */
   const layoutByRow = useMemo(() => {
@@ -266,37 +343,56 @@ export default function MovieDetailPage() {
   };
 
   const handleChangeTicket = (ticketId, delta) => {
-    setTicketTypes((prev) => {
-      const next = prev.map((t) =>
-        t.id === ticketId
-          ? { ...t, quantity: Math.max(0, t.quantity + delta) }
-          : t
+  setTicketTypes((prev) => {
+    // Tính state mới nếu user bấm +/-
+    const next = prev.map((t) =>
+      t.id === ticketId
+        ? { ...t, quantity: Math.max(0, t.quantity + delta) }
+        : t
+    );
+
+    // Sức chứa mới
+    const newTotalSeats = next.reduce((sum, t) => {
+      const factor = t.id === "double" ? 2 : 1;
+      return sum + (t.quantity || 0) * factor;
+    }, 0);
+
+    const newSingleCapacity = next
+      .filter((t) => t.id !== "double")
+      .reduce((sum, t) => sum + (t.quantity || 0), 0);
+
+    const newCoupleCapacity = (next.find((t) => t.id === "double")?.quantity || 0);
+
+    // Đang chọn bao nhiêu ghế đơn / cặp đôi
+    const currentSingles = countSelectedSingles(selectedSeats);
+    const currentCouplePairs = countSelectedCouplePairs(selectedSeats);
+
+    // Nếu giảm vé làm "sức chứa" < số ghế đang chọn → KHÔNG cho giảm
+    if (
+      newTotalSeats < selectedSeats.length ||
+      newSingleCapacity < currentSingles ||
+      newCoupleCapacity < currentCouplePairs
+    ) {
+      showWarning(
+        "Không thể giảm số vé vì số ghế đã chọn nhiều hơn. Vui lòng bỏ bớt ghế trước.",
       );
+      return prev; // giữ nguyên ticketTypes cũ
+    }
 
-      // Tính tổng SỐ CHỖ mới
-      const newTotal = next.reduce((sum, t) => {
-        const factor = t.id === "double" ? 2 : 1;
-        return sum + (t.quantity || 0) * factor;
-      }, 0);
+    // Trường hợp hợp lệ → cập nhật bình thường
+    if (newTotalSeats === 0 && activeShowtime && selectedSeats.length > 0) {
+      releaseSeats(
+        activeShowtime.showtimeId,
+        selectedSeats.map((s) => s.seat_id)
+      );
+      setSelectedSeats([]);
+      setHoldExpireAt(null);
+    }
 
-      // Nếu giảm tổng chỗ < số ghế đang chọn -> cắt bớt ghế cuối
-      if (newTotal < selectedSeats.length) {
-        setSelectedSeats((old) => old.slice(0, newTotal));
-      }
+    return next;
+  });
+};
 
-      // Nếu hết sạch vé -> release hết ghế & reset hold
-      if (newTotal === 0 && activeShowtime && selectedSeats.length > 0) {
-        releaseSeats(
-          activeShowtime.showtimeId,
-          selectedSeats.map((s) => s.seat_id)
-        );
-        setSelectedSeats([]);
-        setHoldExpireAt(null);
-      }
-
-      return next;
-    });
-  };
 
   //logic chọn ghế
   function countSelectedSingles(seats) {
@@ -1369,6 +1465,8 @@ function countLonelyA(statusArr) {
 // selectedSeats: ghế đang chọn
 // rowName: ví dụ "A", "B", ...
 //logic check chỗ ngồi tránh để trống ghế khó bán
+// Check rule "không để ghế lẻ" cho 1 hàng (row)
+// Check rule "không để ghế lẻ" cho 1 hàng (row)
 function violatesSeatGapRuleForRow(seatLayout, selectedSeats, rowName) {
   const rowSeats = seatLayout
     .filter((s) => s.row === rowName)
@@ -1376,45 +1474,70 @@ function violatesSeatGapRuleForRow(seatLayout, selectedSeats, rowName) {
 
   if (rowSeats.length === 0) return false;
 
+  // Nếu là HÀNG GHẾ ĐÔI → KHÔNG áp dụng rule ghế lẻ
+  const isCoupleRow = rowSeats.every((s) => s.type === "COUPLE");
+  if (isCoupleRow) {
+    return false;
+  }
+
+  // ===== HÀNG THƯỜNG / VIP =====
   const selectedIds = new Set(selectedSeats.map((s) => s.seat_id));
 
-  // Trạng thái ban đầu: chỉ BOOKED là R
-  const originalStatus = rowSeats.map((seat) =>
-    seat.status === "BOOKED" ? "R" : "A"
+  // reserved[i] = true nếu ghế i đã bị chiếm (BOOKED hoặc đang chọn)
+  const reserved = rowSeats.map(
+    (seat) => seat.status === "BOOKED" || selectedIds.has(seat.seat_id)
   );
 
-  // Trạng thái mới: BOOKED + ghế đang SELECTED đều là R
-  const newStatus = rowSeats.map((seat) => {
-    if (seat.status === "BOOKED") return "R";
-    if (selectedIds.has(seat.seat_id)) return "R";
-    return "A";
-  });
+  const n = rowSeats.length;
 
-  const originalLonely = countLonelyA(originalStatus);
-  const newLonely = countLonelyA(newStatus);
+  for (let i = 0; i < n; i++) {
+    const isEmpty = !reserved[i];
+    if (!isEmpty) continue;
 
-  // Chỉ coi là VI PHẠM nếu số ghế lẻ mới > ban đầu
-  return newLonely > originalLonely;
+    const leftReserved = i > 0 && reserved[i - 1];
+    const rightReserved = i < n - 1 && reserved[i + 1];
+
+    // Rule 1: 1 ghế trống kẹp giữa 2 ghế đã đặt
+    if (leftReserved && rightReserved) return true;
+
+    // Rule 2: 1 ghế trống ở mép, sát cụm ghế đã đặt
+    if ((i === 0 && rightReserved) || (i === n - 1 && leftReserved)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Helper: format local date -> "YYYY-MM-DD"
+function formatDateLocalYYYYMMDD(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function getToday() {
   const d = new Date();
-  return d.toISOString().slice(0, 10);
+  return formatDateLocalYYYYMMDD(d);
 }
 
 function getDateByOffset(offset) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  const value = d.toISOString().slice(0, 10);
+
+  const value = formatDateLocalYYYYMMDD(d); // 👈 dùng local, không ISO
   const weekday = d.toLocaleDateString("vi-VN", { weekday: "short" });
   const day = d.getDate().toString().padStart(2, "0");
   const month = (d.getMonth() + 1).toString().padStart(2, "0");
+
   return {
     value,
     label: offset === 0 ? "HÔM NAY" : weekday.toUpperCase(),
     display: `${day}/${month}`,
   };
 }
+
 
 function formatTime(sec) {
   const m = Math.floor(sec / 60)

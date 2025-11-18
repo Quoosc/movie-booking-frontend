@@ -2,8 +2,9 @@
 // Toàn bộ logic mock + chuẩn bị cho API thật
 
 
-// import { apiFetch } from "./fetchConfig";
-// import { USE_MOCK, apiFetch } from "./fetchConfig";
+// src/api/bookingService.js
+//import { apiFetch, USE_MOCK } from "./fetchConfig";
+
 
 // TẠM THỜI: booking vẫn luôn dùng mock
 const USE_MOCK = true;
@@ -27,28 +28,57 @@ function genMockSeats(showtimeId) {
 
   rows.forEach((row, rIndex) => {
     const isLastRow = rIndex === rows.length - 1; // hàng J
-    const count = isLastRow ? 10 : 14; // hàng J chỉ có 10 chỗ (5 đôi)
+
+    // 🔹 HÀNG GHẾ ĐÔI (J): xử lý theo CẶP
+    if (isLastRow) {
+      const count = 10;           // 10 chỗ = 5 cặp
+      const type = "COUPLE";
+      const basePrice = 200000;
+
+      // cặp: (1-2), (3-4), (5-6), (7-8), (9-10)
+      for (let i = 1; i <= count; i += 2) {
+        // random 1 lần cho CẢ CẶP
+        const pairBooked = Math.random() < 0.08;
+
+        [0, 1].forEach((offset) => {
+          const number = i + offset;
+          const id = `${showtimeId}-${row}${number}`;
+
+          seats.push({
+            seat_id: id,
+            row,                  // "J"
+            number,               // 1..10
+            type,                 // "COUPLE"
+            status: pairBooked ? "BOOKED" : "AVAILABLE",
+            price: basePrice,
+          });
+        });
+      }
+
+      // xong hàng J thì sang hàng tiếp theo
+      return;
+    }
+
+    // 🔹 CÁC HÀNG CÒN LẠI: NORMAL / VIP như cũ
+    const count = 14;
 
     for (let i = 1; i <= count; i++) {
       const id = `${showtimeId}-${row}${i}`;
 
       let type;
-      if (isLastRow) {
-        type = "COUPLE";
-      } else if (rIndex <= 2) {
+      if (rIndex <= 2) {
         type = "NORMAL"; // 3 hàng đầu
       } else {
         type = "VIP"; // các hàng giữa
       }
 
-      const basePrice =
-        type === "VIP" ? 120000 : type === "COUPLE" ? 200000 : 90000;
+      const basePrice = type === "VIP" ? 120000 : 90000;
 
       seats.push({
         seat_id: id,
-        row, // "A", "B", ...
-        number: i, // 1..14 hoặc 1..10
-        type, // "NORMAL" | "VIP" | "COUPLE"
+        row,          // "A".."I"
+        number: i,    // 1..14
+        type,         // "NORMAL" | "VIP"
         status: Math.random() < 0.08 ? "BOOKED" : "AVAILABLE",
         price: basePrice,
       });
@@ -57,6 +87,8 @@ function genMockSeats(showtimeId) {
 
   return seats;
 }
+
+
 
 /**
  * Lấy sơ đồ ghế theo showtime
