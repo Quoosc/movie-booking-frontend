@@ -15,7 +15,6 @@ const USE_MOCK = true;
 
 const MOCK_SEATS = {};
 
-// Tạo layout ghế demo:
 // - 10 hàng: A → J
 // - Hàng A–C: NORMAL
 // - Hàng D–I: VIP
@@ -478,12 +477,8 @@ function mapSnackFromApiToUi(apiSnack) {
  *   const snacks = await getSnacksByCinema(activeShowtime.cinemaId);
  * Trả về list đã map sang format FE.
  */
-// Nhớ ở đầu file (hoặc fetchConfig.js) đã có:
-// import { apiFetch, USE_MOCK } from "./fetchConfig";
-
 export async function getSnacksByCinema(cinemaId) {
   if (USE_MOCK) {
-    // Mọi rạp cùng 1 menu, nhưng cinema_id gán theo tham số để UI vẫn "có vẻ" theo rạp
     const apiSnacks = BASE_SNACKS_API.map((s) => ({
       ...s,
       cinemaId: cinemaId || s.cinemaId || "mock-cinema",
@@ -492,32 +487,26 @@ export async function getSnacksByCinema(cinemaId) {
     return apiSnacks.map(mapSnackFromApiToUi).filter(Boolean);
   }
 
-  const res = await apiFetch("/cinemas/snacks");
-  const data = res.data || res;
-
-  return (Array.isArray(data) ? data : [])
-    .map(mapSnackFromApiToUi)
-    .filter(Boolean);
+  // 🚀 REAL API
+  // const res = await apiFetch(`/cinemas/snacks?cinemaId=${cinemaId}`);
+  // const data = res.data || res;
+  //
+  // return (Array.isArray(data) ? data : [])
+  //   .map(mapSnackFromApiToUi)
+  //   .filter(Boolean);
 }
 
 
 /* ======================================================
- *  HOLD / RELEASE SEATS + PREVIEW PRICE
- *  PHÙ HỢP API MỚI:
- *
- *  POST   /bookings/lock
- *  DELETE /bookings/lock/release?showtimeId=...&userId=...
- *  POST   /bookings/price-preview
+ *  HOLD / RELEASE SEATS (V1 - dùng ở MovieDetailPage)
+ *  - Có thể giữ lại cho UI, nhưng API thật nên ưu tiên lockSeats ở Checkout
  * ==================================================== */
 
 /**
- * Giữ ghế tạm thời (tạo / cập nhật lock)
+ * Giữ ghế tạm thời (v1 – dùng ở màn MovieDetailPage nếu cần)
  *
  * FE đang gọi:
  *   holdSeats(showtimeId, seatIds, HOLD_SECONDS)
- *
- * Sau này nối auth thật thì nên truyền thêm userId:
- *   holdSeats(showtimeId, seatIds, HOLD_SECONDS, currentUser?.id)
  */
 export async function holdSeats(
   showtimeId,
@@ -532,34 +521,34 @@ export async function holdSeats(
 
     return {
       code: 201,
-      message: "Seats locked (mock)",
+      message: "Seats locked (mock, v1)",
       data: {
-        lockId: `mock-lock-${Date.now()}`,
+        lockId: `mock-hold-${Date.now()}`,
         status: "LOCKED",
         showtimeId,
         seats: (seatIds || []).map((id) => ({ seatId: id })),
         totalPrice: 0,
         expiresAt,
         remainingSeconds: holdSeconds,
-        message: `Seats locked for ${holdSeconds} seconds (mock)`,
+        message: `Seats locked for ${holdSeconds} seconds (mock v1)`,
       },
     };
   }
 
-  // 🚀 API thật (API mới /bookings/lock):
-  //
+  // 🚀 Nếu muốn dùng API thật cho v1:
   // return apiFetch("/bookings/lock", {
   //   method: "POST",
   //   body: JSON.stringify({
   //     showtimeId,
   //     userId,
   //     seatIds,
+  //     holdSeconds,
   //   }),
   // });
 }
 
 /**
- * Release ghế (huỷ toàn bộ lock của user cho showtime đó)
+ * Release ghế (huỷ lock v1)
  *
  * FE hiện đang gọi:
  *   releaseSeats(showtimeId, seatIds)
@@ -569,7 +558,7 @@ export async function holdSeats(
  */
 export async function releaseSeats(showtimeId, seatIds, userId = null) {
   if (USE_MOCK) {
-    return { code: 200, message: "Seats released (mock)" };
+    return { code: 200, message: "Seats released (mock v1)" };
   }
 
   // 🚀 API thật ( /bookings/lock/release):
@@ -582,6 +571,13 @@ export async function releaseSeats(showtimeId, seatIds, userId = null) {
   // );
 }
 
+/* ======================================================
+ *  PREVIEW PRICE
+ *  PHÙ HỢP API MỚI:
+ *
+ *  POST   /bookings/price-preview
+ * ==================================================== */
+
 /**
  * Preview giá vé + bắp nước
  *
@@ -589,12 +585,14 @@ export async function releaseSeats(showtimeId, seatIds, userId = null) {
  * previewPrice({
  *   showtimeId,
  *   seatIds,
- *   ticketTypes, // [{ id, label, price, quantity }]
- *   snacks: [{ snack_id, quantity, price }],
- *   promotionCode, // optional
- *   userId,        // optional
+ *   ticketTypes, // MovieDetailPage: [{ id, label, price, quantity }]
+ *                // Checkout (REAL): [{ ticketTypeId, quantity }]
+ *   snacks: [{ snack_id | snackId, quantity, price? }],
+ *   promotionCode,
+ *   userId,
  * })
  */
+
 export async function previewPrice({
   showtimeId,
   seatIds = [],
@@ -604,21 +602,18 @@ export async function previewPrice({
   userId = null,
 }) {
   if (USE_MOCK) {
-    // 1. Tiền vé: lấy từ ticketTypes (KHÔNG lấy từ seat.price nữa)
+    // MOCK: tính theo price trong payload (MovieDetailPage)
     const ticketTotal = ticketTypes.reduce(
       (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
       0
     );
 
-    // 2. Tiền bắp nước
     const snackTotal = (snacks || []).reduce(
       (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
       0
     );
 
     const subtotal = ticketTotal + snackTotal;
-
-    // 3. Giảm giá (mock: chưa áp promotion, cứ 0)
     const discount = 0;
     const total = subtotal - discount;
 
@@ -636,23 +631,250 @@ export async function previewPrice({
     };
   }
 
-  // 🚀 API thật (API mới /bookings/price-preview):
-  //
-  // return apiFetch("/bookings/price-preview", {
+  // 🚀 API thật
+// return apiFetch("/bookings/price-preview", {
+// return apiFetch("/bookings/price-preview", {
+//   method: "POST",
+//   body: JSON.stringify({
+//     showtimeId,
+//     seatIds,
+//     ticketTypes: ticketTypes.map((t) => ({
+//       ticketTypeId: t.ticketTypeId || t.id,
+//       quantity: t.quantity,
+//     })),
+//     snacks: snacks.map((s) => ({
+//       snackId: s.snackId || s.snack_id,
+//       quantity: s.quantity,
+//     })),
+//     promotionCode,
+//     userId,
+//   }),
+// });
+}
+
+/* ======================================================
+ *  SEAT LOCK CHO CHECKOUT (Flow chính v2)
+ *  - FE gọi /bookings/lock khi VÀO trang Checkout
+ * ==================================================== */
+
+/**
+ * Dùng trong Checkout:
+ *   const res = await lockSeats({
+ *     showtimeId,
+ *     seatIds: selectedSeats.map(s => s.seat_id),
+ *     userId: currentUser?.userId || null,
+ *   });
+ */
+export async function lockSeats({
+  showtimeId,
+  seatIds = [],
+  holdSeconds = 600, // mặc định 10 phút
+  userId = null,
+}) {
+  if (!showtimeId || !Array.isArray(seatIds) || seatIds.length === 0) {
+    throw new Error("lockSeats: thiếu showtimeId hoặc seatIds");
+  }
+
+  if (USE_MOCK) {
+    const now = Date.now();
+    const expiresAt = new Date(now + holdSeconds * 1000).toISOString();
+
+    return {
+      code: 201,
+      message: "Seats locked successfully (mock)",
+      data: {
+        lockId: `mock-lock-${now}`,
+        status: "LOCKED",
+        showtimeId,
+        seats: seatIds.map((id) => ({ seatId: id })),
+        expiresAt,
+        remainingSeconds: holdSeconds,
+        userId,
+      },
+    };
+  }
+
+  // 🚀 BE thật
+  // return apiFetch("/bookings/lock", {
   //   method: "POST",
   //   body: JSON.stringify({
   //     showtimeId,
-  //     seatIds,
-  //     ticketTypes: ticketTypes.map((t) => ({
-  //       ticketTypeId: t.id,
-  //       quantity: t.quantity,
-  //     })),
-  //     snacks: snacks.map((s) => ({
-  //       snackId: s.snack_id,
-  //       quantity: s.quantity,
-  //     })),
-  //     promotionCode,
   //     userId,
+  //     seatIds,
+  //     holdSeconds, // nếu BE cần
+  //   }),
+  // });
+}
+
+/* ======================================================
+ *  TẠO BOOKING (Flow mới: từ lockId)
+ *  - Dùng ở Checkout Step 2 trước khi tạo lệnh thanh toán
+ * ==================================================== */
+
+/**
+ * createBooking:
+ *  Flow mới (chuẩn BE):
+ *   - FE gửi lockId (đã tạo bởi /bookings/lock)
+ *   - BE dùng SeatLocks → tạo Booking PENDING_PAYMENT
+ *
+ *  FE sẽ gọi:
+ *    createBooking({ lockId, userId, promotionCode })
+ *
+ *  Để tránh bể code cũ, hàm vẫn chấp nhận:
+ *    createBooking({ showtimeId, seatIds, snacks, ... })
+ *  → dùng mock OK, khi lên BE thật thì chỉ dùng lockId.
+ */
+export async function createBooking(payload = {}) {
+  const {
+    lockId = null,
+    userId = null,
+    showtimeId = null, // legacy
+    seatIds = [], // legacy
+    snacks = [], // legacy
+    promotionCode = null,
+  } = payload;
+
+  if (!lockId && (!showtimeId || seatIds.length === 0)) {
+    throw new Error(
+      "createBooking: cần lockId (flow mới) hoặc showtimeId + seatIds (legacy mock)"
+    );
+  }
+
+  if (USE_MOCK) {
+    const now = Date.now();
+    const bookingId = `mock-booking-${now}`;
+
+    return {
+      code: 201,
+      message: "Booking created (mock)",
+      data: {
+        booking_id: bookingId,
+        lock_id: lockId,
+        user_id: userId,
+        showtime_id: showtimeId,
+        seat_ids: seatIds,
+        snacks: snacks.map((s) => ({
+          snack_id: s.snack_id,
+          quantity: s.quantity,
+        })),
+        promotion_code: promotionCode,
+        status: "PENDING_PAYMENT",
+        finalPrice: null,
+        created_at: new Date().toISOString(),
+      },
+    };
+  }
+
+  // 🚀 BE thật – FLOW CHÍNH: tạo booking từ lockId
+  //
+  // return apiFetch("/bookings/confirm", {
+  //   method: "POST",
+  //   body: JSON.stringify({
+  //     lockId,
+  //     userId,
+  //     promotionCode,
+  //   }),
+  // });
+}
+
+/* ======================================================
+ *  TẠO PHIÊN THANH TOÁN (OPTIONAL)
+ *  - Bạn có thể dùng createPaymentOrder là đủ
+ * ==================================================== */
+
+export async function createPaymentSession({
+  bookingId,
+  amount,
+  method, // "MOMO" | "PAYPAL"
+  returnUrl,
+  cancelUrl,
+}) {
+  if (!bookingId || !amount || !method) {
+    throw new Error("createPaymentSession: thiếu bookingId/amount/method");
+  }
+
+  if (USE_MOCK) {
+    const now = Date.now();
+    return {
+      code: 200,
+      message: "Payment session created (mock)",
+      data: {
+        paymentId: `mock-payment-${now}`,
+        paymentUrl: "/mock-payment-success", // hoặc "#" cho đỡ redirect
+        method,
+        amount,
+      },
+    };
+  }
+
+  // 🚀 BE thật – điều chỉnh URL theo spec Payment thực tế của bạn.
+  // Ví dụ nếu bạn có:
+  //   POST /payments/checkout
+  //
+  // return apiFetch("/payments/checkout", {
+  //   method: "POST",
+  //   body: JSON.stringify({
+  //     bookingId,
+  //     amount,
+  //     method,
+  //     returnUrl,
+  //     cancelUrl,
+  //   }),
+  // });
+}
+
+/* ======================================================
+ *  TẠO LỆNH THANH TOÁN (PAYMENT ORDER)
+ *  API: POST /payments/order
+ *  Body:
+ *    {
+ *      "bookingId": "booking-7777-aaaa-3333",
+ *      "method": "PAYPAL" | "MOMO",
+ *      "amount": 270000.00
+ *    }
+ *  Response:
+ *    {
+ *      "code": 200,
+ *      "message": "Payment order created",
+ *      "data": {
+ *        "paymentId": "uuid",
+ *        "orderId": "string (gateway order ID)",
+ *        "txnRef": "string (Momo only)",
+ *        "paymentUrl": "string (redirect URL for user)"
+ *      }
+ *    }
+ * ==================================================== */
+
+export async function createPaymentOrder({ bookingId, method, amount }) {
+  if (!bookingId || !method || !amount) {
+    throw new Error(
+      "createPaymentOrder: bookingId, method, amount là bắt buộc"
+    );
+  }
+
+  if (USE_MOCK) {
+    const now = Date.now();
+
+    return {
+      code: 200,
+      message: "Payment order created (mock)",
+      data: {
+        paymentId: `mock-payment-${now}`,
+        orderId: `MOCK-ORDER-${now}`,
+        txnRef: method === "MOMO" ? `MOCK-TXN-${now}` : null,
+        // mock URL, bạn có thể tạo một route /mock-payment-success nếu thích
+        paymentUrl: "/mock-payment-success",
+      },
+    };
+  }
+
+  // 🚀 BE thật – dùng đúng spec bạn đưa ra
+  // return apiFetch("/payments/order", {
+  //   method: "POST",
+  //   body: JSON.stringify({
+  //     bookingId,
+  //     method, // "PAYPAL" | "MOMO"
+  //     amount,
   //   }),
   // });
 }

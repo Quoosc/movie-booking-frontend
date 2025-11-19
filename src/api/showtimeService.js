@@ -69,7 +69,7 @@ function mapShowtimeGroupFromApi(group) {
 // };
 const MOCK_SHOWTIMES_BY_MOVIE = {
   "2": {
-    "2025-11-18": [
+    "2025-11-19": [
       {
         cinemaId: "c1",
         cinemaName: "Cinestar Quốc Thanh (Q.1)",
@@ -114,7 +114,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
       },
     ],
 
-    "2025-11-19": [
+    "2025-11-20": [
       {
         cinemaId: "c1",
         cinemaName: "Cinestar Quốc Thanh (Q.1)",
@@ -147,7 +147,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
   },
 
   "1": {
-    "2025-11-18": [
+    "2025-11-19": [
       {
         cinemaId: "c3",
         cinemaName: "Cinestar Huỳnh Tấn Phát (Q.7)",

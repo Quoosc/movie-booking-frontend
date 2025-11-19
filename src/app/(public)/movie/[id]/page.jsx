@@ -1,8 +1,8 @@
 // src/app/(public)/movie/[id]/page.jsx
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useParams, useNavigate } from "react-router-dom";
 
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
@@ -16,6 +16,7 @@ import {
   holdSeats,
   releaseSeats,
   previewPrice,
+  lockSeats,
 } from "@/api/bookingService";
 
 const DAYS = 7;
@@ -32,6 +33,7 @@ const DEFAULT_TICKET_TYPES = [
 
 export default function MovieDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const currentUser = null; // sau này có tài khoản thì bỏ đi mở comment dưới
   //const { currentUser } = useAuth();
@@ -89,7 +91,6 @@ export default function MovieDetailPage() {
   }, [id]);
 
   /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) ===== */
-  /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) ===== */
   useEffect(() => {
     const fetchTicketTypes = async () => {
       try {
@@ -109,6 +110,7 @@ export default function MovieDetailPage() {
 
     fetchTicketTypes();
   }, []);
+
   /* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ) ===== */
   // useEffect(() => {
   //   // Chưa chọn suất chiếu thì không cần load
@@ -117,8 +119,8 @@ export default function MovieDetailPage() {
   //   const fetchTicketTypes = async () => {
   //     try {
   //       const data = await getTicketTypes({
-  //         showtimeId: activeShowtime.showtimeId,      // ✅ bắt buộc
-  //         userId: currentUser?.id || null,           // ✅ member thì gửi, guest thì null
+  //         showtimeId: activeShowtime.showtimeId,      // bắt buộc
+  //         userId: currentUser?.id || null,           // member thì gửi, guest thì null
   //       });
 
   //       const list =
@@ -409,7 +411,7 @@ export default function MovieDetailPage() {
   // chọn ghế
   const handleToggleSeat = async (seat) => {
     if (!activeShowtime) return;
-    if (seat.status === "BOOKED" || seat.status === "LOCKED" ) return;
+    if (seat.status === "BOOKED" || seat.status === "LOCKED") return;
 
     // Bắt buộc chọn vé trước
     if (totalTickets === 0) {
@@ -622,31 +624,64 @@ export default function MovieDetailPage() {
     });
   };
 
+  //  BẢN MOCK
+  // Dùng khi bạn muốn test riêng countdown / lock từ MovieDetail.
+  // Lưu ý: nếu bật bản này + CheckoutPage vẫn lockSeats nữa → sẽ bị lock 2 lần.
+
+ 
+  // ✅ BẢN REAL – CHUẨN FLOW CUỐI (RECOMMENDED DÙNG)
+  // - Không gọi API ở đây
+  // - Chỉ navigate sang /checkout
   const handleProceedBooking = () => {
     if (!activeShowtime) return;
+
     if (totalTickets === 0) {
       showWarning("Vui lòng chọn vé.");
       return;
     }
+
     if (selectedSeats.length === 0) {
       showWarning("Vui lòng chọn ghế.");
       return;
     }
-    if (remainSeconds === 0) {
-      showWarning("Hết thời gian giữ ghế, vui lòng chọn lại.");
-      return;
-    }
 
-    // Mock submit
-    showWarning(
-      `Mock đặt vé:
-Phim: ${movie?.title}
-Rạp: ${activeShowtime.cinemaName}
-Suất: ${activeShowtime.startTime}
-Ghế: ${selectedSeats.map((s) => `${s.row}${s.number}`).join(", ")}
-Tổng tiền: ${priceSummary.total.toLocaleString()}đ`
-    );
+    const cinemaPayload = {
+      id:
+        activeShowtime.cinemaId ||
+        activeShowtime.cinema_id ||
+        activeShowtime.cinema?.id ||
+        null,
+      name:
+        activeShowtime.cinemaName ||
+        activeShowtime.cinema_name ||
+        activeShowtime.cinema?.name ||
+        "",
+      address:
+        activeShowtime.cinemaAddress ||
+        activeShowtime.cinema_address ||
+        activeShowtime.cinema?.address ||
+        "",
+      room:
+        activeShowtime.room ||
+        activeShowtime.roomName ||
+        activeShowtime.room_name ||
+        "",
+    };
+
+    navigate("/checkout", {
+      state: {
+        showtimeId: activeShowtime.showtimeId || activeShowtime.id,
+        cinema: cinemaPayload,
+        movie,
+        seats: selectedSeats,
+        ticketTypes,
+        snacks: selectedSnacks, // dạng object { snack_id: {...} } – CheckoutPage đang Object.values()
+        priceSummary,
+        // lock: không gửi, CheckoutPage tự lockSeats khi mount
+      },
+    });
   };
+
 
   /* ===== NOT FOUND ===== */
   if (!movie && !loadingMovie) {
@@ -1554,3 +1589,17 @@ function formatTime(sec) {
   const s = (sec % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
 }
+
+const buildCheckoutPayload = () => {
+  const ticketsSelected = ticketTypes.filter((t) => t.quantity > 0);
+  const snacksSelected = Object.values(selectedSnacks);
+
+  return {
+    movie,
+    showtime: activeShowtime,
+    selectedSeats,
+    ticketTypes: ticketsSelected,
+    snacks: snacksSelected,
+    priceSummary,
+  };
+};
