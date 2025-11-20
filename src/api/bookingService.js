@@ -1,11 +1,8 @@
 // src/api/bookingService.js
-// Toàn bộ logic mock + chuẩn bị cho API thật
-
-// Khi nối BE thật thì chỉ cần:
 // import { apiFetch, USE_MOCK } from "./fetchConfig";
 
 // TẠM THỜI: booking vẫn luôn dùng mock (không gọi BE)
-const USE_MOCK = true;
+const USE_MOCK = true; // TẠM THỜI: chỉ để test UI. Sau này gắn BE thì đổi thành false.
 
 /* ======================================================
  *  MOCK SEAT LAYOUT
@@ -14,11 +11,6 @@ const USE_MOCK = true;
  * ==================================================== */
 
 const MOCK_SEATS = {};
-
-// - 10 hàng: A → J
-// - Hàng A–C: NORMAL
-// - Hàng D–I: VIP
-// - Hàng J: COUPLE (5 ghế đôi = 10 chỗ)
 function genMockSeats(showtimeId) {
   const rows = "ABCDEFGHIJ".split("");
   const seats = [];
@@ -47,11 +39,7 @@ function genMockSeats(showtimeId) {
             row, // "J"
             number, // 1..10
             type, // "COUPLE"
-            status: pairBooked
-              ? "BOOKED"
-              : pairLocked
-              ? "LOCKED"
-              : "AVAILABLE",
+            status: pairBooked ? "BOOKED" : pairLocked ? "LOCKED" : "AVAILABLE",
             price: basePrice,
           });
         });
@@ -496,7 +484,6 @@ export async function getSnacksByCinema(cinemaId) {
   //   .filter(Boolean);
 }
 
-
 /* ======================================================
  *  HOLD / RELEASE SEATS (V1 - dùng ở MovieDetailPage)
  *  - Có thể giữ lại cho UI, nhưng API thật nên ưu tiên lockSeats ở Checkout
@@ -515,9 +502,7 @@ export async function holdSeats(
   userId = null
 ) {
   if (USE_MOCK) {
-    const expiresAt = new Date(
-      Date.now() + holdSeconds * 1000
-    ).toISOString();
+    const expiresAt = new Date(Date.now() + holdSeconds * 1000).toISOString();
 
     return {
       code: 201,
@@ -632,24 +617,24 @@ export async function previewPrice({
   }
 
   // 🚀 API thật
-// return apiFetch("/bookings/price-preview", {
-// return apiFetch("/bookings/price-preview", {
-//   method: "POST",
-//   body: JSON.stringify({
-//     showtimeId,
-//     seatIds,
-//     ticketTypes: ticketTypes.map((t) => ({
-//       ticketTypeId: t.ticketTypeId || t.id,
-//       quantity: t.quantity,
-//     })),
-//     snacks: snacks.map((s) => ({
-//       snackId: s.snackId || s.snack_id,
-//       quantity: s.quantity,
-//     })),
-//     promotionCode,
-//     userId,
-//   }),
-// });
+  // return apiFetch("/bookings/price-preview", {
+  // return apiFetch("/bookings/price-preview", {
+  //   method: "POST",
+  //   body: JSON.stringify({
+  //     showtimeId,
+  //     seatIds,
+  //     ticketTypes: ticketTypes.map((t) => ({
+  //       ticketTypeId: t.ticketTypeId || t.id,
+  //       quantity: t.quantity,
+  //     })),
+  //     snacks: snacks.map((s) => ({
+  //       snackId: s.snackId || s.snack_id,
+  //       quantity: s.quantity,
+  //     })),
+  //     promotionCode,
+  //     userId,
+  //   }),
+  // });
 }
 
 /* ======================================================
@@ -845,15 +830,136 @@ export async function createPaymentSession({
  *    }
  * ==================================================== */
 
-export async function createPaymentOrder({ bookingId, method, amount }) {
-  if (!bookingId || !method || !amount) {
-    throw new Error(
-      "createPaymentOrder: bookingId, method, amount là bắt buộc"
-    );
+// export async function createPaymentOrder({ bookingId, method, amount }) {
+//   if (!bookingId || !method || !amount) {
+//     throw new Error(
+//       "createPaymentOrder: bookingId, method, amount là bắt buộc"
+//     );
+//   }
+
+//   if (USE_MOCK) {
+//     const now = Date.now();
+
+//     return {
+//       code: 200,
+//       message: "Payment order created (mock)",
+//       data: {
+//         paymentId: `mock-payment-${now}`,
+//         orderId: `MOCK-ORDER-${now}`,
+//         txnRef: method === "MOMO" ? `MOCK-TXN-${now}` : null,
+//         // mock URL, bạn có thể tạo một route /mock-payment-success nếu thích
+//         paymentUrl: "/mock-payment-success",
+//       },
+//     };
+//   }
+
+//   //  BE thật – dùng đúng spec bạn đưa ra
+//   // return apiFetch("/payments/order", {
+//   //   method: "POST",
+//   //   body: JSON.stringify({
+//   //     bookingId,
+//   //     method, // "PAYPAL" | "MOMO"
+//   //     amount,
+//   //   }),
+//   // });
+// }
+
+// export async function getBookingById(bookingId) {
+//   const res = await apiClient.get(`/bookings/${bookingId}`);
+//   const json = res.data;
+
+//   if (json.code !== 200 || !json.data) {
+//     throw new Error(json.message || "Không lấy được thông tin vé.");
+//   }
+
+//   // API trả data là mảng → lấy phần tử đầu
+//   return Array.isArray(json.data) ? json.data[0] : json.data;
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// sài để mock tesst step3 và
+export async function getBookingById(bookingId) {
+  if (USE_MOCK) {
+    // 💡 Dữ liệu mock bám đúng spec /bookings/{bookingId} bạn gửi
+    return {
+      bookingId: bookingId || "5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
+      showtimeId: "3e4a8c9f-1234-5678-90ab-cdef12345678",
+      movieTitle: "Inception",
+      showtimeStartTime: "2025-11-18T19:30:00",
+      cinemaName: "CGV Vincom Center",
+      roomName: "IMAX 1",
+      seats: [
+        {
+          rowLabel: "A",
+          seatNumber: 5,
+          seatType: "VIP",
+          price: 120000.0,
+        },
+        {
+          rowLabel: "A",
+          seatNumber: 6,
+          seatType: "VIP",
+          price: 120000.0,
+        },
+      ],
+      totalPrice: 240000.0,
+      discountReason: "Promotion WINTER2024(-10%)",
+      discountValue: 24000.0,
+      finalPrice: 216000.0,
+      status: "CONFIRMED",
+      bookedAt: "2025-11-18T19:15:00",
+      qrCode: "https://res.cloudinary.com/demo/image/upload/qr_code_123.png",
+      qrPayload: "BOOKING_5e6f7a8b_SHOWTIME_3e4a8c9f",
+      paymentExpiresAt: null,
+      posterUrl: "https://cdn.example.com/posters/oppenheimer.jpg",
+    };
   }
 
+  //  REAL FLOW – gọi BE thật
+  const res = await apiClient.get(`/bookings/${bookingId}`);
+  const json = res.data;
+
+  if (json.code !== 200 || !json.data) {
+    throw new Error(json.message || "Không lấy được thông tin vé.");
+  }
+
+  // API trả data là mảng → lấy phần tử đầu
+  return Array.isArray(json.data) ? json.data[0] : json.data;
+}
+
+// Tạo lệnh thanh toán (mock + real)
+// bật mock payment
+export async function createPaymentOrder({ bookingId, method, amount }) {
+  console.log("[createPaymentOrder] input =", { bookingId, method, amount });
+
+  //  MOCK MODE: dễ dãi, auto fake nếu thiếu dữ liệu
   if (USE_MOCK) {
     const now = Date.now();
+
+    const safeBookingId = bookingId || `mock-booking-${now}`;
+    const safeMethod = (method || "PAYPAL").toUpperCase();
+    const safeAmount =
+      typeof amount === "number" && !Number.isNaN(amount) && amount > 0
+        ? amount
+        : 100000; // fake 100k cho chắc
+
+    const mockTxn = `MOCK-TXN-${now}`;
 
     return {
       code: 200,
@@ -861,20 +967,24 @@ export async function createPaymentOrder({ bookingId, method, amount }) {
       data: {
         paymentId: `mock-payment-${now}`,
         orderId: `MOCK-ORDER-${now}`,
-        txnRef: method === "MOMO" ? `MOCK-TXN-${now}` : null,
-        // mock URL, bạn có thể tạo một route /mock-payment-success nếu thích
-        paymentUrl: "/mock-payment-success",
+        txnRef: safeMethod === "MOMO" ? mockTxn : null,
+        // ⬇️ redirect thẳng sang PaymentCallback với đủ param
+        paymentUrl: `/payment-callback?transactionId=${mockTxn}&method=${safeMethod}&bookingId=${safeBookingId}&mock=1`,
       },
     };
   }
 
-  // 🚀 BE thật – dùng đúng spec bạn đưa ra
-  // return apiFetch("/payments/order", {
-  //   method: "POST",
-  //   body: JSON.stringify({
-  //     bookingId,
-  //     method, // "PAYPAL" | "MOMO"
-  //     amount,
-  //   }),
-  // });
+  //  REAL MODE: lúc nối BE thật mới check gắt
+  if (!bookingId || !method || amount == null) {
+    throw new Error(
+      "createPaymentOrder: bookingId, method, amount là bắt buộc"
+    );
+  }
+
+  const res = await apiClient.post("/payments/order", {
+    bookingId,
+    method,
+    amount,
+  });
+  return res.data;
 }

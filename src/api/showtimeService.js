@@ -52,7 +52,6 @@ function mapShowtimeGroupFromApi(group) {
   };
 }
 
-
 /**
  * MOCK structure để bạn test:
  * const MOCK_SHOWTIMES_BY_MOVIE = {
@@ -68,11 +67,11 @@ function mapShowtimeGroupFromApi(group) {
 //   }
 // };
 const MOCK_SHOWTIMES_BY_MOVIE = {
-  "2": {
-    "2025-11-19": [
+  2: {
+    "2025-11-21": [
       {
         cinemaId: "c1",
-        cinemaName: "Cinestar Quốc Thanh (Q.1)",
+        cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
         address: "271 Nguyễn Trãi, Q.1, TP.HCM",
         showtimes: [
           {
@@ -100,7 +99,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
       },
       {
         cinemaId: "c2",
-        cinemaName: "Cinestar Sinh Viên (Bình Dương)",
+        cinemaName: "CinesVerse Đẳng cấp vũ trụ",
         address: "Khu phố sinh viên, Bình Dương",
         showtimes: [
           {
@@ -114,10 +113,10 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
       },
     ],
 
-    "2025-11-20": [
+    "2025-11-22": [
       {
         cinemaId: "c1",
-        cinemaName: "Cinestar Quốc Thanh (Q.1)",
+        cinemaName: "CinesVerse Gà Trống",
         address: "271 Nguyễn Trãi, Q.1, TP.HCM",
         showtimes: [
           {
@@ -146,11 +145,11 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
     ],
   },
 
-  "1": {
-    "2025-11-19": [
+  1: {
+    "2025-11-21": [
       {
         cinemaId: "c3",
-        cinemaName: "Cinestar Huỳnh Tấn Phát (Q.7)",
+        cinemaName: "CinesVerse Yến Vy",
         address: "Huỳnh Tấn Phát, Q.7, TP.HCM",
         showtimes: [
           {
@@ -180,15 +179,13 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
   },
 };
 
-
 /**
  * Trang chi tiết phim:
  * GET /movies/{id}/showtimes?date=YYYY-MM-DD
  */
 export async function getShowtimesByMovie(movieId, date) {
   if (USE_MOCK) {
-    const raw =
-      MOCK_SHOWTIMES_BY_MOVIE[String(movieId)]?.[date] || [];
+    const raw = MOCK_SHOWTIMES_BY_MOVIE[String(movieId)]?.[date] || [];
     // raw đang là kiểu API (camelCase) → vẫn map lại cho thống nhất
     return raw.map(mapShowtimeGroupFromApi);
   }
@@ -199,8 +196,6 @@ export async function getShowtimesByMovie(movieId, date) {
   // const data = res.data || res;
   // return (data || []).map(mapShowtimeGroupFromApi);
 }
-
-
 
 /**
  * Tạm thời FE **không cần** getShowtimeDetail riêng.

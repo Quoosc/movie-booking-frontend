@@ -1,9 +1,7 @@
 import { createContext, useContext, useMemo, useState, useEffect } from "react";
 import { USE_MOCK_API } from "@/utils/constants";
-// 
-// Chọn service theo cờ
 import * as mockAuth from "@/api/mockAuthService";
-import * as realAuth from "@/api/authService"; // khi có backend, chỉ cần tắt USE_MOCK_API
+import * as realAuth from "@/api/authService"; 
 
 const svc = USE_MOCK_API ? mockAuth : realAuth;
 
@@ -24,13 +22,11 @@ export function AuthProvider({ children }) {
         const res = await svc.me(accessToken);
         if (mounted && res?.data) setUser(res.data);
       } catch {
-        // token hỏng -> clear
         handleLogout();
       }
     }
     fetchProfile();
     return () => (mounted = false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function persistTokens(at, rt, remember) {
@@ -40,7 +36,6 @@ export function AuthProvider({ children }) {
       localStorage.setItem("access_token", at);
       localStorage.setItem("refresh_token", rt);
     } else {
-      // nếu không nhớ, chỉ giữ trong state (không ghi localStorage)
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
     }

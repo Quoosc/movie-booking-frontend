@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import { getValidPromotions, validatePromotion } from "@/api/promotionService";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
-import HomeButton from "@/components/shared/Buttons/HomeButton";
 // import { useAuth } from "@/context/AuthContext";
 import {
   lockSeats,
@@ -14,16 +13,17 @@ import {
   createPaymentOrder,
 } from "@/api/bookingService";
 
-
-//Map từ mã UI sang enum PaymentMethod của BE (PAYPAL / MOMO)
-function mapPaymentMethodForApi(uiMethod) {
-  switch (uiMethod) {
+// Map từ mã UI sang enum PaymentMethod của BE (PAYPAL / MOMO)
+function mapPaymentMethodForApi(method) {
+  switch (method) {
     case "MOMO":
       return "MOMO";
     case "CARD_LOCAL":
-    case "CARD_INTL":
-    default:
       return "PAYPAL";
+    case "CARD_INTL":
+      return "PAYPAL";
+    default:
+      return "MOMO";
   }
 }
 
@@ -35,28 +35,54 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
+function validateCustomer(data) {
+  const errors = {};
+
+  const fullName = data.fullName?.trim() || "";
+  const email = data.email?.trim() || "";
+  const phone = data.phone?.trim() || "";
+
+  if (!fullName) {
+    errors.fullName = "Vui lòng nhập họ và tên.";
+  } else if (fullName.length < 2) {
+    errors.fullName = "Họ tên quá ngắn.";
+  }
+
+  if (!email) {
+    errors.email = "Vui lòng nhập email.";
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      errors.email = "Email không hợp lệ.";
+    }
+  }
+
+  if (!phone) {
+    errors.phone = "Vui lòng nhập số điện thoại.";
+  } else {
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 9 || digits.length > 11) {
+      errors.phone = "Số điện thoại không hợp lệ.";
+    }
+  }
+
+  return errors;
+}
+
 export default function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
   // const { currentUser } = useAuth();
-  const currentUser = null; // tạm thời mock, giống MovieDetailPage
-
+  const currentUser = null; // tạm thời mock
   const state = location.state || {};
 
-  //   const {
-  //   movie,
-  //   showtime,          // { showtimeId, cinemaName, room, startTime, ... }
-  //   selectedSeats,     // [{ seat_id, row, number, type }]
-  //   ticketTypesUsed,   // [{ id, label, price, quantity }]
-  //   selectedSnacks,    // object { snack_id: { snack_id, name, price, quantity } }
-  // } = location.state || {};
   const {
     showtimeId,
-    cinema, // { id, name, address, room }
+    cinema,
     movie,
     seats = [],
     ticketTypes = [],
-    snacks = {}, // { snack_id: {..., quantity} }
+    snacks = {},
     priceSummary = { subtotal: 0, discount: 0, total: 0 },
   } = state;
 
@@ -65,8 +91,7 @@ export default function CheckoutPage() {
     if (!showtimeId || !seats || seats.length === 0 || !movie || !cinema) {
       navigate("/", { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [showtimeId, seats, movie, cinema, navigate]);
 
   /* ===== STEP STATE ===== */
   const [step, setStep] = useState(1);
@@ -76,23 +101,40 @@ export default function CheckoutPage() {
   const [remainSeconds, setRemainSeconds] = useState(0);
   const [loadingLock, setLoadingLock] = useState(false);
 
-  /* ===== WARNING POPUP ===== */
+  /* ===== WARNING POPUP (dùng chung) ===== */
   const [warning, setWarning] = useState({
     open: false,
     title: "Lưu ý!",
     message: "",
+    buttonText: "OK",
+    onConfirm: null,
   });
 
-  const showWarning = (message, title = "Lưu ý!") => {
+  const showWarning = (message, title = "Lưu ý!", options = {}) => {
     setWarning({
       open: true,
       title,
       message,
+      buttonText: options.buttonText || "OK",
+      onConfirm: options.onConfirm || null,
     });
   };
 
   const closeWarning = () => {
-    setWarning((prev) => ({ ...prev, open: false }));
+    if (warning.onConfirm) {
+      warning.onConfirm();
+    }
+    setWarning((prev) => ({ ...prev, open: false, onConfirm: null }));
+  };
+
+  /* ===== TOAST NHỎ RIÊNG CHO PROMO (góc trên phải) ===== */
+  const [promoToast, setPromoToast] = useState({
+    open: false,
+    message: "",
+  });
+
+  const showPromoToast = (message) => {
+    setPromoToast({ open: true, message });
   };
 
   /* ===== CUSTOMER INFO (STEP 1) ===== */
@@ -101,19 +143,159 @@ export default function CheckoutPage() {
     email: currentUser?.email || "",
     phone: currentUser?.phoneNumber || "",
   }));
+  const [customerErrors, setCustomerErrors] = useState({});
 
   const handleChangeCustomer = (field, value) => {
     setCustomer((prev) => ({
       ...prev,
       [field]: value,
     }));
+    setCustomerErrors((prev) => ({
+      ...prev,
+      [field]: undefined,
+    }));
   };
+
+  // user login/logout thì tự prefill
+  useEffect(() => {
+    if (!currentUser) return;
+
+    setCustomer((prev) => ({
+      ...prev,
+      fullName: currentUser.fullName || prev.fullName,
+      email: currentUser.email || prev.email,
+      phone: currentUser.phoneNumber || prev.phone,
+    }));
+  }, [currentUser]);
 
   /* ===== PAYMENT (STEP 2) ===== */
   const [paymentMethod, setPaymentMethod] = useState(null); // "MOMO", "CARD_LOCAL", "CARD_INTL"
   const [submitting, setSubmitting] = useState(false);
 
-  /* ===== LOCK SEATS KHI VÀO CHECKOUT (mock) ===== */
+  /* ===== PRICE SUMMARY & PROMOTION ===== */
+  const [computedPriceSummary, setComputedPriceSummary] = useState(
+    priceSummary || { subtotal: 0, discount: 0, total: 0 }
+  );
+  const [promotionCode, setPromotionCode] = useState("");
+  const [appliedPromotion, setAppliedPromotion] = useState(null);
+  const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
+  const [promotionList, setPromotionList] = useState([]);
+  const [promotionLoading, setPromotionLoading] = useState(false);
+  const [promotionError, setPromotionError] = useState("");
+
+  // mở popup, fetch danh sách ưu đãi
+  const handleOpenPromoModal = async () => {
+    setIsPromotionModalOpen(true);
+    setPromotionError("");
+
+    if (promotionList.length === 0 && !promotionLoading) {
+      try {
+        setPromotionLoading(true);
+        const list = await getValidPromotions();
+        setPromotionList(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error("getValidPromotions error", err);
+        setPromotionError(
+          "Không tải được danh sách ưu đãi. Bạn vẫn có thể nhập mã tay."
+        );
+      } finally {
+        setPromotionLoading(false);
+      }
+    }
+  };
+
+  // apply promotion: validate + previewPrice để update UI
+  const handleApplyPromotion = async () => {
+    const code = promotionCode.trim();
+    if (!code) {
+      setPromotionError("Vui lòng nhập mã khuyến mãi.");
+      return;
+    }
+
+    setPromotionError("");
+    setPromotionLoading(true);
+    try {
+      const res = await validatePromotion(code, null);
+
+      if (!res?.valid) {
+        setAppliedPromotion(null);
+        setIsPromotionModalOpen(false); // đóng popup
+        showPromoToast(res?.message || "Mã khuyến mãi không tồn tại.");
+        return;
+      }
+
+      const promo = res.promotion || res;
+      setAppliedPromotion(promo);
+      setIsPromotionModalOpen(false);
+
+      // Cập nhật lại giá hiển thị bằng previewPrice
+      if (showtimeId && seats?.length) {
+        const seatIds = seats.map((s) => s.seat_id || s.seatId);
+        const snacksArray = Object.values(snacks || {});
+
+        const ticketTypesPayload = ticketTypes
+          .filter((t) => t.quantity > 0)
+          .map((t) => ({
+            ticketTypeId: t.ticketTypeId || t.id,
+            quantity: t.quantity,
+          }));
+
+        const snacksPayload = snacksArray
+          .filter((s) => s.quantity > 0)
+          .map((s) => ({
+            snackId: s.snackId || s.snack_id,
+            quantity: s.quantity,
+          }));
+
+        try {
+          const previewRes = await previewPrice({
+            showtimeId,
+            seatIds,
+            ticketTypes: ticketTypesPayload,
+            snacks: snacksPayload,
+            promotionCode: code,
+            userId: currentUser?.userId || null,
+          });
+
+          const previewWrapper = previewRes || {};
+          const previewData = previewWrapper.data || previewWrapper;
+
+          if (!previewWrapper.code || previewWrapper.code === 200) {
+            setComputedPriceSummary((prev) => ({
+              subtotal:
+                typeof previewData.subtotal === "number"
+                  ? previewData.subtotal
+                  : prev.subtotal ?? priceSummary.subtotal ?? 0,
+              discount:
+                typeof previewData.discount === "number"
+                  ? previewData.discount
+                  : typeof previewData.discountValue === "number"
+                  ? previewData.discountValue
+                  : prev.discount ?? 0,
+              total:
+                typeof previewData.total === "number"
+                  ? previewData.total
+                  : typeof previewData.finalPrice === "number"
+                  ? previewData.finalPrice
+                  : prev.total ?? priceSummary.total ?? 0,
+            }));
+          }
+        } catch (err) {
+          console.error("previewPrice with promotion failed", err);
+          // Nếu fail thì vẫn giữ appliedPromotion, chỉ không update số tiền UI
+        }
+      }
+    } catch (err) {
+      console.error("handleApplyPromotion error", err);
+      setAppliedPromotion(null);
+      setIsPromotionModalOpen(false);
+      showPromoToast("Mã khuyến mãi không hợp lệ hoặc đã hết hạn.");
+    } finally {
+      setPromotionLoading(false);
+    }
+  };
+
+  /* ===== LOCK SEATS KHI VÀO CHECKOUT ===== */
   useEffect(() => {
     if (!showtimeId || !seats || seats.length === 0) return;
 
@@ -125,7 +307,7 @@ export default function CheckoutPage() {
         const res = await lockSeats({
           showtimeId,
           userId: currentUser?.userId || null,
-          seatIds: seats.map((s) => s.seat_id),
+          seatIds: seats.map((s) => s.seat_id || s.seatId),
         });
 
         const data = res.data || res;
@@ -158,8 +340,7 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showtimeId]);
+  }, [showtimeId, seats, currentUser]);
 
   /* ===== COUNTDOWN TIMER ===== */
   useEffect(() => {
@@ -176,16 +357,19 @@ export default function CheckoutPage() {
     return () => clearInterval(timer);
   }, [lockInfo?.expiresAt]);
 
-  // Nếu hết thời gian giữ ghế → cảnh báo
+  // Nếu hết thời gian giữ ghế → cảnh báo + nút quay lại movieDetail
   useEffect(() => {
     if (remainSeconds === 0 && lockInfo) {
       showWarning(
         "Đã hết thời gian giữ ghế. Vui lòng quay lại chọn ghế.",
-        "Hết thời gian giữ vé"
+        "Hết thời gian giữ vé",
+        {
+          buttonText: "Quay lại chọn ghế",
+          onConfirm: () => navigate(-1),
+        }
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remainSeconds]);
+  }, [remainSeconds, lockInfo, navigate]);
 
   /* ===== DERIVED SUMMARY ===== */
   const totalTickets = useMemo(
@@ -214,136 +398,226 @@ export default function CheckoutPage() {
   };
 
   const handleNextStep = () => {
-    if (
-      !customer.fullName.trim() ||
-      !customer.email.trim() ||
-      !customer.phone.trim()
-    ) {
-      showWarning("Vui lòng nhập đầy đủ Họ tên, Email và Số điện thoại.");
+    const errors = validateCustomer(customer);
+    if (Object.keys(errors).length > 0) {
+      setCustomerErrors(errors);
+      showWarning("Vui lòng kiểm tra lại thông tin khách hàng.");
       return;
     }
+
     if (remainSeconds <= 0) {
       showWarning("Đã hết thời gian giữ ghế. Vui lòng quay lại chọn ghế.");
       return;
     }
+
     setStep(2);
   };
 
-    /* ===== HANDLER STEP 2 (THANH TOÁN) ===== */
+  /* ===== HANDLER STEP 2 (THANH TOÁN – REAL FLOW) ===== */
+  // const handleSubmitPayment = async () => {
+  //   const promoCodeToUse =
+  //     (promotionCode || appliedPromotion?.code || "").trim() || null;
 
-  // ==============================
-  // BẢN ĐANG DÙNG HIỆN TẠI: MOCK
-  // ==============================
+  //   if (!paymentMethod) {
+  //     showWarning("Vui lòng chọn phương thức thanh toán.");
+  //     return;
+  //   }
+
+  //   if (remainSeconds <= 0) {
+  //     showWarning("Hết thời gian giữ ghế. Vui lòng quay lại chọn ghế.");
+  //     return;
+  //   }
+
+  //   if (!showtimeId || !seats?.length) {
+  //     showWarning("Thiếu thông tin suất chiếu hoặc ghế. Vui lòng đặt lại.");
+  //     return;
+  //   }
+
+  //   if (!lockInfo?.lockId) {
+  //     showWarning(
+  //       "Không tìm thấy thông tin ghế. Vui lòng đặt lại ghế.",
+  //       "Lỗi"
+  //     );
+  //     return;
+  //   }
+
+  //   // đảm bảo info khách vẫn còn đủ (tránh user F5)
+  //   const errors = validateCustomer(customer);
+  //   if (Object.keys(errors).length > 0) {
+  //     setCustomerErrors(errors);
+  //     showWarning(
+  //       "Thiếu thông tin khách hàng. Vui lòng kiểm tra lại Họ tên, Email và Số điện thoại."
+  //     );
+  //     setStep(1);
+  //     return;
+  //   }
+
+  //   setSubmitting(true);
+
+  //   try {
+  //     const seatIds = seats.map((s) => s.seat_id || s.seatId);
+  //     const snacksArray = Object.values(snacks || {});
+  //     const gatewayMethod = mapPaymentMethodForApi(paymentMethod);
+
+  //     const ticketTypesPayload = ticketTypes
+  //       .filter((t) => t.quantity > 0)
+  //       .map((t) => ({
+  //         ticketTypeId: t.ticketTypeId || t.id,
+  //         quantity: t.quantity,
+  //       }));
+
+  //     const snacksPayload = snacksArray
+  //       .filter((s) => s.quantity > 0)
+  //       .map((s) => ({
+  //         snackId: s.snackId || s.snack_id,
+  //         quantity: s.quantity,
+  //       }));
+
+  //     // 1️⃣ Tính tiền với /bookings/price-preview
+  //     const previewRes = await previewPrice({
+  //       showtimeId,
+  //       seatIds,
+  //       ticketTypes: ticketTypesPayload,
+  //       snacks: snacksPayload,
+  //       promotionCode: promoCodeToUse,
+  //       userId: currentUser?.userId || null,
+  //     });
+
+  //     const previewWrapper = previewRes || {};
+  //     const previewData = previewWrapper.data || previewWrapper;
+
+  //     if (previewWrapper.code && previewWrapper.code !== 200) {
+  //       showWarning(
+  //         previewWrapper.message || "Không tính được giá vé. Vui lòng thử lại.",
+  //         "Lỗi"
+  //       );
+  //       return;
+  //     }
+
+  //     const subtotal =
+  //       typeof previewData.subtotal === "number"
+  //         ? previewData.subtotal
+  //         : priceSummary.subtotal;
+
+  //     const discount =
+  //       typeof previewData.discount === "number"
+  //         ? previewData.discount
+  //         : typeof previewData.discountValue === "number"
+  //         ? previewData.discountValue
+  //         : 0;
+
+  //     const finalTotal =
+  //       typeof previewData.total === "number"
+  //         ? previewData.total
+  //         : typeof previewData.finalPrice === "number"
+  //         ? previewData.finalPrice
+  //         : computedPriceSummary.total ?? priceSummary.total ?? 0;
+
+  //     // Cập nhật lại tổng tiền trên UI cho khớp với BE
+  //     setComputedPriceSummary({
+  //       subtotal,
+  //       discount,
+  //       total: finalTotal,
+  //     });
+
+  //     // 2️⃣ Xác nhận booking từ lockId: /bookings/confirm
+  //     const bookingRes = await createBooking({
+  //       lockId: lockInfo.lockId,
+  //       userId: currentUser?.userId || null, // guest = null
+  //       promotionCode: promoCodeToUse,
+  //       // Nếu sau này BE nhận thêm fullName/email/phone thì gắn thêm ở đây
+  //     });
+
+  //     const bookingWrapper = bookingRes || {};
+  //     const bookingData = bookingWrapper.data || bookingWrapper;
+
+  //     if (
+  //       bookingWrapper.code &&
+  //       bookingWrapper.code !== 200 &&
+  //       bookingWrapper.code !== 201
+  //     ) {
+  //       showWarning(
+  //         bookingWrapper.message ||
+  //           "Không tạo được booking. Vui lòng thử lại.",
+  //         "Lỗi"
+  //       );
+  //       return;
+  //     }
+
+  //     const bookingId =
+  //       bookingData.bookingId ||
+  //       bookingData.booking_id ||
+  //       bookingData.id ||
+  //       null;
+
+  //     if (!bookingId) {
+  //       showWarning("Booking không hợp lệ. Vui lòng thử lại.", "Lỗi");
+  //       return;
+  //     }
+
+  //     // 3️⃣ Tạo lệnh thanh toán: /payments/order
+  //     const paymentRes = await createPaymentOrder({
+  //       bookingId,
+  //       method: gatewayMethod, // "PAYPAL" | "MOMO"
+  //       amount: finalTotal,
+  //     });
+
+  //     const paymentWrapper = paymentRes || {};
+  //     const paymentData = paymentWrapper.data || paymentWrapper;
+
+  //     if (paymentWrapper.code && paymentWrapper.code !== 200) {
+  //       showWarning(
+  //         paymentWrapper.message ||
+  //           "Không tạo được lệnh thanh toán. Vui lòng thử lại.",
+  //         "Lỗi"
+  //       );
+  //       return;
+  //     }
+
+  //     const paymentUrl =
+  //       paymentData.paymentUrl ||
+  //       paymentData.redirectUrl ||
+  //       paymentData.checkoutUrl ||
+  //       null;
+
+  //     if (!paymentUrl) {
+  //       showWarning(
+  //         "Không nhận được paymentUrl từ cổng thanh toán.",
+  //         "Lỗi"
+  //       );
+  //       return;
+  //     }
+
+  //     // 4️⃣ Redirect sang trang thanh toán (PayPal / Momo)
+  //     window.location.href = paymentUrl;
+  //   } catch (err) {
+  //     console.error("handleSubmitPayment (real) error", err);
+  //     showWarning("Có lỗi xảy ra trong quá trình thanh toán.", "Lỗi");
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // };
+
+  // const canSubmitPayment = !!paymentMethod && remainSeconds > 0 && !submitting;
+
+
+
+
+
+  // ĐOẠN DƯỚI LÀ MOCK TEST
+    const canSubmitPayment =
+    step === 2 &&
+    !submitting &&
+    remainSeconds > 0 &&
+    !!paymentMethod &&
+    seats?.length > 0;
+
+
+  /* ===== HANDLER STEP 2 (THANH TOÁN – REAL FLOW) ===== */
   const handleSubmitPayment = async () => {
-    if (!paymentMethod) {
-      showWarning("Vui lòng chọn phương thức thanh toán.");
-      return;
-    }
+    const promoCodeToUse =
+      (promotionCode || appliedPromotion?.code || "").trim() || null;
 
-    if (remainSeconds <= 0) {
-      showWarning("Hết thời gian giữ ghế. Vui lòng quay lại chọn ghế.");
-      return;
-    }
-
-    if (!showtimeId || !seats?.length) {
-      showWarning("Thiếu thông tin suất chiếu hoặc ghế. Vui lòng đặt lại.");
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const seatIds = seats.map((s) => s.seat_id || s.seatId);
-      const snacksArray = Object.values(snacks || {});
-      const gatewayMethod = mapPaymentMethodForApi(paymentMethod);
-
-      // Payload ticketTypes cho MOCK previewPrice: có cả price
-      const ticketTypesPayload = ticketTypes.map((t) => ({
-        id: t.ticketTypeId || t.id,
-        label: t.label,
-        price: t.price,
-        quantity: t.quantity,
-      }));
-
-      // Snacks cho MOCK previewPrice: có cả price
-      const snacksPayload = snacksArray.map((s) => ({
-        snack_id: s.snackId || s.snack_id,
-        price: s.price,
-        quantity: s.quantity,
-      }));
-
-      // 1️⃣ MOCK: gọi previewPrice để test lại tổng tiền trên FE
-      const previewRes = await previewPrice({
-        showtimeId,
-        seatIds,
-        ticketTypes: ticketTypesPayload,
-        snacks: snacksPayload,
-        promotionCode: null,
-        userId: currentUser?.userId || null,
-      });
-
-      const previewWrapper = previewRes || {};
-      const previewData = previewWrapper.data || previewWrapper;
-      const finalTotal =
-        typeof previewData.total === "number"
-          ? previewData.total
-          : priceSummary.total;
-
-      // 2️⃣ MOCK: tạo booking (PENDING_PAYMENT) bằng spec cũ showtimeId + seatIds
-      const bookingRes = await createBooking({
-        userId: currentUser?.userId || null,
-        showtimeId,
-        seatIds,
-        snacks: snacksArray.map((s) => ({
-          snack_id: s.snackId || s.snack_id,
-          quantity: s.quantity,
-        })),
-        promotionCode: null,
-      });
-
-      const bookingWrapper = bookingRes || {};
-      const bookingData = bookingWrapper.data || bookingWrapper;
-      const bookingId =
-        bookingData.booking_id ||
-        bookingData.bookingId ||
-        bookingData.id ||
-        "mock-booking-id";
-
-      // 3️⃣ MOCK: tạo lệnh thanh toán (không redirect thật)
-      const paymentRes = await createPaymentOrder({
-        bookingId,
-        method: gatewayMethod, // "MOMO" | "PAYPAL"
-        amount: finalTotal,
-      });
-
-      const paymentWrapper = paymentRes || {};
-      const paymentData = paymentWrapper.data || paymentWrapper;
-
-      showWarning(
-        `MOCK THANH TOÁN\n\nBooking ID: ${bookingId}\nPayment ID: ${
-          paymentData.paymentId || "mock-payment"
-        }\nOrder ID: ${paymentData.orderId || "MOCK-ORDER"}\nMethod: ${
-          gatewayMethod
-        }\nSố tiền: ${finalTotal.toLocaleString()}đ\n\nSau khi BE hoàn tất, bước này sẽ redirect sang paymentUrl.`,
-        "Thông báo (MOCK)"
-      );
-    } catch (err) {
-      console.error("handleSubmitPayment (mock) error", err);
-      showWarning("Có lỗi xảy ra trong quá trình thanh toán (mock).", "Lỗi");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  /*
-  // ==========================================
-  // BẢN THẬT KHI NỐI BE + DB (REAL API FLOW)
-  // - Dùng lockId từ /bookings/lock
-  // - /bookings/price-preview
-  // - /bookings/confirm
-  // - /payments/order
-  // ==========================================
-  const handleSubmitPayment = async () => {
     if (!paymentMethod) {
       showWarning("Vui lòng chọn phương thức thanh toán.");
       return;
@@ -360,10 +634,18 @@ export default function CheckoutPage() {
     }
 
     if (!lockInfo?.lockId) {
+      showWarning("Không tìm thấy thông tin ghế. Vui lòng đặt lại ghế.", "Lỗi");
+      return;
+    }
+
+    // đảm bảo info khách vẫn còn đủ (tránh user F5)
+    const errors = validateCustomer(customer);
+    if (Object.keys(errors).length > 0) {
+      setCustomerErrors(errors);
       showWarning(
-        "Không tìm thấy thông tin khóa ghế (lockId). Vui lòng đặt lại ghế.",
-        "Lỗi"
+        "Thiếu thông tin khách hàng. Vui lòng kiểm tra lại Họ tên, Email và Số điện thoại."
       );
+      setStep(1);
       return;
     }
 
@@ -374,7 +656,6 @@ export default function CheckoutPage() {
       const snacksArray = Object.values(snacks || {});
       const gatewayMethod = mapPaymentMethodForApi(paymentMethod);
 
-      // ticketTypes dạng API (không cần price): { ticketTypeId, quantity }
       const ticketTypesPayload = ticketTypes
         .filter((t) => t.quantity > 0)
         .map((t) => ({
@@ -389,13 +670,13 @@ export default function CheckoutPage() {
           quantity: s.quantity,
         }));
 
-      // 1️⃣ Gọi /bookings/price-preview để BE tính finalTotal
+      // 1️⃣ Tính tiền với /bookings/price-preview
       const previewRes = await previewPrice({
         showtimeId,
         seatIds,
         ticketTypes: ticketTypesPayload,
         snacks: snacksPayload,
-        promotionCode: null, // TODO: gắn promotionCode từ UI mã khuyến mãi
+        promotionCode: promoCodeToUse,
         userId: currentUser?.userId || null,
       });
 
@@ -404,23 +685,44 @@ export default function CheckoutPage() {
 
       if (previewWrapper.code && previewWrapper.code !== 200) {
         showWarning(
-          previewWrapper.message ||
-            "Không tính được giá vé. Vui lòng thử lại.",
+          previewWrapper.message || "Không tính được giá vé. Vui lòng thử lại.",
           "Lỗi"
         );
         return;
       }
 
+      const subtotal =
+        typeof previewData.subtotal === "number"
+          ? previewData.subtotal
+          : priceSummary.subtotal;
+
+      const discount =
+        typeof previewData.discount === "number"
+          ? previewData.discount
+          : typeof previewData.discountValue === "number"
+          ? previewData.discountValue
+          : 0;
+
       const finalTotal =
         typeof previewData.total === "number"
           ? previewData.total
-          : priceSummary.total;
+          : typeof previewData.finalPrice === "number"
+          ? previewData.finalPrice
+          : computedPriceSummary.total ?? priceSummary.total ?? 0;
 
-      // 2️⃣ Tạo booking thật: POST /bookings/confirm (từ lockId)
+      // Cập nhật lại tổng tiền trên UI cho khớp với BE
+      setComputedPriceSummary({
+        subtotal,
+        discount,
+        total: finalTotal,
+      });
+
+      // 2️⃣ Xác nhận booking từ lockId: /bookings/confirm
       const bookingRes = await createBooking({
         lockId: lockInfo.lockId,
-        userId: currentUser?.userId || null,
-        promotionCode: null,
+        userId: currentUser?.userId || null, // guest = null
+        promotionCode: promoCodeToUse,
+        // Nếu sau này BE nhận thêm fullName/email/phone thì gắn thêm ở đây
       });
 
       const bookingWrapper = bookingRes || {};
@@ -432,8 +734,7 @@ export default function CheckoutPage() {
         bookingWrapper.code !== 201
       ) {
         showWarning(
-          bookingWrapper.message ||
-            "Không tạo được booking. Vui lòng thử lại.",
+          bookingWrapper.message || "Không tạo được booking. Vui lòng thử lại.",
           "Lỗi"
         );
         return;
@@ -450,7 +751,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // 3️⃣ Tạo lệnh thanh toán: POST /payments/order
+      // 3️⃣ Tạo lệnh thanh toán: /payments/order
       const paymentRes = await createPaymentOrder({
         bookingId,
         method: gatewayMethod, // "PAYPAL" | "MOMO"
@@ -476,15 +777,16 @@ export default function CheckoutPage() {
         null;
 
       if (!paymentUrl) {
-        showWarning(
-          "Không nhận được paymentUrl từ cổng thanh toán.",
-          "Lỗi"
-        );
+        showWarning("Không nhận được paymentUrl từ cổng thanh toán.", "Lỗi");
         return;
       }
 
-      // 4️⃣ Redirect sang trang thanh toán (PayPal / Momo)
-      window.location.href = paymentUrl;
+      // 4️⃣ Redirect:
+      if (paymentUrl.startsWith("/")) {
+        navigate(paymentUrl, { replace: true });
+      } else {
+        window.location.href = paymentUrl;
+      }
     } catch (err) {
       console.error("handleSubmitPayment (real) error", err);
       showWarning("Có lỗi xảy ra trong quá trình thanh toán.", "Lỗi");
@@ -492,9 +794,9 @@ export default function CheckoutPage() {
       setSubmitting(false);
     }
   };
-  */
+// ĐOẠN TRÊN LÀ MOCK TEST
 
-  const canSubmitPayment = !!paymentMethod && remainSeconds > 0 && !submitting;
+
 
 
   /* ===== RENDER ===== */
@@ -511,20 +813,9 @@ export default function CheckoutPage() {
       <Navbar />
 
       <main className="relative z-10 max-w-6xl mx-auto px-4 pb-12 pt-4">
-        {/* Back home + back to movie */}
+        {/* back to movie (giữ chỗ, có thể thêm lại nút sau) */}
         <div className="flex items-center justify-between mb-4">
-          <HomeButton />
-          <button
-            onClick={handleBackToMovie}
-            className="inline-flex items-center gap-2 text-[11px] md:text-[12px] text-white/70 hover:text-white transition-colors"
-          >
-            <span className="inline-block w-5 h-5 rounded-full border border-white/40 flex items-center justify-center text-[10px]">
-              ←
-            </span>
-            <span className="tracking-[0.16em] uppercase">
-              Quay lại chọn ghế
-            </span>
-          </button>
+          {/* <button ...>Quay lại chọn ghế</button> */}
         </div>
 
         {/* Heading + Step indicator */}
@@ -532,9 +823,22 @@ export default function CheckoutPage() {
           <p className="text-[11px] sm:text-xs tracking-[0.22em] text-[#9ca3ff] uppercase mb-2">
             Checkout • CinesVerse
           </p>
-          <h1 className="text-2xl sm:text-3xl md:text-[32px] font-extrabold bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_26px_rgba(123,92,255,0.9)]">
-            Trang thanh toán
-          </h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-2xl sm:text-3xl md:text-[32px] font-extrabold bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_26px_rgba(123,92,255,0.9)]">
+              Trang thanh toán
+            </h1>
+            {/* <button
+              onClick={handleBackToMovie}
+              className="hidden md:inline-flex items-center gap-2 text-[11px] md:text-[12px] text-white/70 hover:text-white transition-colors"
+            >
+              <span className="inline-block w-5 h-5 rounded-full border border-white/40 flex items-center justify-center text-[10px]">
+                ←
+              </span>
+              <span className="tracking-[0.16em] uppercase">
+                Quay lại chọn ghế
+              </span>
+            </button> */}
+          </div>
 
           {/* Process bar */}
           <ul className="mt-5 flex flex-wrap justify-center md:justify-start gap-4 md:gap-8 text-[11px] sm:text-[12px]">
@@ -555,6 +859,7 @@ export default function CheckoutPage() {
             {step === 1 ? (
               <Step1CustomerInfo
                 customer={customer}
+                errors={customerErrors}
                 onChangeCustomer={handleChangeCustomer}
                 onNext={handleNextStep}
                 loadingLock={loadingLock}
@@ -567,6 +872,13 @@ export default function CheckoutPage() {
                 onBack={() => setStep(1)}
                 onSubmit={handleSubmitPayment}
                 canSubmit={canSubmitPayment}
+                submitting={submitting}
+                remainSeconds={remainSeconds}
+                promotionCode={promotionCode}
+                setPromotionCode={setPromotionCode}
+                onOpenPromoModal={handleOpenPromoModal}
+                appliedPromotion={appliedPromotion}
+                promotionLoading={promotionLoading}
               />
             )}
           </div>
@@ -579,15 +891,17 @@ export default function CheckoutPage() {
             totalTickets={totalTickets}
             selectedTicketTypes={selectedTicketTypes}
             snackList={snackList}
-            priceSummary={priceSummary}
+            priceSummary={computedPriceSummary}
             remainSeconds={remainSeconds}
             loadingLock={loadingLock}
             seatLabel={seatLabel}
+            promotionCode={promotionCode}
+            appliedPromotion={appliedPromotion}
           />
         </section>
       </main>
 
-      {/* POPUP WARNING */}
+      {/* POPUP WARNING CHUNG */}
       {warning.open && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div className="w-[90%] max-w-md rounded-3xl bg-gradient-to-r from-[#4f46e5] via-[#7b5cff] to-[#ec4899] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.95)]">
@@ -607,12 +921,41 @@ export default function CheckoutPage() {
                      hover:brightness-110 hover:-translate-y-[1px]
                      active:translate-y-0 transition-all"
               >
-                OK
+                {warning.buttonText || "OK"}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* TOAST PROMO */}
+      {promoToast.open && (
+        <div className="fixed top-6 right-4 z-[998]">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#7c3aed] text-white text-xs shadow-lg">
+            <span>⚠️</span>
+            <span>{promoToast.message}</span>
+            <button
+              onClick={() => setPromoToast({ open: false, message: "" })}
+              className="ml-2 text-white/80 hover:text-white text-[10px]"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PROMO */}
+      <PromoModal
+        open={isPromotionModalOpen}
+        onClose={() => setIsPromotionModalOpen(false)}
+        promotions={promotionList}
+        loading={promotionLoading}
+        error={promotionError}
+        code={promotionCode}
+        onChangeCode={setPromotionCode}
+        onSelectCode={(code) => setPromotionCode(code)}
+        onApply={handleApplyPromotion}
+      />
 
       <Footer />
     </div>
@@ -641,12 +984,15 @@ function StepItem({ stepNumber, label, active }) {
 
 function Step1CustomerInfo({
   customer,
+  errors,
   onChangeCustomer,
   onNext,
   loadingLock,
   remainSeconds,
 }) {
   const disabled = loadingLock || remainSeconds <= 0;
+  const baseInput =
+    "w-full rounded-xl bg-[#020617] px-3 py-2 text-[12px] md:text-[13px] text-white outline-none transition-all";
 
   return (
     <div className="rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md p-5 md:p-6 shadow-[0_22px_70px_rgba(0,0,0,0.9)]">
@@ -655,8 +1001,7 @@ function Step1CustomerInfo({
       </h2>
 
       <p className="text-[11px] md:text-xs text-white/70 mb-4">
-        Vui lòng điền thông tin để nhận vé và thông báo qua email / số điện
-        thoại.
+        Vui lòng điền thông tin để nhận vé và thông báo qua email
       </p>
 
       <div className="space-y-3 text-[12px] md:text-[13px]">
@@ -668,9 +1013,16 @@ function Step1CustomerInfo({
             type="text"
             value={customer.fullName}
             onChange={(e) => onChangeCustomer("fullName", e.target.value)}
-            className="w-full rounded-xl bg-[#020617] border border-white/10 px-3 py-2 text-[12px] md:text-[13px] text-white outline-none focus:border-[#7b5cff] focus:ring-1 focus:ring-[#7b5cff] transition-all"
+            className={`${baseInput} border ${
+              errors?.fullName
+                ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                : "border-white/10 focus:border-[#7b5cff] focus:ring-1 focus:ring-[#7b5cff]"
+            }`}
             placeholder="Nhập họ tên của bạn"
           />
+          {errors?.fullName && (
+            <p className="mt-1 text-[11px] text-red-400">{errors.fullName}</p>
+          )}
         </div>
 
         <div>
@@ -681,9 +1033,16 @@ function Step1CustomerInfo({
             type="email"
             value={customer.email}
             onChange={(e) => onChangeCustomer("email", e.target.value)}
-            className="w-full rounded-xl bg-[#020617] border border-white/10 px-3 py-2 text-[12px] md:text-[13px] text-white outline-none focus:border-[#7b5cff] focus:ring-1 focus:ring-[#7b5cff] transition-all"
+            className={`${baseInput} border ${
+              errors?.email
+                ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                : "border-white/10 focus:border-[#7b5cff] focus:ring-1 focus:ring-[#7b5cff]"
+            }`}
             placeholder="example@gmail.com"
           />
+          {errors?.email && (
+            <p className="mt-1 text-[11px] text-red-400">{errors.email}</p>
+          )}
         </div>
 
         <div>
@@ -694,9 +1053,16 @@ function Step1CustomerInfo({
             type="tel"
             value={customer.phone}
             onChange={(e) => onChangeCustomer("phone", e.target.value)}
-            className="w-full rounded-xl bg-[#020617] border border-white/10 px-3 py-2 text-[12px] md:text-[13px] text-white outline-none focus:border-[#7b5cff] focus:ring-1 focus:ring-[#7b5cff] transition-all"
+            className={`${baseInput} border ${
+              errors?.phone
+                ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                : "border-white/10 focus:border-[#7b5cff] focus:ring-1 focus:ring-[#7b5cff]"
+            }`}
             placeholder="Nhập số điện thoại"
           />
+          {errors?.phone && (
+            <p className="mt-1 text-[11px] text-red-400">{errors.phone}</p>
+          )}
         </div>
       </div>
 
@@ -734,6 +1100,12 @@ function Step2Payment({
   onBack,
   onSubmit,
   canSubmit,
+  submitting,
+  remainSeconds,
+  promotionCode,
+  appliedPromotion,
+  promotionLoading,
+  onOpenPromoModal,
 }) {
   const paymentOptions = [
     {
@@ -759,7 +1131,16 @@ function Step2Payment({
         Bước 2 • Thanh toán
       </h2>
 
-      <div className="space-y-3">
+      {/* Banner hết thời gian giữ ghế */}
+      {remainSeconds <= 0 && (
+        <div className="mb-3 rounded-2xl border border-red-500/60 bg-red-500/10 px-3 py-2 text-[11px] text-red-100">
+          Thời gian giữ ghế đã hết. Vui lòng quay lại bước 1 hoặc đặt vé lại từ
+          đầu.
+        </div>
+      )}
+
+      {/* Danh sách phương thức thanh toán */}
+      <div className="space-y-3 mb-5">
         {paymentOptions.map((opt) => (
           <button
             key={opt.id}
@@ -786,7 +1167,7 @@ function Step2Payment({
         ))}
       </div>
 
-      {/* Block mã khuyến mãi (UI thôi, logic sẽ làm sau) */}
+      {/* Block mã khuyến mãi */}
       <div className="mt-5 rounded-2xl border border-dashed border-white/20 bg-[#020617]/70 px-3 py-3 flex items-center gap-3">
         <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-[14px]">
           %
@@ -795,20 +1176,39 @@ function Step2Payment({
           <p className="text-[11px] md:text-[12px] font-semibold text-white">
             Mã khuyến mãi
           </p>
-          <p className="text-[10px] text-white/60">
-            Chức năng áp dụng ưu đãi sẽ gắn với Promotions sau.
-          </p>
+          {appliedPromotion ? (
+            <p className="text-[10px] text-[#fbbf24]/90">
+              Đã áp dụng:{" "}
+              <span className="font-semibold">{appliedPromotion.code}</span> –{" "}
+              {appliedPromotion.name}
+            </p>
+          ) : (
+            <p className="text-[10px] text-white/60">
+              Nếu có mã ưu đãi, hãy nhập tại đây. Mã sẽ được áp dụng khi tính
+              tiền cuối cùng.
+            </p>
+          )}
         </div>
-        <button className="px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-[0.18em] border border-white/30 text-white/80">
-          Nhập mã
+        <button
+          type="button"
+          onClick={onOpenPromoModal}
+          className="px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-[0.18em] border border-white/30 text-white/80 hover:bg-white/10"
+          disabled={promotionLoading}
+        >
+          {promotionLoading
+            ? "Đang tải..."
+            : appliedPromotion || promotionCode
+            ? "Đổi mã"
+            : "Nhập mã"}
         </button>
       </div>
 
+      {/* Nút back / thanh toán */}
       <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <button
           onClick={onBack}
           className="w-full sm:w-auto px-4 py-2.5 rounded-2xl text-[11px] md:text-[12px] font-semibold uppercase tracking-[0.18em]
-             border border-white/40 text-white/80 hover:bg-white/10 transition-all"
+             border border-white/40 text-white/80 hover:bg.white/10 transition-all"
         >
           Quay lại bước 1
         </button>
@@ -824,7 +1224,7 @@ function Step2Payment({
              active:translate-y-0 transition-all
              disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Thanh toán
+          {submitting ? "Đang xử lý..." : "Thanh toán"}
         </button>
       </div>
     </div>
@@ -842,6 +1242,7 @@ function BookingSummary({
   remainSeconds,
   loadingLock,
   seatLabel,
+  appliedPromotion,
 }) {
   return (
     <div className="rounded-3xl bg-[#020617]/90 border border-white/10 backdrop-blur-md p-5 md:p-6 shadow-[0_22px_70px_rgba(0,0,0,0.9)]">
@@ -885,7 +1286,7 @@ function BookingSummary({
             <ul className="space-y-1">
               {selectedTicketTypes.map((t) => (
                 <li
-                  key={t.id || t.ticketTypeId}
+                  key={t.id}
                   className="flex items-center justify-between gap-2"
                 >
                   <span>{t.label}</span>
@@ -911,7 +1312,7 @@ function BookingSummary({
             <ul className="space-y-1">
               {snackList.map((s) => (
                 <li
-                  key={s.snack_id || s.snackId}
+                  key={s.snack_id}
                   className="flex items-center justify-between gap-2"
                 >
                   <span className="truncate max-w-[160px]">{s.name}</span>
@@ -923,6 +1324,15 @@ function BookingSummary({
             </ul>
           )}
         </div>
+
+        {/* Khuyến mãi áp dụng */}
+        {appliedPromotion && (
+          <div className="mt-1 text-[10px] md:text-[11px] text-[#fbbf24]">
+            Mã đã áp dụng:{" "}
+            <span className="font-semibold">{appliedPromotion.code}</span> –{" "}
+            {appliedPromotion.name}
+          </div>
+        )}
       </div>
 
       {/* Footer: Tổng tiền */}
@@ -938,7 +1348,7 @@ function BookingSummary({
           </div>
         )}
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-[11px] md:text-[12px] text-white/80">
+          <span className="text-[11px] md:text-[12px] text.white/80">
             Số tiền cần thanh toán
           </span>
           <span className="text-[18px] md:text-[20px] font-extrabold text-[#facc15]">
@@ -958,6 +1368,135 @@ function InfoRow({ label, value, sub }) {
       </p>
       <p className="text-[12px] md:text-[13px] text-white">{value || "—"}</p>
       {sub && <p className="text-[10px] text-white/55 mt-0.5">{sub}</p>}
+    </div>
+  );
+}
+
+function PromoModal({
+  open,
+  onClose,
+  promotions,
+  loading,
+  error,
+  code,
+  onChangeCode,
+  onSelectCode,
+  onApply,
+}) {
+  if (!open) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onApply && onApply();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="w-[90%] max-w-lg rounded-3xl bg-gradient-to-r from-[#4f46e5] via-[#7b5cff] to-[#ec4899] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.95)]">
+        <div className="rounded-3xl bg-[#050018]/98 px-5 sm:px-6 py-5 sm:py-6 text-left">
+          {/* HEADER */}
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-[13px] sm:text-[14px] font-extrabold tracking-[0.28em] text-white uppercase">
+                MÃ KHUYẾN MÃI
+              </h3>
+              <p className="mt-2 text-[11px] sm:text-[12px] text-white/75">
+                Nhập mã ưu đãi của bạn hoặc chọn nhanh từ danh sách mã hợp lệ mà
+                hệ thống gợi ý.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 text-sm"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* FORM NHẬP MÃ */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <label className="block mb-1 text-[11px] uppercase tracking-[0.18em] text-white/60">
+                Nhập mã khuyến mãi
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={code}
+                  onChange={(e) => onChangeCode(e.target.value.toUpperCase())}
+                  placeholder="VD: WINTER2024"
+                  className="flex-1 rounded-xl bg-[#020617] border border-white/15 px-3 py-2 text-[12px] sm:text-[13px] text-white outline-none focus:border-[#7b5cff] focus:ring-1 focus:ring-[#7b5cff] transition-all"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl text-[11px] sm:text-[12px] font-extrabold uppercase tracking-[0.18em]
+                    bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6]
+                    text-white shadow-[0_0_16px_rgba(123,92,255,0.9)]
+                    hover:brightness-110 hover:-translate-y-[1px]
+                    active:translate-y-0 transition-all"
+                >
+                  Áp dụng
+                </button>
+              </div>
+            </div>
+
+            {/* LIST MÃ GỢI Ý */}
+            <div className="mt-3 max-h-52 overflow-y-auto rounded-2xl bg-white/3 border border-white/10 p-3 space-y-2">
+              {loading ? (
+                <p className="text-[11px] text-white/70">
+                  Đang tải danh sách mã...
+                </p>
+              ) : error ? (
+                <p className="text-[11px] text-red-300">{error}</p>
+              ) : !promotions || promotions.length === 0 ? (
+                <p className="text-[11px] text-white/60">
+                  Hiện chưa có mã khuyến mãi khả dụng.
+                </p>
+              ) : (
+                promotions.map((promo) => (
+                  <button
+                    key={promo.promotionId || promo.id || promo.code}
+                    type="button"
+                    onClick={() => {
+                      onSelectCode(promo.code);
+                    }}
+                    className="w-full text-left rounded-2xl px-3 py-2.5 bg-black/25 border border-white/10 hover:border-[#ffe700aa] hover:bg-white/5 transition-all"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold text-[#ffe700] tracking-[0.18em] uppercase">
+                        {promo.code}
+                      </span>
+                      <span className="text-[11px] text-[#a5b4fc]">
+                        {promo.discountType === "PERCENTAGE"
+                          ? `-${promo.discountValue}%`
+                          : `-${
+                              promo.discountValue?.toLocaleString?.() ||
+                              promo.discountValue
+                            }đ`}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-white/80">
+                      {promo.name}
+                    </p>
+                    {promo.description && (
+                      <p className="mt-0.5 text-[10px] text-white/55">
+                        {promo.description}
+                      </p>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </form>
+
+          {/* FOOTER NOTE */}
+          <p className="mt-4 text-[10px] text-white/50">
+            Lưu ý: Mỗi đơn chỉ áp dụng 1 mã khuyến mãi và sẽ được kiểm tra lại ở
+            bước tính tiền cuối cùng.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

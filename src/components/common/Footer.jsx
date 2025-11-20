@@ -18,7 +18,6 @@ export default function Footer() {
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
               <img
-                // Đặt file trong public/movies/... => dùng src="/movies/..."
                 src="/public/movies/—Pngtree—film festival logo popcorn and_4686389.png"
                 alt="CinesVerse"
                 className="h-11 w-auto drop-shadow-[0_3px_16px_rgba(0,0,0,0.75)]"

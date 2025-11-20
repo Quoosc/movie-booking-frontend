@@ -623,11 +623,6 @@ export default function MovieDetailPage() {
       };
     });
   };
-
-  //  BẢN MOCK
-  // Dùng khi bạn muốn test riêng countdown / lock từ MovieDetail.
-  // Lưu ý: nếu bật bản này + CheckoutPage vẫn lockSeats nữa → sẽ bị lock 2 lần.
-
  
   // ✅ BẢN REAL – CHUẨN FLOW CUỐI (RECOMMENDED DÙNG)
   // - Không gọi API ở đây

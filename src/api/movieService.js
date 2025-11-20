@@ -10,14 +10,16 @@ const USE_MOCK = true;
 const MOCK_MOVIES = [
   {
     movie_id: "1",
-    title: "CỤC VÀNG CỦA NGOẠI (T13)",
+    title: "CỤC VÀNG CỦA TÔI (T13)",
     genre: "Hài, Gia đình",
     duration: 110,
     minimum_age: 13,
-    poster_url: "/public/movies/cuc-vang-cua-ngoai-poster.jpg",
+    poster_url:
+      "https://scontent.fsgn5-10.fna.fbcdn.net/v/t1.15752-9/582262336_3271145863038912_7032492895580728179_n.jpg?stp=dst-jpg_s2048x2048_tt6&_nc_cat=107&ccb=1-7&_nc_sid=9f807c&_nc_ohc=YJEobKjfTW0Q7kNvwGNuxQ8&_nc_oc=AdkF-nvd6VVM1GI0CJjfGJeWs2Aak51Tl4SzUBO38Eeb-KuzAzXFpU5zqC_dOIjJIgs&_nc_zt=23&_nc_ht=scontent.fsgn5-10.fna&oh=03_Q7cD3wGb83n3mnT0hWzoO95JJv7R-B7DGkx4N9dwpNZ_s77PKQ&oe=694687A1",
     banner_url: "/public/movies/cuc-vang-cua-ngoai-poster.jpg",
     posterCloudinaryId: "movies/cuc_vang_cua_ngoai_poster",
-    description: "Câu chuyện ấm áp, hài hước về tình cảm gia đình khi 'cục vàng' bất đắc dĩ về sống cùng ngoại.",
+    description:
+      "Câu chuyện ấm áp, hài hước về tình cảm gia đình khi 'cục vàng' bất đắc dĩ về sống cùng ngoại.",
     trailer_url: "https://www.youtube.com/watch?v=_cj77qa_wMc",
     status: "SHOWING",
     language: "Việt",
@@ -27,14 +29,16 @@ const MOCK_MOVIES = [
   },
   {
     movie_id: "2",
-    title: "QUÁI THÚ VÔ HÌNH: VÙNG ĐẤT CHẾT CHÓC (T16)",
+    title: "VÌ SAO ĐƯA EM TỚI",
     genre: "Kinh dị",
     duration: 105,
     minimum_age: 16,
-    poster_url: "/public/movies/quai-thu-vo-hinh.jpg",
+    poster_url:
+      "https://scontent.fsgn5-5.fna.fbcdn.net/v/t1.15752-9/582228216_1534144324441816_7296489216345483207_n.jpg?stp=dst-jpg_s2048x2048_tt6&_nc_cat=100&ccb=1-7&_nc_sid=9f807c&_nc_ohc=9fyozd2SbFIQ7kNvwGawE27&_nc_oc=AdmTBD8iRnL5AnFhgQD8oPZnVztVDc5vpoA71osq3h0wQk4LqXjE13HWS_bWfSKFSJw&_nc_zt=23&_nc_ht=scontent.fsgn5-5.fna&oh=03_Q7cD3wESplByRMz8p6kyBSo6xwiuJdml8aEPXmx6LCW6chhV0A&oe=6946A0EB",
     banner_url: "/public/movies/quai-thu-vo-hinh.jpg",
     posterCloudinaryId: "movies/quai_thu_vo_hinh",
-    description: "Sinh vật vô hình gieo rắc kinh hoàng trong khu rừng cấm, nơi không ai sống sót trở về.",
+    description:
+      "Sinh vật vô hình gieo rắc kinh hoàng trong khu rừng cấm, nơi không ai sống sót trở về.",
     trailer_url: "https://www.youtube.com/watch?v=quai-thu-vo-hinh",
     status: "SHOWING",
     language: "Anh - Phụ đề Việt",
@@ -44,14 +48,16 @@ const MOCK_MOVIES = [
   },
   {
     movie_id: "3",
-    title: "GODZILLA MINUS ONE (T13)",
+    title: "YÊU EM TỪ CÁI NHÌN ĐẦU TIÊN",
     genre: "Hành động, Thảm họa",
     duration: 124,
     minimum_age: 13,
-    poster_url: "/public/movies/godzilla.jpg",
+    poster_url:
+      "https://scontent.fsgn5-11.fna.fbcdn.net/v/t1.15752-9/582516822_1221489803376136_7539095796292573020_n.jpg?stp=dst-jpg_s2048x2048_tt6&_nc_cat=111&ccb=1-7&_nc_sid=9f807c&_nc_ohc=pq3A_mLJ2J4Q7kNvwGSgGuT&_nc_oc=Adn39smCaZp4A2p2z_3CYyORyDSg9vAhUS22WGizd8pbMnx2tf-Z53Cj7i1sPPYvHbk&_nc_zt=23&_nc_ht=scontent.fsgn5-11.fna&oh=03_Q7cD3wGFa763bauFix-WzVfS5AFD18z5QPlNiJFmi2M-gbZaeQ&oe=694682EE",
     banner_url: "/public/movies/godzilla.jpg",
     posterCloudinaryId: "movies/godzilla_minus_one",
-    description: "Nhật Bản sau chiến tranh lại phải đối mặt với thảm họa Godzilla trong tuyệt vọng.",
+    description:
+      "Nhật Bản sau chiến tranh lại phải đối mặt với thảm họa Godzilla trong tuyệt vọng.",
     trailer_url: "https://www.youtube.com/watch?v=godzilla-minus-one",
     status: "SHOWING",
     language: "Nhật - Phụ đề Việt",
@@ -61,14 +67,16 @@ const MOCK_MOVIES = [
   },
   {
     movie_id: "4",
-    title: "TRÁI TIM QUÈ QUẶT (T18)",
+    title: "TRÁI TIM NÀY DÀNH CHO EM ",
     genre: "Tâm lý, Tình cảm",
     duration: 98,
     minimum_age: 18,
-    poster_url: "/public/movies/trai-tim-que-quat-poster.jpg",
+    poster_url:
+      "https://scontent.fsgn5-9.fna.fbcdn.net/v/t1.15752-9/566652044_2366659927123295_7669307562518199857_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=9f807c&_nc_ohc=Q6l0Dvl_P30Q7kNvwGD3U7j&_nc_oc=AdkPvKB3IwgfR84RcgwyBPmiqqJ7-55MsZleKq-b2bHk2ci4lpxHYQTU0lTPbEljJB8&_nc_zt=23&_nc_ht=scontent.fsgn5-9.fna&oh=03_Q7cD3wFP9ppAlaicFHDjXlZf0S18mElJX83gU3oCxD1VRKt1Dw&oe=6946A26C",
     banner_url: "/public/movies/trai-tim-que-quat-poster.jpg",
     posterCloudinaryId: "movies/trai_tim_que_quat",
-    description: "Một chuyện tình méo mó, gai góc và ám ảnh giữa hai con người đầy tổn thương.",
+    description:
+      "Một chuyện tình méo mó, gai góc và ám ảnh giữa hai con người đầy tổn thương.",
     trailer_url: "https://www.youtube.com/watch?v=trai-tim-que-quat",
     status: "SHOWING",
     language: "Việt",
@@ -85,7 +93,8 @@ const MOCK_MOVIES = [
     poster_url: "/public/movies/chet_choc.jpg",
     banner_url: "/public/movies/chet_choc.jpg",
     posterCloudinaryId: "movies/badlands_co_hoi_cuoi_cung",
-    description: "Một đặc vụ hết thời có cơ hội cuối cùng để cứu chuộc bản thân qua nhiệm vụ bất khả thi.",
+    description:
+      "Một đặc vụ hết thời có cơ hội cuối cùng để cứu chuộc bản thân qua nhiệm vụ bất khả thi.",
     trailer_url: "https://www.youtube.com/watch?v=badlands",
     status: "SHOWING",
     language: "Anh - Phụ đề Việt",
@@ -102,7 +111,8 @@ const MOCK_MOVIES = [
     poster_url: "/public/movies/base64-17550626259371965999958.jpg",
     banner_url: "/public/movies/base64-17550626259371965999958.jpg",
     posterCloudinaryId: "movies/anh_hung_cuoi_cung",
-    description: "Hành trình trở thành anh hùng của cậu bé yếu đuối giữa thế giới đầy hiểm nguy.",
+    description:
+      "Hành trình trở thành anh hùng của cậu bé yếu đuối giữa thế giới đầy hiểm nguy.",
     trailer_url: "https://www.youtube.com/watch?v=anh-hung-cuoi-cung",
     status: "SHOWING",
     language: "Anh - Phụ đề Việt",
@@ -119,7 +129,8 @@ const MOCK_MOVIES = [
     poster_url: "/public/movies/300x450_16.jpg",
     banner_url: "/public/movies/300x450_16.jpg",
     posterCloudinaryId: "movies/ke_san_bong_dem",
-    description: "Kẻ sát nhân ẩn mình trong đêm tối, săn lùng những linh hồn lạc lối tại thành phố tội lỗi.",
+    description:
+      "Kẻ sát nhân ẩn mình trong đêm tối, săn lùng những linh hồn lạc lối tại thành phố tội lỗi.",
     trailer_url: "https://www.youtube.com/watch?v=ke-san-bong-dem",
     status: "SHOWING",
     language: "Anh - Phụ đề Việt",
@@ -136,7 +147,8 @@ const MOCK_MOVIES = [
     poster_url: "/public/movies/11265_103_100002.jpg",
     banner_url: "/public/movies/11265_103_100002.jpg",
     posterCloudinaryId: "movies/dem_den_thanh_pho",
-    description: "Một thanh tra trẻ lao vào thế giới ngầm để tìm ra sự thật về vụ mất tích bí ẩn.",
+    description:
+      "Một thanh tra trẻ lao vào thế giới ngầm để tìm ra sự thật về vụ mất tích bí ẩn.",
     trailer_url: "https://www.youtube.com/watch?v=dem-den-thanh-pho",
     status: "SHOWING",
     language: "Việt",
@@ -171,7 +183,8 @@ const MOCK_MOVIES = [
     poster_url: "/public/movies/tinh-nguoi-duyen-ma-2025.jpg",
     banner_url: "/public/movies/tinh-nguoi-duyen-ma-2025.jpg",
     posterCloudinaryId: "movies/tinh_nguoi_duyen_ma_2025",
-    description: "Phiên bản mới của câu chuyện tình người - duyên ma kinh điển.",
+    description:
+      "Phiên bản mới của câu chuyện tình người - duyên ma kinh điển.",
     trailer_url: "",
     status: "UPCOMING",
     language: "Thái - Phụ đề Việt",
@@ -202,10 +215,13 @@ const MOCK_MOVIES = [
     genre: "Giật gân, Bí ẩn",
     duration: 104,
     minimum_age: 16,
-    poster_url: "/public/movies/1_5d10adc4-7517-442c-a3c6-0894cbf9e1e9_spo_600x.jpg",
-    banner_url: "/public/movies/1_5d10adc4-7517-442c-a3c6-0894cbf9e1e9_spo_600x.jpg",
+    poster_url:
+      "/public/movies/1_5d10adc4-7517-442c-a3c6-0894cbf9e1e9_spo_600x.jpg",
+    banner_url:
+      "/public/movies/1_5d10adc4-7517-442c-a3c6-0894cbf9e1e9_spo_600x.jpg",
     posterCloudinaryId: "movies/midnight_special",
-    description: "Cậu bé mang năng lực đặc biệt và chuyến chạy trốn trong đêm đầy bí ẩn.",
+    description:
+      "Cậu bé mang năng lực đặc biệt và chuyến chạy trốn trong đêm đầy bí ẩn.",
     trailer_url: "",
     status: "UPCOMING",
     language: "Anh - Phụ đề Việt",
@@ -239,7 +255,8 @@ const MOCK_MOVIES = [
     poster_url: "/public/movies/dn.jpg",
     banner_url: "/public/movies/dn.jpg",
     posterCloudinaryId: "movies/the_gioi_khong_ngu",
-    description: "Một thế giới tương lai nơi con người không còn ngủ và hậu quả kéo theo.",
+    description:
+      "Một thế giới tương lai nơi con người không còn ngủ và hậu quả kéo theo.",
     trailer_url: "",
     status: "UPCOMING",
     language: "Anh - Phụ đề Việt",
@@ -258,10 +275,7 @@ function mapMovie(m) {
     id: m.movieId || m.movie_id || m.id,
     title: m.title,
     posterUrl: buildPosterUrl(m), // luôn có giá trị hợp lý
-    bannerUrl:
-      m.bannerUrl ||
-      m.banner_url ||
-      buildPosterUrl(m),          // nếu không có banner thì fallback poster
+    bannerUrl: m.bannerUrl || m.banner_url || buildPosterUrl(m), // nếu không có banner thì fallback poster
     description: m.description || "",
     genre: m.genre,
     language: m.language,
@@ -292,7 +306,6 @@ function buildPosterUrl(m) {
   // 3️⃣ Fallback placeholder
   return "/public/movies/placeholder-poster.jpg";
 }
-
 
 /* ==================== PUBLIC SERVICES ==================== */
 
