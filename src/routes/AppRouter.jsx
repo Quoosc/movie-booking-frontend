@@ -8,13 +8,20 @@ import Home from "@/app/(public)/home/page";
 import LoginPage from "@/app/(auth)/login/page";
 import RegisterPage from "@/app/(auth)/register/page";
 
+import MoviesPage from "@/app/(public)/movie/movies/page";
+import MoviesShowingPage from "@/app/(public)/movie/movies/moviesShowing/page";
+import MoviesUpCommingPage from "@/app/(public)/movie/movies/moviesUpComming/page";
+
+import AboutPage from "@/app/(public)/about/page";
+
 // Promotion
 import PromotionsPage from "@/app/(public)/promotions/page";
-
+import MembershipPage from "@/app/(public)/membership/page";
 import MovieDetailPage from "@/app/(public)/movie/[id]/page.jsx";
 import CheckoutPage from "@/app/(public)/checkout/page";
 import PaymentCallbackPage from "@/app/(public)/payment-callback/page";
 import CheckoutSuccessPage from "@/app/(public)/checkout-success/page";
+import MovieSearchPage from "@/app/(public)/movie/search/page";
 export default function AppRouter() {
   return (
     <Routes>
@@ -24,6 +31,15 @@ export default function AppRouter() {
       <Route path="/auth/register" element={<RegisterPage />} />
 
       <Route path="/promotions" element={<PromotionsPage />} />
+
+      <Route path="/about" element={<AboutPage />} />
+      {/* Movies list + detail */}
+      <Route path="/movie/movies" element={<MoviesPage />} />
+      <Route path="/movie/moviesShowing" element={<MoviesShowingPage />} />
+      <Route path="/movie/moviesUpComming" element={<MoviesUpCommingPage />} />
+      <Route path="/movie/search" element={<MovieSearchPage />} />
+
+      <Route path="/membership" element={<MembershipPage />} />
 
       {/* Movie detail + booking */}
       <Route path="/movie/:id" element={<MovieDetailPage />} />

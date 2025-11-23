@@ -373,3 +373,79 @@ export async function getMovieShowtimesByDate(movieId, date) {
 }
 
 export const getShowtimesByMovieAndDate = getMovieShowtimesByDate;
+
+// ==================== SEARCH / FILTER ====================
+
+/**
+ * TÌM KIẾM THEO TÊN
+ * GET /movies/search/title?title=...
+ */
+export async function searchMoviesByTitle(title) {
+  const keyword = (title || "").trim().toLowerCase();
+
+  if (!keyword) {
+    // Nếu không nhập từ khóa → trả tất cả phim
+    return getAllMovies();
+  }
+
+  if (USE_MOCK) {
+    return MOCK_MOVIES.filter((m) =>
+      (m.title || "").toLowerCase().includes(keyword)
+    ).map(mapMovie);
+  }
+
+  // const res = await apiFetch(
+  //   `/movies/search/title?title=${encodeURIComponent(keyword)}`
+  // );
+  // return (res.data || res).map(mapMovie);
+}
+
+/**
+ * LỌC THEO TRẠNG THÁI
+ * GET /movies/filter/status?status=SHOWING|UPCOMING
+ */
+export async function filterMoviesByStatus(status) {
+  const normalized = (status || "").toUpperCase();
+
+  if (!normalized) {
+    return getAllMovies();
+  }
+
+  if (USE_MOCK) {
+    return MOCK_MOVIES.filter(
+      (m) => (m.status || "").toUpperCase() === normalized
+    ).map(mapMovie);
+  }
+
+  // const res = await apiFetch(
+  //   `/movies/filter/status?status=${encodeURIComponent(normalized)}`
+  // );
+  // return (res.data || res).map(mapMovie);
+}
+
+/**
+ * LỌC THEO THỂ LOẠI
+ * GET /movies/filter/genre?genre=...
+ *
+ * Với MOCK:
+ *  - so sánh 'contains' không phân biệt hoa thường
+ *  - ví dụ genre="Hài" sẽ match "Hài, Gia đình"
+ */
+export async function filterMoviesByGenre(genre) {
+  const keyword = (genre || "").trim().toLowerCase();
+
+  if (!keyword) {
+    return getAllMovies();
+  }
+
+  if (USE_MOCK) {
+    return MOCK_MOVIES.filter((m) =>
+      (m.genre || "").toLowerCase().includes(keyword)
+    ).map(mapMovie);
+  }
+
+  // const res = await apiFetch(
+  //   `/movies/filter/genre?genre=${encodeURIComponent(keyword)}`
+  // );
+  // return (res.data || res).map(mapMovie);
+}

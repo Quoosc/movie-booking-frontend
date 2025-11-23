@@ -1,5 +1,5 @@
 // src/components/promotions/PromoList.jsx
-
+import { useNavigate } from "react-router-dom";
 const promos = [
   {
     id: 1,
@@ -34,6 +34,7 @@ const promos = [
 ];
 
 export default function PromoList() {
+  const navigate = useNavigate();
   return (
     <main className="relative z-10 max-w-6xl mx-auto px-4 pt-24 pb-14">
       <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
@@ -69,6 +70,7 @@ export default function PromoList() {
                   hover:shadow-[0_0_22px_rgba(123,92,255,0.9)]
                   hover:scale-[1.02] active:scale-100 transition-all
                 "
+                onClick={() => navigate("/movie/movies")}
               >
                 ĐẶT VÉ NGAY
               </button>

@@ -33,8 +33,9 @@ export default function Footer() {
             </div>
 
             <p className="text-sm leading-relaxed text-white/70">
-              BE HAPPY, BE A STAR — Nền tảng đặt vé phim hiện đại với trải nghiệm
-              điện ảnh sống động, giao diện tối giản và hiệu ứng neon sang trọng.
+              BE HAPPY, BE A STAR — Nền tảng đặt vé phim hiện đại với trải
+              nghiệm điện ảnh sống động, giao diện tối giản và hiệu ứng neon
+              sang trọng.
             </p>
 
             {/* Social */}
@@ -62,19 +63,19 @@ export default function Footer() {
           {/* Xem phim */}
           <div>
             <FooterTitle>Xem phim</FooterTitle>
-            <FooterLink to="/now-showing">Phim đang chiếu</FooterLink>
-            <FooterLink to="/upcoming">Phim sắp chiếu</FooterLink>
-            <FooterLink to="/special-showtime">Suất chiếu đặc biệt</FooterLink>
+            <FooterLink to="/movie/moviesShowing">Phim đang chiếu</FooterLink>
+            <FooterLink to="/movie/moviesUpComming">Phim sắp chiếu</FooterLink>
+            <FooterLink to="/movie/movies">Suất chiếu đặc biệt</FooterLink>
           </div>
 
           {/* CinesVerse + hệ thống rạp */}
           <div>
-            <FooterTitle>CinesVerse</FooterTitle>
+            {/* <FooterTitle>CinesVerse</FooterTitle>
             <FooterLink to="/about">Giới thiệu</FooterLink>
             <FooterLink to="/contact">Liên hệ</FooterLink>
-            <FooterLink to="/careers">Tuyển dụng</FooterLink>
+            <FooterLink to="/careers">Tuyển dụng</FooterLink> */}
 
-            <FooterTitle className="mt-4">Hệ thống rạp</FooterTitle>
+            <FooterTitle>Hệ thống rạp</FooterTitle>
             <FooterText>CinesVerse Tran Quoc(Hà Nội)</FooterText>
             <FooterText>CinesVerse Tran Quoc1(TP.HCM)</FooterText>
             <FooterText>CinesVerse Tran Quoc2(Huế)</FooterText>
@@ -89,16 +90,11 @@ export default function Footer() {
         <div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] text-white/60">
           <p>
             © 2025 CinesVerse.Copyright by{" "}
-            <span className="text-[#7b5cff] font-semibold">
-              PhamTranQuoc
-            </span>
-            .
+            <span className="text-[#7b5cff] font-semibold">PhamTranQuoc</span>.
           </p>
 
-        <div className="flex flex-wrap items-center gap-4">
-            <button>
-              Liên hệ
-            </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <button>Liên hệ</button>
             <a href="/privacy" className="hover:text-white transition-colors">
               Chính sách bảo mật
             </a>
@@ -143,11 +139,7 @@ function FooterLink({ to, children }) {
 }
 
 function FooterText({ children }) {
-  return (
-    <p className="text-sm text-white/55">
-      {children}
-    </p>
-  );
+  return <p className="text-sm text-white/55">{children}</p>;
 }
 
 function FooterInlineLink({ to, children }) {

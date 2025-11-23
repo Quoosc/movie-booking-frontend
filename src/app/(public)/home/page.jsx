@@ -1,54 +1,11 @@
-// // src/pages/HomePage.jsx
-
-// sử dụng để chọn rạp hiện banner trong herobanner
-// import { useEffect, useState } from 'react';
-// import Navbar from '@/components/common/Navbar';
-// import HeroBanner from '@/components/home/HeroBanner';
-// import SectionTitle from '@/components/home/SectionTitle';
-// import MovieCarousel from '@/components/movies/MovieCarousel';
-// import { getAllMovies } from '@/api/movieService';
-
-// export default function HomePage() {
-//   const [movies, setMovies] = useState([]);
-
-//   useEffect(() => {
-//     const fetchMovies = async () => {
-//       const res = await getAllMovies();
-//       setMovies(res.data);
-//     };
-//     fetchMovies();
-//   }, []);
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-b from-[#0a0014] to-[#050911] text-white">
-//       {/* 🔹 Thanh Navbar cố định trên đầu */}
-//       <Navbar />
-
-//       {/* 🔹 Banner đầu trang (ảnh rạp + tab) */}
-//       <HeroBanner />
-
-//       <div className="pt-6 md:pt-10">
-//         {/* 🔹 Section 1: Phim đang chiếu */}
-//         <MovieCarousel title="Phim đang chiếu" movies={movies} />
-
-//         {/* 🔹 Section 2: Phim sắp chiếu */}
-//         <MovieCarousel title="Phim sắp chiếu" movies={[...movies].reverse()} />
-//       </div>
-//     </div>
-//   );
-// }
-// src/app/(public)/home/page.jsx
-// src/app/(public)/home/page.jsx
-
-
 // src/app/(public)/home/page.jsx
 
 import { useEffect, useRef, useState } from "react";
 import { animate } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 import Navbar from "@/components/common/Navbar";
 import MovieCarousel from "@/components/movies/MovieCarousel";
-import AllMoviesGrid from "@/components/movies/AllMoviesGrid";
 import { getShowingMovies, getUpcomingMovies } from "@/api/movieService";
 import Footer from "@/components/common/Footer";
 import MembershipHighlight from "@/components/membership/MembershipHighlight";
@@ -61,13 +18,10 @@ export default function HomePage() {
   const [showingMovies, setShowingMovies] = useState([]);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
 
-  const [showAllShowing, setShowAllShowing] = useState(false);
-  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const [activeMembership, setActiveMembership] = useState(null);
 
-  const showingRef = useRef(null);
-  const upcomingRef = useRef(null);
   const membershipRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -132,62 +86,30 @@ export default function HomePage() {
 
         {/* PHIM ĐANG CHIẾU */}
         <div className="mt-8">
-          {!showAllUpcoming && (
-            <div ref={showingRef}>
-              {showAllShowing ? (
-                <AllMoviesGrid
-                  title="PHIM ĐANG CHIẾU"
-                  movies={showingMovies}
-                  onCollapse={() => {
-                    setShowAllShowing(false);
-                    scrollInto(showingRef);
-                  }}
-                  titleClass="bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(123,92,255,0.7)]"
-                />
-              ) : (
-                <MovieCarousel
-                  title="PHIM ĐANG CHIẾU"
-                  movies={showingMovies}
-                  onShowAll={() => {
-                    setShowAllShowing(true);
-                    setShowAllUpcoming(false);
-                    smoothScrollToTop();
-                  }}
-                  titleClass="bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(123,92,255,0.7)]"
-                />
-              )}
-            </div>
-          )}
+          <MovieCarousel
+            title="PHIM ĐANG CHIẾU"
+            movies={showingMovies}
+            // 🔁 Bấm XEM THÊM -> sang trang /movie/moviesShowing
+            onShowAll={() => {
+              smoothScrollToTop();
+              navigate("/movie/moviesShowing");
+            }}
+            titleClass="bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(123,92,255,0.7)]"
+          />
         </div>
 
         {/* PHIM SẮP CHIẾU */}
         <div className="mt-10">
-          {!showAllShowing && (
-            <div ref={upcomingRef}>
-              {showAllUpcoming ? (
-                <AllMoviesGrid
-                  title="PHIM SẮP CHIẾU"
-                  movies={upcomingMovies}
-                  onCollapse={() => {
-                    setShowAllUpcoming(false);
-                    scrollInto(upcomingRef);
-                  }}
-                  titleClass="bg-gradient-to-r from-[#ff7af6] via-[#7b5cff] to-[#43e1ff] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,122,246,0.7)]"
-                />
-              ) : (
-                <MovieCarousel
-                  title="PHIM SẮP CHIẾU"
-                  movies={upcomingMovies}
-                  onShowAll={() => {
-                    setShowAllUpcoming(true);
-                    setShowAllShowing(false);
-                    smoothScrollToTop();
-                  }}
-                  titleClass="bg-gradient-to-r from-[#ff7af6] via-[#7b5cff] to-[#43e1ff] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,122,246,0.7)]"
-                />
-              )}
-            </div>
-          )}
+          <MovieCarousel
+            title="PHIM SẮP CHIẾU"
+            movies={upcomingMovies}
+            // 🔁 Bấm XEM THÊM -> sang trang /movie/moviesUpComming
+            onShowAll={() => {
+              smoothScrollToTop();
+              navigate("/movie/moviesUpComming");
+            }}
+            titleClass="bg-gradient-to-r from-[#ff7af6] via-[#7b5cff] to-[#43e1ff] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,122,246,0.7)]"
+          />
         </div>
 
         {/* KHUYẾN MÃI */}
@@ -195,15 +117,13 @@ export default function HomePage() {
           <PromoHighlight />
         </div>
 
-        {/* MEMBERSHIP */}
-        <div ref={membershipRef} className="mt-16">
+        {/* MEMBERSHIP – chỉ còn highlight, click card để sang /membership */}
+        <div className="mt-16">
           <MembershipHighlight
-            activeId={activeMembership}
-            onSelect={handleSelectMembership}
-          />
-          <MembershipDetail
-            type={activeMembership}
-            onBack={handleBackMembership}
+            onSelect={(id) => {
+              smoothScrollToTop();
+              navigate(`/membership?type=${id}`);
+            }}
           />
         </div>
 
@@ -213,7 +133,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* FOOTER: không margin-bottom, sẽ dính đáy nhờ flex */}
+      {/* FOOTER */}
       <Footer />
     </div>
   );

@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const nav = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
   const [openUserMenu, setOpenUserMenu] = useState(false);
 
@@ -31,6 +32,12 @@ export default function Navbar() {
     setOpenUserMenu(false);
     setOpen(false);
     nav("/", { replace: true });
+  };
+
+  const handleSearch = () => {
+    const q = searchTerm.trim();
+    if (!q) return;
+    nav(`/movie/search?q=${encodeURIComponent(q)}`);
   };
 
   return (
@@ -72,46 +79,67 @@ export default function Navbar() {
           {/* CTA desktop */}
           <div className="hidden lg:flex items-center gap-2 ml-3">
             <button
-              onClick={() => nav("/")}
-              className="group relative overflow-hidden px-4 py-2 rounded-xl border border-[#43e1ff]/70 bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white font-extrabold tracking-wide hover:shadow-[0_0_18px_rgba(123,92,255,0.9)] transition-all duration-300"
-              title="Đặt vé ngay"
+              onClick={() => nav("/movie/movies")}
+              className="group relative overflow-hidden px-5 py-2.5 rounded-2xl border border-[#43e1ff]/70 bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white font-extrabold tracking-wide hover:shadow-[0_0_20px_rgba(123,92,255,0.95)] transition-all duration-300"
+              title="Đặt vé / bắp nước ngay"
             >
+              {/* hiệu ứng highlight chạy ngang */}
               <span className="absolute inset-0 -translate-x-full group-hover:translate-x-0 transition-transform duration-700 bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+
               <div className="flex items-center gap-2 relative z-10">
                 <PiCalendarCheckBold className="opacity-90" />
-                ĐẶT VÉ NGAY
-              </div>
-            </button>
-
-            <button
-              onClick={() => nav("/")}
-              className="group relative overflow-hidden px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-[#e5e7ff] font-semibold hover:bg-white/[0.08] hover:shadow-[0_0_14px_rgba(255,255,255,0.16)] transition-all duration-300 flex items-center gap-2"
-              title="Đặt bắp nước"
-            >
-              <span className="absolute inset-0 -translate-x-full group-hover:translate-x-0 transition-transform duration-700 bg-gradient-to-r from-transparent via-white/18 to-transparent" />
-              <div className="flex items-center gap-2 relative z-10">
-                <PiPopcornBold className="text-[#ffdd55]" />
-                ĐẶT BẮP NƯỚC
+                <PiPopcornBold className="opacity-90" />
+                <span className="whitespace-nowrap">
+                  ĐẶT VÉ / BẮP NƯỚC NGAY
+                </span>
               </div>
             </button>
           </div>
 
           {/* Search */}
+          {/* Search */}
           <div className="flex-1 mx-3">
             <div className="relative group">
               <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSearch();
+                  }
+                }}
                 placeholder="Tìm phim, rạp, suất chiếu..."
-                className="w-full bg-white/3 border border-white/10 rounded-full py-2.5 pl-4 pr-11 text-[13px] text-[#e5e7ff] placeholder-[#9ca3ff]/55 outline-none focus:ring-2 focus:ring-[#7b5cff]/55 focus:border-[#7b5cff]/70 transition-all"
+                className="
+    w-full rounded-full py-2.5 pl-4 pr-11 text-[13px]
+    bg-[#050018]/90
+    border border-[#2f3370]
+    text-[#f9fafb]
+    placeholder:text-[#9ca3ff]/80
+    shadow-[0_0_0_1px_rgba(123,92,255,0.35)]
+    outline-none
+    focus:ring-2 focus:ring-[#7b5cff]/70
+    focus:border-[#43e1ff]
+    transition-all
+  "
               />
-              <svg
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9ca3ff]/75 group-focus-within:text-[#ff7af6]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
+
+              <button
+                type="button"
+                onClick={handleSearch}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-[#9ca3ff]/75 group-focus-within:text-[#ff7af6] hover:bg-white/[0.06] transition"
+                aria-label="Tìm kiếm"
               >
-                <circle cx="11" cy="11" r="8" strokeWidth="2" />
-                <path d="M21 21l-3.5-3.5" strokeWidth="2" />
-              </svg>
+                <svg
+                  className="w-4.5 h-4.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <circle cx="11" cy="11" r="8" strokeWidth="2" />
+                  <path d="M21 21l-3.5-3.5" strokeWidth="2" />
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -214,7 +242,7 @@ export default function Navbar() {
 
         {/* ROW 2: dùng chung nền, không thêm border dưới */}
         <div className="h-[40px] flex items-center">
-          <nav className="flex items-center gap-6 overflow-x-auto">
+          <nav className="flex items-center gap-6">
             <button className={`${LinkBase} flex items-center gap-2`}>
               <FaLocationDot className="text-[#43e1ff]" />
               <span>Chọn rạp</span>
@@ -315,9 +343,7 @@ export default function Navbar() {
                   <div className="flex items-center gap-2">
                     <FaRegUser className="text-[#7b5cff]" />
                     <div className="flex flex-col">
-                      <span className="font-semibold">
-                        {displayName}
-                      </span>
+                      <span className="font-semibold">{displayName}</span>
                       <span className="text-[12px] text-[#9ca3ff]">
                         {isAdmin
                           ? "Quản trị viên"

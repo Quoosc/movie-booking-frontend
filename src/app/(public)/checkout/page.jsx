@@ -6,7 +6,6 @@ import { getValidPromotions, validatePromotion } from "@/api/promotionService";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import { useAuth } from "@/context/AuthContext";
-const [hasAutoJumped, setHasAutoJumped] = useState(false);
 import {
   lockSeats,
   previewPrice,
@@ -74,6 +73,7 @@ export default function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [hasAutoJumped, setHasAutoJumped] = useState(false);
   const currentUser = user; // giữ lại tên currentUser cho đỡ phải sửa cả file
   const isMemberUser = currentUser?.role === "USER"; // kiểm tra có phải member không
   const state = location.state || {};
