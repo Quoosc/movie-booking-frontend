@@ -10,33 +10,27 @@ import HomeButton from "@/components/shared/Buttons/HomeButton";
 import { getTicketTypes } from "@/api/ticketTypeService";
 import { getMovieById, getMovieShowtimesByDate } from "@/api/movieService";
 
-import {
-  getSeatLayout,
-  getSnacksByCinema,
-  holdSeats,
-  releaseSeats,
-  previewPrice,
-  lockSeats,
-} from "@/api/bookingService";
+import { getSeatLayout, getSnacksByCinema } from "@/api/bookingService";
 
 const DAYS = 7;
 const HOLD_SECONDS = 300; // 5 phút
 
 // Danh sách loại vé gốc (load từ API ticket-types)
 const DEFAULT_TICKET_TYPES = [
-  { id: "adult", label: "NGƯỜI LỚN", price: 69000 },
-  { id: "student", label: "HSSV/U22-GV", price: 49000 },
-  { id: "senior", label: "NGƯỜI CAO TUỔI", price: 55000 },
-  { id: "member", label: "GIÁ VÉ THÀNH VIÊN", price: 45000 },
-  { id: "double", label: "GHẾ ĐÔI (2 NGƯỜI)", price: 128000 },
+  { id: "adult",  code: "adult",  ticketTypeId: null, label: "NGƯỜI LỚN",           price: 69000 },
+  { id: "student",code: "student",ticketTypeId: null, label: "HSSV/U22-GV",        price: 49000 },
+  { id: "senior", code: "senior", ticketTypeId: null, label: "NGƯỜI CAO TUỔI",     price: 55000 },
+  { id: "member", code: "member", ticketTypeId: null, label: "GIÁ VÉ THÀNH VIÊN",  price: 45000 },
+  { id: "double", code: "double", ticketTypeId: null, label: "GHẾ ĐÔI (2 NGƯỜI)",  price: 128000 },
 ];
 
 export default function MovieDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const currentUser = null; // sau này có tài khoản thì bỏ đi mở comment dưới
-  //const { currentUser } = useAuth();
+  // const { user, isMember, isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const isAuthenticated = !!user; // true nếu đã đăng nhập, false nếu guest thường
 
   const [movie, setMovie] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getToday());
@@ -53,8 +47,6 @@ export default function MovieDetailPage() {
 
   const [snacks, setSnacks] = useState([]);
   const [selectedSnacks, setSelectedSnacks] = useState({}); // { snack_id: { ...snack, quantity } }
-  const [holdExpireAt, setHoldExpireAt] = useState(null);
-  const [remainSeconds, setRemainSeconds] = useState(0);
   const [priceSummary, setPriceSummary] = useState({
     subtotal: 0,
     discount: 0,
@@ -156,114 +148,110 @@ export default function MovieDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, selectedDate]);
 
-  /* ===== HOLD TIMER ===== */
-  useEffect(() => {
-    if (!holdExpireAt) {
-      setRemainSeconds(0);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      const diff = Math.max(
-        0,
-        Math.floor((new Date(holdExpireAt).getTime() - Date.now()) / 1000)
-      );
-      setRemainSeconds(diff);
-
-      if (diff <= 0) {
-        if (activeShowtime && selectedSeats.length > 0) {
-          releaseSeats(
-            activeShowtime.showtimeId,
-            selectedSeats.map((s) => s.seat_id)
-          );
-        }
-        resetBookingState();
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [holdExpireAt, activeShowtime, selectedSeats]);
-
   /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC ===== */
 
+  // useEffect(() => {
+  //   if (!activeShowtime) {
+  //     setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+  //     return;
+  //   }
+
+  //   const ticketPayload = ticketTypes
+  //     .filter((t) => t.quantity > 0)
+  //     .map((t) => ({
+  //       id: t.id,
+  //       label: t.label,
+  //       price: t.price,
+  //       quantity: t.quantity,
+  //     }));
+
+  //   const snackPayload = Object.values(selectedSnacks).map((s) => ({
+  //     snack_id: s.snack_id,
+  //     name: s.name,
+  //     price: s.price,
+  //     quantity: s.quantity,
+  //   }));
+
+  //   if (ticketPayload.length === 0 && snackPayload.length === 0) {
+  //     setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+  //     return;
+  //   }
+
+  //   let cancelled = false;
+
+  //   const fetchPrice = async () => {
+  //     try {
+  //       const seatIds = selectedSeats.map((s) => s.seat_id);
+
+  //       const res = await previewPrice({
+  //         showtimeId: activeShowtime.showtimeId,
+  //         seatIds,
+  //         ticketTypes: ticketPayload,
+  //         snacks: snackPayload,
+  //         promotionCode: null,
+  //         userId: null,
+  //       });
+
+  //       const data = res.data || res;
+
+  //       if (!cancelled) {
+  //         setPriceSummary({
+  //           subtotal: data.subtotal ?? 0,
+  //           discount: data.discount ?? 0,
+  //           total: data.total ?? 0,
+  //         });
+  //       }
+  //     } catch (error) {
+  //       console.error("previewPrice failed, fallback local calc", error);
+
+  //       // fallback: dùng logic cũ để không chết UI
+  //       const ticketTotal = ticketTypes.reduce(
+  //         (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
+  //         0
+  //       );
+  //       const snackTotal = Object.values(selectedSnacks).reduce(
+  //         (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
+  //         0
+  //       );
+  //       const subtotal = ticketTotal + snackTotal;
+  //       const discount = 0;
+  //       const total = subtotal - discount;
+
+  //       if (!cancelled) {
+  //         setPriceSummary({ subtotal, discount, total });
+  //       }
+  //     }
+  //   };    //             BẢN NÀY CÓ VẤN ĐỀ VỀ PRICE-PREVIEW
+
+  //   fetchPrice();
+
+  //   return () => {
+  //     cancelled = true;
+  //   };
+  // }, [activeShowtime, ticketTypes, selectedSnacks]);
+
+  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC ===== */
   useEffect(() => {
     if (!activeShowtime) {
       setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
       return;
     }
 
-    const ticketPayload = ticketTypes
-      .filter((t) => t.quantity > 0)
-      .map((t) => ({
-        id: t.id,
-        label: t.label,
-        price: t.price,
-        quantity: t.quantity,
-      }));
+    const ticketTotal = ticketTypes.reduce(
+      (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
+      0
+    );
 
-    const snackPayload = Object.values(selectedSnacks).map((s) => ({
-      snack_id: s.snack_id,
-      name: s.name,
-      price: s.price,
-      quantity: s.quantity,
-    }));
+    const snackTotal = Object.values(selectedSnacks).reduce(
+      (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
+      0
+    );
 
-    if (ticketPayload.length === 0 && snackPayload.length === 0) {
-      setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-      return;
-    }
+    const subtotal = ticketTotal + snackTotal;
+    const discount = 0; // MovieDetailPage chỉ tạm tính, chưa áp dụng khuyến mãi
+    const total = subtotal - discount;
 
-    let cancelled = false;
-
-    const fetchPrice = async () => {
-      try {
-        const seatIds = selectedSeats.map((s) => s.seat_id);
-
-        const res = await previewPrice({
-          showtimeId: activeShowtime.showtimeId,
-          seatIds,
-          ticketTypes: ticketPayload,
-          snacks: snackPayload,
-          promotionCode: null,
-          userId: null,
-        });
-
-        const data = res.data || res;
-
-        if (!cancelled) {
-          setPriceSummary({
-            subtotal: data.subtotal ?? 0,
-            discount: data.discount ?? 0,
-            total: data.total ?? 0,
-          });
-        }
-      } catch (error) {
-        console.error("previewPrice failed, fallback local calc", error);
-
-        // fallback: dùng logic cũ để không chết UI
-        const ticketTotal = ticketTypes.reduce(
-          (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
-          0
-        );
-        const snackTotal = Object.values(selectedSnacks).reduce(
-          (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
-          0
-        );
-        const subtotal = ticketTotal + snackTotal;
-        const discount = 0;
-        const total = subtotal - discount;
-
-        if (!cancelled) {
-          setPriceSummary({ subtotal, discount, total });
-        }
-      }
-    };
-
-    fetchPrice();
-
-    return () => {
-      cancelled = true;
-    };
+    setPriceSummary({ subtotal, discount, total });
   }, [activeShowtime, ticketTypes, selectedSnacks]);
 
   /* ===== SEAT LAYOUT THEO ROW ===== */
@@ -316,7 +304,6 @@ export default function MovieDetailPage() {
 
     setSnacks([]);
     setSelectedSnacks({});
-    setHoldExpireAt(null);
   };
 
   const handleSelectShowtime = async (cinema, s) => {
@@ -345,6 +332,16 @@ export default function MovieDetailPage() {
   };
 
   const handleChangeTicket = (ticketId, delta) => {
+    //Guest thường không được dùng GIÁ VÉ THÀNH VIÊN
+    if (ticketId === "member" && !isAuthenticated && delta > 0) {
+      showWarning(
+        "Giá vé thành viên chỉ dành cho khách đã đăng nhập. Vui lòng đăng nhập hoặc đăng ký để sử dụng."
+      );
+      // Nếu muốn đẩy sang trang login luôn thì có thể:
+      // navigate("/auth/login");
+      return;
+    }
+
     setTicketTypes((prev) => {
       // Tính state mới nếu user bấm +/-
       const next = prev.map((t) =>
@@ -383,13 +380,8 @@ export default function MovieDetailPage() {
       }
 
       // Trường hợp hợp lệ → cập nhật bình thường
-      if (newTotalSeats === 0 && activeShowtime && selectedSeats.length > 0) {
-        releaseSeats(
-          activeShowtime.showtimeId,
-          selectedSeats.map((s) => s.seat_id)
-        );
+      if (newTotalSeats === 0 && selectedSeats.length > 0) {
         setSelectedSeats([]);
-        setHoldExpireAt(null);
       }
 
       return next;
@@ -469,11 +461,11 @@ export default function MovieDetailPage() {
         }
 
         setSelectedSeats(newSelected);
-        await releaseSeats(activeShowtime.showtimeId, pairIds);
+        // await releaseSeats(activeShowtime.showtimeId, pairIds);
 
-        if (newSelected.length === 0) {
-          setHoldExpireAt(null);
-        }
+        // if (newSelected.length === 0) {
+        //   setHoldExpireAt(null);
+        // }
         return;
       } else {
         // 👉 CHỌN CẢ CẶP
@@ -514,16 +506,6 @@ export default function MovieDetailPage() {
         }
 
         setSelectedSeats(newSelected);
-
-        const res = await holdSeats(
-          activeShowtime.showtimeId,
-          pairIds,
-          HOLD_SECONDS
-        );
-        if (res?.data?.expires_at) {
-          setHoldExpireAt(res.data.expiresAt);
-        }
-
         return;
       }
     }
@@ -537,28 +519,20 @@ export default function MovieDetailPage() {
         (s) => s.seat_id !== seat.seat_id
       );
 
-      const violates = violatesSeatGapRuleForRow(
-        seatLayout,
-        newSelected,
-        seat.row
-      );
-      if (violates) {
-        showWarning(
-          "Không thể bỏ ghế này vì sẽ để lại 1 ghế trống lẻ giữa các ghế. Vui lòng chọn lại."
-        );
-        return;
-      }
+      // const violates = violatesSeatGapRuleForRow(
+      //   seatLayout,
+      //   newSelected,
+      //   seat.row
+      // );
+      // if (violates) {
+      //   showWarning(
+      //     "Không thể bỏ ghế này vì sẽ để lại 1 ghế trống lẻ giữa các ghế. Vui lòng chọn lại."
+      //   );
+      //   return;
+      // }
 
       setSelectedSeats(newSelected);
-      await releaseSeats(activeShowtime.showtimeId, [seat.seat_id]);
-
-      if (newSelected.length === 0) {
-        setHoldExpireAt(null);
-      }
     } else {
-      // CHỌN GHẾ THƯỜNG (NORMAL/VIP)
-
-      // 1️⃣ Không cho vượt quá SỐ GHẾ ĐƠN cho phép
       const currentSingles = countSelectedSingles(selectedSeats);
       if (currentSingles + 1 > singleSeatCapacity) {
         showWarning(
@@ -581,28 +555,19 @@ export default function MovieDetailPage() {
         },
       ];
 
-      const violates = violatesSeatGapRuleForRow(
-        seatLayout,
-        newSelected,
-        seat.row
-      );
-      if (violates) {
-        showWarning(
-          "Không được để lại 1 ghế trống lẻ giữa các ghế đã chọn. Vui lòng chọn lại."
-        );
-        return;
-      }
+      // const violates = violatesSeatGapRuleForRow(
+      //   seatLayout,
+      //   newSelected,
+      //   seat.row
+      // );
+      // if (violates) {
+      //   showWarning(
+      //     "Không được để lại 1 ghế trống lẻ giữa các ghế đã chọn. Vui lòng chọn lại."
+      //   );
+      //   return;
+      // }
 
       setSelectedSeats(newSelected);
-
-      const res = await holdSeats(
-        activeShowtime.showtimeId,
-        [seat.seat_id],
-        HOLD_SECONDS
-      );
-      if (res?.data?.expires_at) {
-        setHoldExpireAt(res.data.expiresAt);
-      }
     }
   };
 
@@ -623,7 +588,7 @@ export default function MovieDetailPage() {
       };
     });
   };
- 
+
   // ✅ BẢN REAL – CHUẨN FLOW CUỐI (RECOMMENDED DÙNG)
   // - Không gọi API ở đây
   // - Chỉ navigate sang /checkout
@@ -676,7 +641,6 @@ export default function MovieDetailPage() {
       },
     });
   };
-
 
   /* ===== NOT FOUND ===== */
   if (!movie && !loadingMovie) {
@@ -735,6 +699,7 @@ export default function MovieDetailPage() {
             snacks={snacks}
             selectedSnacks={selectedSnacks}
             onChangeSnack={handleChangeSnack}
+            isAuthenticated={isAuthenticated}
           />
         )}
 
@@ -1064,6 +1029,7 @@ function BookingPanel({
   snacks,
   selectedSnacks,
   onChangeSnack,
+  isAuthenticated,
 }) {
   return (
     <section className="max-w-6xl mx-auto px-4 pb-24 space-y-10">
@@ -1078,10 +1044,14 @@ function BookingPanel({
   grid grid-cols-2 md:grid-cols-4 gap-5 text-[11px]
 "
         >
-          {ticketTypes.map((t) => (
-            <div
-              key={t.id}
-              className={`
+          {ticketTypes.map((t) => {
+            const isMemberTicket = t.id === "member";
+            const isDisabledMember = isMemberTicket && !isAuthenticated; // guest thường
+
+            return (
+              <div
+                key={t.id}
+                className={`
         relative flex flex-col items-center justify-between
         rounded-2xl px-4 py-4
         bg-[#0b0a26]/70
@@ -1097,42 +1067,52 @@ function BookingPanel({
             ? "ring-1 ring-[#ffe700] shadow-[0_0_24px_rgba(255,231,0,0.5)]"
             : ""
         }
+        ${isDisabledMember ? "opacity-50 cursor-not-allowed" : ""}
       `}
-            >
-              <div className="text-[10px] text-white/50 mb-1 tracking-[0.1em] uppercase">
-                Loại vé
-              </div>
+              >
+                <div className="text-[10px] text-white/50 mb-1 tracking-[0.1em] uppercase">
+                  Loại vé
+                </div>
 
-              {/* 🔥 label căn giữa, hỗ trợ xuống 2 dòng */}
-              <div className="text-[13px] font-semibold text-white text-center leading-snug px-1 min-h-[34px] flex items-center justify-center">
-                {t.label}
-              </div>
+                <div className="text-[13px] font-semibold text-white text-center leading-snug px-1 min-h-[34px] flex items-center justify-center">
+                  {t.label}
+                </div>
 
-              <div className="mt-1 text-[#ffe700] font-semibold text-[12px]">
-                {t.price.toLocaleString()} VND
-              </div>
+                <div className="mt-1 text-[#ffe700] font-semibold text-[12px]">
+                  {t.price.toLocaleString()} VND
+                </div>
 
-              <div className="mt-3 flex items-center justify-center gap-2">
-                <button
-                  onClick={() => onChangeTicket(t.id, -1)}
-                  className="
+                {/* Nếu là vé member và guest thường → hiện hint nhỏ */}
+                {isDisabledMember && (
+                  <p className="mt-1 text-[10px] text-amber-200/80 text-center">
+                    Chỉ dành cho khách đã đăng nhập
+                  </p>
+                )}
+
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => onChangeTicket(t.id, -1)}
+                    disabled={isDisabledMember}
+                    className={`
             w-6 h-6 flex items-center justify-center
             rounded-md border border-white/35
             text-[11px] text-white/85
             hover:bg-white/15
             transition-all
-          "
-                >
-                  −
-                </button>
+            ${isDisabledMember ? "opacity-50 cursor-not-allowed" : ""}
+          `}
+                  >
+                    −
+                  </button>
 
-                <span className="min-w-[22px] text-center text-[11px] text-white">
-                  {t.quantity}
-                </span>
+                  <span className="min-w-[22px] text-center text-[11px] text-white">
+                    {t.quantity}
+                  </span>
 
-                <button
-                  onClick={() => onChangeTicket(t.id, 1)}
-                  className="
+                  <button
+                    onClick={() => onChangeTicket(t.id, 1)}
+                    disabled={isDisabledMember}
+                    className={`
             w-6 h-6 flex items-center justify-center
             rounded-md
             bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6]
@@ -1140,13 +1120,15 @@ function BookingPanel({
             shadow-[0_0_10px_rgba(123,92,255,0.8)]
             hover:shadow-[0_0_16px_rgba(123,92,255,1)]
             transition-all
-          "
-                >
-                  +
-                </button>
+            ${isDisabledMember ? "opacity-50 cursor-not-allowed" : ""}
+          `}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -1584,17 +1566,3 @@ function formatTime(sec) {
   const s = (sec % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
 }
-
-const buildCheckoutPayload = () => {
-  const ticketsSelected = ticketTypes.filter((t) => t.quantity > 0);
-  const snacksSelected = Object.values(selectedSnacks);
-
-  return {
-    movie,
-    showtime: activeShowtime,
-    selectedSeats,
-    ticketTypes: ticketsSelected,
-    snacks: snacksSelected,
-    priceSummary,
-  };
-};

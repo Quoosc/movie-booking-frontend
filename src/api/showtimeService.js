@@ -68,7 +68,7 @@ function mapShowtimeGroupFromApi(group) {
 // };
 const MOCK_SHOWTIMES_BY_MOVIE = {
   2: {
-    "2025-11-21": [
+    "2025-11-23": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
@@ -113,7 +113,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
       },
     ],
 
-    "2025-11-22": [
+    "2025-11-24": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Gà Trống",
@@ -146,7 +146,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
   },
 
   1: {
-    "2025-11-21": [
+    "2025-11-25": [
       {
         cinemaId: "c3",
         cinemaName: "CinesVerse Yến Vy",

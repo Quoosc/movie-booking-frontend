@@ -7,9 +7,14 @@ import { LuCalendarClock } from "react-icons/lu";
 import { PiCalendarCheckBold, PiPopcornBold } from "react-icons/pi";
 import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function Navbar() {
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
+  const [openUserMenu, setOpenUserMenu] = useState(false);
+
+  const { user, isAuthenticated, isMember, isAdmin, logout } = useAuth();
 
   const LinkBase =
     "relative py-3 text-sm md:text-[15px] text-[#d4ddff]/80 hover:text-white transition-colors duration-200 group";
@@ -17,6 +22,16 @@ export default function Navbar() {
   const Underline = (
     <span className="absolute left-0 -bottom-0.5 h-[2px] w-0 bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] rounded-full transition-all duration-300 group-hover:w-full" />
   );
+
+  const displayName =
+    user?.fullName || user?.name || user?.email || "Tài khoản";
+
+  const handleLogoutClick = async () => {
+    await logout();
+    setOpenUserMenu(false);
+    setOpen(false);
+    nav("/", { replace: true });
+  };
 
   return (
     <header
@@ -48,7 +63,7 @@ export default function Navbar() {
             className="flex items-center gap-2 shrink-0 hover:opacity-95 transition"
           >
             <img
-              src="/public/movies/—Pngtree—film festival logo popcorn and_4686389.png" 
+              src="/public/movies/—Pngtree—film festival logo popcorn and_4686389.png"
               alt="CinesVerse"
               className="h-9 w-auto drop-shadow-[0_0_14px_rgba(123,92,255,0.9)]"
             />
@@ -101,20 +116,99 @@ export default function Navbar() {
           </div>
 
           {/* Auth desktop */}
-          <div className="hidden md:flex items-center gap-3">
-            <button
-              onClick={() => nav("/auth/login")}
-              className="px-3 py-2 rounded-lg border border-white/15 bg-white/3 text-[#d4ddff] hover:text-white hover:bg-white/8 hover:border-[#7b5cff55] transition-all duration-200 flex items-center gap-2 text-[13px]"
-            >
-              <FaRegUser className="text-[#7b5cff]" />
-              <span className="font-semibold">Đăng nhập</span>
-            </button>
-            <button
-              onClick={() => nav("/auth/register")}
-              className="px-3 py-2 rounded-lg bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white font-extrabold text-[13px] hover:shadow-[0_0_16px_rgba(123,92,255,0.9)] hover:scale-[1.02] active:scale-100 transition-all duration-200 border border-[#43e1ff]/40"
-            >
-              Đăng ký
-            </button>
+          <div className="hidden md:flex items-center gap-3 relative">
+            {!isAuthenticated && (
+              <>
+                <button
+                  onClick={() => nav("/auth/login")}
+                  className="px-3 py-2 rounded-lg border border-white/15 bg.white/3 bg-white/3 text-[#d4ddff] hover:text-white hover:bg-white/8 hover:border-[#7b5cff55] transition-all duration-200 flex items-center gap-2 text-[13px]"
+                >
+                  <FaRegUser className="text-[#7b5cff]" />
+                  <span className="font-semibold">Đăng nhập</span>
+                </button>
+                <button
+                  onClick={() => nav("/auth/register")}
+                  className="px-3 py-2 rounded-lg bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white font-extrabold text-[13px] hover:shadow-[0_0_16px_rgba(123,92,255,0.9)] hover:scale-[1.02] active:scale-100 transition-all duration-200 border border-[#43e1ff]/40"
+                >
+                  Đăng ký
+                </button>
+              </>
+            )}
+
+            {isAuthenticated && (
+              <div className="relative">
+                <button
+                  onClick={() => setOpenUserMenu((v) => !v)}
+                  className="px-3 py-2 rounded-lg border border-white/15 bg-white/5 text-[#d4ddff] hover:bg-white/10 hover:border-[#7b5cffaa] transition-all duration-200 flex items-center gap-2 text-[13px]"
+                >
+                  <FaRegUser className="text-[#7b5cff]" />
+                  <span className="font-semibold max-w-[140px] truncate">
+                    {displayName}
+                  </span>
+                </button>
+
+                {openUserMenu && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#050018] border border-white/15 shadow-[0_18px_50px_rgba(0,0,0,0.9)] text-[13px] py-2 z-50">
+                    {/* Member-only: Profile + History + Membership */}
+                    {isMember && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setOpenUserMenu(false);
+                            nav("/profile");
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-white/8 text-[#e5e7ff]"
+                        >
+                          Hồ sơ cá nhân
+                        </button>
+                        <button
+                          onClick={() => {
+                            setOpenUserMenu(false);
+                            nav("/my-bookings");
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-white/8 text-[#e5e7ff]"
+                        >
+                          Lịch sử đặt vé
+                        </button>
+                        <button
+                          onClick={() => {
+                            setOpenUserMenu(false);
+                            nav("/membership");
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-white/8 text-[#e5e7ff]"
+                        >
+                          Membership
+                        </button>
+                        <div className="my-1 h-px bg-white/10" />
+                      </>
+                    )}
+
+                    {/* Admin-only */}
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setOpenUserMenu(false);
+                            nav("/admin");
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-white/8 text-[#facc15]"
+                        >
+                          Admin Dashboard
+                        </button>
+                        <div className="my-1 h-px bg-white/10" />
+                      </>
+                    )}
+
+                    <button
+                      onClick={handleLogoutClick}
+                      className="w-full text-left px-4 py-2 hover:bg-white/8 text-red-300"
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -191,24 +285,104 @@ export default function Navbar() {
           </div>
 
           <div className="p-4 space-y-3 text-[14px]">
-            <button
-              onClick={() => {
-                setOpen(false);
-                nav("/auth/login");
-              }}
-              className="w-full px-4 py-3 rounded-xl border border-white/12 bg-white/4 text-[#d4ddff] hover:bg_white/8 hover:bg-white/8 transition flex items-center gap-2"
-            >
-              <FaRegUser className="text-[#7b5cff]" /> Đăng nhập
-            </button>
-            <button
-              onClick={() => {
-                setOpen(false);
-                nav("/auth/register");
-              }}
-              className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white font-extrabold hover:shadow-[0_0_16px_rgba(123,92,255,0.9)] transition"
-            >
-              Đăng ký
-            </button>
+            {/* Auth block mobile */}
+            {!isAuthenticated && (
+              <>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    nav("/auth/login");
+                  }}
+                  className="w-full px-4 py-3 rounded-xl border border-white/12 bg-white/4 text-[#d4ddff] hover:bg_white/8 hover:bg-white/8 transition flex items-center gap-2"
+                >
+                  <FaRegUser className="text-[#7b5cff]" /> Đăng nhập
+                </button>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    nav("/auth/register");
+                  }}
+                  className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white font-extrabold hover:shadow-[0_0_16px_rgba(123,92,255,0.9)] transition"
+                >
+                  Đăng ký
+                </button>
+              </>
+            )}
+
+            {isAuthenticated && (
+              <div className="space-y-2">
+                <div className="px-1 py-2 text-[#e5e7ff]/90">
+                  <div className="flex items-center gap-2">
+                    <FaRegUser className="text-[#7b5cff]" />
+                    <div className="flex flex-col">
+                      <span className="font-semibold">
+                        {displayName}
+                      </span>
+                      <span className="text-[12px] text-[#9ca3ff]">
+                        {isAdmin
+                          ? "Quản trị viên"
+                          : isMember
+                          ? "Thành viên"
+                          : "Khách"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {isMember && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        nav("/profile");
+                      }}
+                      className="w-full text-left text-[#d4ddff]/85 py-2"
+                    >
+                      Hồ sơ cá nhân
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        nav("/my-bookings");
+                      }}
+                      className="w-full text-left text-[#d4ddff]/85 py-2"
+                    >
+                      Lịch sử đặt vé
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        nav("/membership");
+                      }}
+                      className="w-full text-left text-[#d4ddff]/85 py-2"
+                    >
+                      Membership
+                    </button>
+                  </>
+                )}
+
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      nav("/admin");
+                    }}
+                    className="w-full text-left text-[#facc15] py-2"
+                  >
+                    Admin Dashboard
+                  </button>
+                )}
+
+                <div className="h-px bg-white/10 my-2" />
+
+                <button
+                  onClick={handleLogoutClick}
+                  className="w-full text-left text-red-300 py-2"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            )}
 
             <div className="h-px bg-white/10 my-2" />
 

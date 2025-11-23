@@ -1,7 +1,14 @@
-import { createContext, useContext, useMemo, useState, useEffect } from "react";
+// src/context/AuthContext.jsx
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
 import { USE_MOCK_API } from "@/utils/constants";
 import * as mockAuth from "@/api/mockAuthService";
-import * as realAuth from "@/api/authService"; 
+import * as realAuth from "@/api/authService";
 
 const svc = USE_MOCK_API ? mockAuth : realAuth;
 
@@ -9,13 +16,18 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [accessToken, setAccessToken] = useState(() => localStorage.getItem("access_token") || "");
-  const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem("refresh_token") || "");
+  const [accessToken, setAccessToken] = useState(
+    () => localStorage.getItem("access_token") || ""
+  );
+  const [refreshToken, setRefreshToken] = useState(
+    () => localStorage.getItem("refresh_token") || ""
+  );
   const [loading, setLoading] = useState(false);
 
   // Nếu đã có token, lấy profile
   useEffect(() => {
     let mounted = true;
+
     async function fetchProfile() {
       if (!accessToken) return;
       try {
@@ -25,13 +37,19 @@ export function AuthProvider({ children }) {
         handleLogout();
       }
     }
+
     fetchProfile();
-    return () => (mounted = false);
-  }, []);
+
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // login flow đã tự gọi /me rồi nên để [] vẫn OK
 
   function persistTokens(at, rt, remember) {
     setAccessToken(at);
     setRefreshToken(rt);
+
     if (remember) {
       localStorage.setItem("access_token", at);
       localStorage.setItem("refresh_token", rt);
@@ -44,7 +62,6 @@ export function AuthProvider({ children }) {
   async function handleLogin({ email, password }, rememberMe = false) {
     setLoading(true);
     try {
-      // === thay cho loginApi ===
       const res = await svc.login({ email, password });
       const at = res?.access_token || "";
       const rt = res?.refresh_token || "";
@@ -52,6 +69,7 @@ export function AuthProvider({ children }) {
 
       const profile = await svc.me(at);
       if (profile?.data) setUser(profile.data);
+
       return true;
     } finally {
       setLoading(false);
@@ -71,7 +89,9 @@ export function AuthProvider({ children }) {
   async function handleLogout() {
     try {
       if (accessToken) await svc.logout(accessToken);
-    } catch {}
+    } catch {
+      // ignore
+    }
     setUser(null);
     setAccessToken("");
     setRefreshToken("");
@@ -79,21 +99,36 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("refresh_token");
   }
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const role = user?.role || null;
+
+    const isAuthenticated = !!user;
+    const isGuest = !user;
+    const isMember = role === "USER"; // guest member
+    const isAdmin = role === "ADMIN";
+
+    return {
       user,
+      role,
+      isAuthenticated,
+      isGuest,
+      isMember,
+      isAdmin,
+
       loading,
       accessToken,
       refreshToken,
+
       login: handleLogin,
       register: handleRegister,
       logout: handleLogout,
       setUser,
-    }),
-    [user, loading, accessToken, refreshToken]
-  );
+    };
+  }, [user, loading, accessToken, refreshToken]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
