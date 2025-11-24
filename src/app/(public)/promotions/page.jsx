@@ -2,7 +2,6 @@
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import PromoList from "@/components/promotions/PromoList";
-import HomeButton from "@/components/shared/Buttons/HomeButton";
 
 export default function PromotionsPage() {
   return (
@@ -22,18 +21,11 @@ export default function PromotionsPage() {
         <div className="absolute bottom-[-40px] left-1/3 w-[520px] h-[260px] bg-[radial-gradient(circle_at_center,#ff92ff40,transparent)] blur-[120px]" />
       </div>
 
-    <Navbar />
-          
-    <div className="fixed top-40 left-40 z-50">
-        <HomeButton />
-    </div>  
-    
-    {/* <div className="fixed bottom-6 right-6 z-50">
-        <HomeButton />
-    </div>  phía dưới góc phải */}
+      <Navbar />
 
-    <PromoList />
-    <Footer />
+      <PromoList />
+
+      <Footer />
     </div>
   );
 }

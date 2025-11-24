@@ -6,6 +6,7 @@ import { FaLocationDot } from "react-icons/fa6";
 import { LuCalendarClock } from "react-icons/lu";
 import { PiCalendarCheckBold, PiPopcornBold } from "react-icons/pi";
 import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
+import CinemaDropdown from "@/components/cinema/CinemaDropdown";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -244,8 +245,7 @@ export default function Navbar() {
         <div className="h-[40px] flex items-center">
           <nav className="flex items-center gap-6">
             <button className={`${LinkBase} flex items-center gap-2`}>
-              <FaLocationDot className="text-[#43e1ff]" />
-              <span>Chọn rạp</span>
+              <CinemaDropdown />
               {Underline}
             </button>
 

@@ -28,8 +28,8 @@ export default function MovieSearchPage() {
   const [genre, setGenre] = useState("ALL");
   const [genresOptions, setGenresOptions] = useState([]);
 
-  const [baseMovies, setBaseMovies] = useState([]); // ✅ tập kết quả gốc
-  const [movies, setMovies] = useState([]); // ✅ sau khi filter FE
+  const [baseMovies, setBaseMovies] = useState([]); //tập kết quả gốc
+  const [movies, setMovies] = useState([]); // sau khi filter FE
 
   const [loading, setLoading] = useState(false);
 

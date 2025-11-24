@@ -67,111 +67,437 @@ function mapShowtimeGroupFromApi(group) {
 //   }
 // };
 const MOCK_SHOWTIMES_BY_MOVIE = {
-  2: {
-    "2025-11-23": [
+  1: {
+    "2025-11-25": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
-        address: "271 Nguyễn Trãi, Q.1, TP.HCM",
+        address: "271 Nguyễn Trãi, Quận 1, TP.HCM",
         showtimes: [
           {
-            showtimeId: "st1",
-            startTime: "2025-11-10T13:00:00",
+            showtimeId: "s101",
+            startTime: "2025-11-24T09:30:00",
             format: "2D",
             roomName: "Rạp 1",
-            basePrice: 90000,
+            basePrice: 75000,
           },
           {
-            showtimeId: "st2",
-            startTime: "2025-11-10T15:30:00",
+            showtimeId: "s102",
+            startTime: "2025-11-24T12:00:00",
             format: "2D",
-            roomName: "Rạp 1",
-            basePrice: 90000,
+            roomName: "Rạp 2",
+            basePrice: 95000,
           },
           {
-            showtimeId: "st3",
-            startTime: "2025-11-10T18:00:00",
+            showtimeId: "s103",
+            startTime: "2025-11-24T14:45:00",
+            format: "3D",
+            roomName: "Rạp VIP",
+            basePrice: 145000,
+          },
+          {
+            showtimeId: "s104",
+            startTime: "2025-11-24T17:30:00",
             format: "2D",
             roomName: "Rạp 3",
-            basePrice: 90000,
+            basePrice: 105000,
+          },
+          {
+            showtimeId: "s105",
+            startTime: "2025-11-24T20:15:00",
+            format: "2D",
+            roomName: "Rạp 1",
+            basePrice: 115000,
           },
         ],
       },
       {
         cinemaId: "c2",
-        cinemaName: "CinesVerse Đẳng cấp vũ trụ",
-        address: "Khu phố sinh viên, Bình Dương",
+        cinemaName: "CinesVerse Hai Bà Trưng (Q.3)",
+        address: "135 Hai Bà Trưng, Quận 3, TP.HCM",
         showtimes: [
           {
-            showtimeId: "st4",
-            startTime: "2025-11-10T20:30:00",
+            showtimeId: "s106",
+            startTime: "2025-11-24T11:00:00",
+            format: "2D",
+            roomName: "Rạp 4",
+            basePrice: 85000,
+          },
+          {
+            showtimeId: "s107",
+            startTime: "2025-11-24T16:30:00",
             format: "2D",
             roomName: "Rạp 5",
-            basePrice: 90000,
+            basePrice: 95000,
+          },
+          {
+            showtimeId: "s108",
+            startTime: "2025-11-24T19:00:00",
+            format: "3D",
+            roomName: "Rạp 6",
+            basePrice: 135000,
           },
         ],
       },
     ],
-
-    "2025-11-24": [
+    "2025-11-26": [
       {
-        cinemaId: "c1",
-        cinemaName: "CinesVerse Gà Trống",
-        address: "271 Nguyễn Trãi, Q.1, TP.HCM",
+        cinemaId: "c3",
+        cinemaName: "CinesVerse Huỳnh Tấn Phát (Q.7)",
+        address: "126 Huỳnh Tấn Phát, Quận 7, TP.HCM",
         showtimes: [
           {
-            showtimeId: "st7",
-            startTime: "2025-11-11T14:15:00",
+            showtimeId: "s109",
+            startTime: "2025-11-25T10:15:00",
             format: "2D",
-            roomName: "Rạp 9",
-            basePrice: 90000,
+            roomName: "Rạp 1",
+            basePrice: 70000,
           },
           {
-            showtimeId: "st8",
-            startTime: "2025-11-11T17:00:00",
+            showtimeId: "s110",
+            startTime: "2025-11-25T13:30:00",
             format: "2D",
             roomName: "Rạp 2",
             basePrice: 90000,
           },
           {
-            showtimeId: "st9",
-            startTime: "2025-11-11T19:45:00",
+            showtimeId: "s111",
+            startTime: "2025-11-25T18:45:00",
+            format: "2D",
+            roomName: "Rạp 3",
+            basePrice: 100000,
+          },
+        ],
+      },
+    ],
+    "2025-11-27": [
+      {
+        cinemaId: "c1",
+        cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
+        address: "271 Nguyễn Trãi, Quận 1, TP.HCM",
+        showtimes: [
+          {
+            showtimeId: "s112",
+            startTime: "2025-11-26T14:00:00",
             format: "2D",
             roomName: "Rạp 2",
-            basePrice: 90000,
+            basePrice: 95000,
+          },
+          {
+            showtimeId: "s113",
+            startTime: "2025-11-26T20:30:00",
+            format: "3D",
+            roomName: "Rạp VIP",
+            basePrice: 150000,
           },
         ],
       },
     ],
   },
-
-  1: {
+  2: {
     "2025-11-25": [
       {
-        cinemaId: "c3",
-        cinemaName: "CinesVerse Yến Vy",
-        address: "Huỳnh Tấn Phát, Q.7, TP.HCM",
+        cinemaId: "c1",
+        cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
+        address: "271 Nguyễn Trãi, Quận 1, TP.HCM",
         showtimes: [
           {
-            showtimeId: "st10",
-            startTime: "2025-11-10T10:30:00",
+            showtimeId: "s201",
+            startTime: "2025-11-24T10:30:00",
             format: "2D",
-            roomName: "Rạp 3",
-            basePrice: 70000,
+            roomName: "Rạp 5",
+            basePrice: 65000,
           },
           {
-            showtimeId: "st11",
-            startTime: "2025-11-10T13:15:00",
+            showtimeId: "s202",
+            startTime: "2025-11-24T13:15:00",
             format: "2D",
-            roomName: "Rạp 3",
-            basePrice: 70000,
+            roomName: "Rạp 6",
+            basePrice: 85000,
           },
           {
-            showtimeId: "st12",
-            startTime: "2025-11-10T15:45:00",
+            showtimeId: "s203",
+            startTime: "2025-11-24T16:00:00",
+            format: "2D",
+            roomName: "Rạp 7",
+            basePrice: 95000,
+          },
+          {
+            showtimeId: "s204",
+            startTime: "2025-11-24T18:45:00",
+            format: "2D",
+            roomName: "Rạp 8",
+            basePrice: 105000,
+          },
+          {
+            showtimeId: "s205",
+            startTime: "2025-11-24T21:30:00",
+            format: "2D",
+            roomName: "Rạp 5",
+            basePrice: 95000,
+          },
+        ],
+      },
+      {
+        cinemaId: "c4",
+        cinemaName: "CinesVerse Bình Dương",
+        address: "Khu đô thị mới, Thủ Dầu Một, Bình Dương",
+        showtimes: [
+          {
+            showtimeId: "s206",
+            startTime: "2025-11-24T12:00:00",
+            format: "2D",
+            roomName: "Rạp 1",
+            basePrice: 75000,
+          },
+          {
+            showtimeId: "s207",
+            startTime: "2025-11-24T19:30:00",
+            format: "2D",
+            roomName: "Rạp 2",
+            basePrice: 90000,
+          },
+        ],
+      },
+    ],
+    "2025-11-26": [
+      {
+        cinemaId: "c2",
+        cinemaName: "CinesVerse Hai Bà Trưng (Q.3)",
+        address: "135 Hai Bà Trưng, Quận 3, TP.HCM",
+        showtimes: [
+          {
+            showtimeId: "s208",
+            startTime: "2025-11-25T11:45:00",
             format: "2D",
             roomName: "Rạp 3",
             basePrice: 80000,
+          },
+          {
+            showtimeId: "s209",
+            startTime: "2025-11-25T17:15:00",
+            format: "2D",
+            roomName: "Rạp 4",
+            basePrice: 95000,
+          },
+        ],
+      },
+    ],
+    "2025-11-27": [
+      {
+        cinemaId: "c1",
+        cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
+        address: "271 Nguyễn Trãi, Quận 1, TP.HCM",
+        showtimes: [
+          {
+            showtimeId: "s210",
+            startTime: "2025-11-27T15:00:00",
+            format: "2D",
+            roomName: "Rạp 1",
+            basePrice: 95000,
+          },
+          {
+            showtimeId: "s211",
+            startTime: "2025-11-27T20:00:00",
+            format: "2D",
+            roomName: "Rạp VIP",
+            basePrice: 130000,
+          },
+        ],
+      },
+    ],
+  },
+  3: {
+    "2025-11-25": [
+      {
+        cinemaId: "c1",
+        cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
+        address: "271 Nguyễn Trãi, Quận 1, TP.HCM",
+        showtimes: [
+          {
+            showtimeId: "s301",
+            startTime: "2025-11-24T09:00:00",
+            format: "2D",
+            roomName: "Rạp 4",
+            basePrice: 60000,
+          },
+          {
+            showtimeId: "s302",
+            startTime: "2025-11-24T11:30:00",
+            format: "2D",
+            roomName: "Rạp 5",
+            basePrice: 70000,
+          },
+          {
+            showtimeId: "s303",
+            startTime: "2025-11-24T14:00:00",
+            format: "2D",
+            roomName: "Rạp 6",
+            basePrice: 80000,
+          },
+          {
+            showtimeId: "s304",
+            startTime: "2025-11-24T16:30:00",
+            format: "2D",
+            roomName: "Rạp 7",
+            basePrice: 80000,
+          },
+        ],
+      },
+      {
+        cinemaId: "c3",
+        cinemaName: "CinesVerse Huỳnh Tấn Phát (Q.7)",
+        address: "126 Huỳnh Tấn Phát, Quận 7, TP.HCM",
+        showtimes: [
+          {
+            showtimeId: "s305",
+            startTime: "2025-11-24T10:00:00",
+            format: "2D",
+            roomName: "Rạp 1",
+            basePrice: 55000,
+          },
+          {
+            showtimeId: "s306",
+            startTime: "2025-11-24T13:45:00",
+            format: "2D",
+            roomName: "Rạp 2",
+            basePrice: 75000,
+          },
+        ],
+      },
+    ],
+    "2025-11-26": [
+      {
+        cinemaId: "c2",
+        cinemaName: "CinesVerse Hai Bà Trưng (Q.3)",
+        address: "135 Hai Bà Trưng, Quận 3, TP.HCM",
+        showtimes: [
+          {
+            showtimeId: "s307",
+            startTime: "2025-11-26T10:30:00",
+            format: "2D",
+            roomName: "Rạp 3",
+            basePrice: 70000,
+          },
+          {
+            showtimeId: "s308",
+            startTime: "2025-11-26T15:15:00",
+            format: "2D",
+            roomName: "Rạp 4",
+            basePrice: 80000,
+          },
+        ],
+      },
+    ],
+  },
+  4: {
+    "2025-11-25": [
+      {
+        cinemaId: "c1",
+        cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
+        address: "271 Nguyễn Trãi, Quận 1, TP.HCM",
+        showtimes: [
+          {
+            showtimeId: "s401",
+            startTime: "2025-11-24T11:00:00",
+            format: "2D",
+            roomName: "Rạp 8",
+            basePrice: 85000,
+          },
+          {
+            showtimeId: "s402",
+            startTime: "2025-11-24T14:30:00",
+            format: "2D",
+            roomName: "Rạp 9",
+            basePrice: 95000,
+          },
+          {
+            showtimeId: "s403",
+            startTime: "2025-11-24T17:15:00",
+            format: "2D",
+            roomName: "Rạp 10",
+            basePrice: 105000,
+          },
+          {
+            showtimeId: "s404",
+            startTime: "2025-11-24T20:00:00",
+            format: "2D",
+            roomName: "Rạp VIP",
+            basePrice: 140000,
+          },
+        ],
+      },
+      {
+        cinemaId: "c4",
+        cinemaName: "CinesVerse Bình Dương",
+        address: "Khu đô thị mới, Thủ Dầu Một, Bình Dương",
+        showtimes: [
+          {
+            showtimeId: "s405",
+            startTime: "2025-11-24T13:00:00",
+            format: "2D",
+            roomName: "Rạp 3",
+            basePrice: 75000,
+          },
+          {
+            showtimeId: "s406",
+            startTime: "2025-11-24T18:30:00",
+            format: "2D",
+            roomName: "Rạp 4",
+            basePrice: 90000,
+          },
+        ],
+      },
+    ],
+    "2025-11-26": [
+      {
+        cinemaId: "c3",
+        cinemaName: "CinesVerse Huỳnh Tấn Phát (Q.7)",
+        address: "126 Huỳnh Tấn Phát, Quận 7, TP.HCM",
+        showtimes: [
+          {
+            showtimeId: "s407",
+            startTime: "2025-11-25T12:30:00",
+            format: "2D",
+            roomName: "Rạp 5",
+            basePrice: 80000,
+          },
+          {
+            showtimeId: "s408",
+            startTime: "2025-11-25T16:00:00",
+            format: "2D",
+            roomName: "Rạp 6",
+            basePrice: 90000,
+          },
+          {
+            showtimeId: "s409",
+            startTime: "2025-11-25T19:30:00",
+            format: "2D",
+            roomName: "Rạp 7",
+            basePrice: 95000,
+          },
+        ],
+      },
+    ],
+    "2025-11-27": [
+      {
+        cinemaId: "c1",
+        cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
+        address: "271 Nguyễn Trãi, Quận 1, TP.HCM",
+        showtimes: [
+          {
+            showtimeId: "s410",
+            startTime: "2025-11-28T15:45:00",
+            format: "2D",
+            roomName: "Rạp 1",
+            basePrice: 95000,
+          },
+          {
+            showtimeId: "s411",
+            startTime: "2025-11-28T21:00:00",
+            format: "2D",
+            roomName: "Rạp VIP",
+            basePrice: 135000,
           },
         ],
       },
@@ -186,7 +512,6 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
 export async function getShowtimesByMovie(movieId, date) {
   if (USE_MOCK) {
     const raw = MOCK_SHOWTIMES_BY_MOVIE[String(movieId)]?.[date] || [];
-    // raw đang là kiểu API (camelCase) → vẫn map lại cho thống nhất
     return raw.map(mapShowtimeGroupFromApi);
   }
 

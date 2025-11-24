@@ -449,3 +449,84 @@ export async function filterMoviesByGenre(genre) {
   // );
   // return (res.data || res).map(mapMovie);
 }
+
+
+
+
+
+// ==================== CINEMA MOVIES (NEW) ====================
+
+/**
+ * GET /cinemas/{cinemaId}/movies?status=SHOWING|UPCOMING
+ *
+ * BE response (spec v2.3):
+ * [
+ *   {
+ *     "movieId": "uuid",
+ *     "title": "...",
+ *     "genre": "...",
+ *     "description": "...",
+ *     "duration": 120,
+ *     "minimumAge": 13,
+ *     "director": "Jane Doe",
+ *     "actors": "Actor A, Actor B",
+ *     "posterUrl": "...",
+ *     "posterCloudinaryId": "...",
+ *     "trailerUrl": "...",
+ *     "status": "SHOWING",
+ *     "language": "EN"
+ *   }
+ * ]
+ */
+
+// 👉 với MOCK: map rạp -> danh sách movieId đang chiếu
+// (đã derive từ MOCK_SHOWTIMES_BY_MOVIE trong showtimeService)
+const MOCK_CINEMA_MOVIES_SHOWING = {
+  c1: ["1", "2", "3", "4"],
+  c2: ["1", "2", "3"],
+  c3: ["1", "3", "4"],
+  c4: ["2", "4"],
+};
+
+export async function getCinemaMovies(cinemaId, status) {
+  const normalizedStatus = (status || "SHOWING").toUpperCase();
+
+  if (USE_MOCK) {
+    // SHOWING: chỉ lấy các phim có thật suất chiếu tại rạp (dựa trên MOCK)
+    if (normalizedStatus === "SHOWING") {
+      const idsForCinema = new Set(
+        MOCK_CINEMA_MOVIES_SHOWING[cinemaId] || []
+      );
+
+      const list = MOCK_MOVIES.filter((m) => {
+        const idStr = String(m.movie_id || m.movieId || m.id);
+        const matchCinema = idsForCinema.has(idStr);
+        const matchStatus =
+          (m.status || "").toUpperCase() === "SHOWING";
+        return matchCinema && matchStatus;
+      });
+
+      return list.map(mapMovie);
+    }
+
+    // UPCOMING: hiện tại mock chưa có suất chiếu tương lai,
+    // nên mình cho tất cả phim UPCOMING xuất hiện ở mọi rạp
+    if (normalizedStatus === "UPCOMING") {
+      return MOCK_MOVIES.filter(
+        (m) => (m.status || "").toUpperCase() === "UPCOMING"
+      ).map(mapMovie);
+    }
+
+    // fallback: nếu status linh tinh -> trả rỗng
+    return [];
+  }
+
+  // 🚀 BE thật:
+  // const res = await apiFetch(
+  //   `/cinemas/${cinemaId}/movies?status=${encodeURIComponent(normalizedStatus)}`
+  // );
+  // const data = res.data || res;
+  // return (data || []).map(mapMovie);
+}
+
+
