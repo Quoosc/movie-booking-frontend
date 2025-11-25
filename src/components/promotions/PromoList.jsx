@@ -6,8 +6,7 @@ const promos = [
   {
     id: 1,
     title: "C'SCHOOL - Ưu đãi vé từ 45K dành riêng cho HSSV/U22/Giáo viên",
-    image:
-      "https://api-website.cinestar.com.vn/media/wysiwyg/CMSPage/Promotions/HSSV-2.jpg",
+    image: "/public/movies/CINESVERSE1.jpg",
     desc: [
       "Giá vé ưu đãi từ 45.000đ / vé 2D áp dụng vào Thứ 2 và các suất chiếu trước 10:00.",
       "Áp dụng tại các cụm rạp Cinestar trên toàn hệ thống.",
@@ -16,8 +15,7 @@ const promos = [
   {
     id: 2,
     title: "HAPPY HOUR | Suất sớm & sau 22h - Giá vé ưu đãi chỉ từ 45K",
-    image:
-      "https://api-website.cinestar.com.vn/media/wysiwyg/CMSPage/Promotions/C_TEN.jpg",
+    image: "/public/movies/CINESVERSE2.jpg",
     desc: [
       "Áp dụng cho các suất chiếu trước 10h và sau 22h.",
       "Số lượng vé ưu đãi có giới hạn cho mỗi suất.",
@@ -26,8 +24,7 @@ const promos = [
   {
     id: 3,
     title: "THỨ 4 HAPPY DAY - Đồng giá vé hấp dẫn",
-    image:
-      "https://api-website.cinestar.com.vn/media/wysiwyg/CMSPage/Promotions/THU_4.jpg",
+    image: "/public/movies/CINESVERSE3.jpg",
     desc: [
       "Thành viên C'Member/C'Friend/C'VIP nhận thêm ưu đãi tích điểm.",
       "Không áp dụng Lễ, Tết và một số suất chiếu đặc biệt.",

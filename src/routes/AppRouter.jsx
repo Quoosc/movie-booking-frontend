@@ -4,6 +4,12 @@ import { Routes, Route, Navigate } from "react-router-dom";
 // Public
 import Home from "@/app/(public)/home/page";
 
+//user
+import AccountHistoryPage from "../app/(protected)/account/account-history/page";
+import AccountMemberPage from "../app/(protected)/account/account-member/page";
+import AccountProfilePage from "../app/(protected)/account/account-profile/page";
+import AccountPasswordPage from "@/app/(protected)/account/account-password/page.jsx";
+
 // Auth
 import LoginPage from "@/app/(auth)/login/page";
 import RegisterPage from "@/app/(auth)/register/page";
@@ -54,7 +60,14 @@ export default function AppRouter() {
       <Route path="/payment-callback" element={<PaymentCallbackPage />} />
       <Route path="/checkout-success" element={<CheckoutSuccessPage />} />
 
-      {/* Protected / Admin sẽ thêm sau */}
+      {/* Protected*/}
+      <Route path="/account/account-history" element={<AccountHistoryPage />} />
+      <Route path="/account/account-member" element={<AccountMemberPage />} />
+      <Route path="/account/account-profile" element={<AccountProfilePage />} />
+      <Route
+        path="/account/account-password"
+        element={<AccountPasswordPage />}
+      />
       {/* <Route path="/booking/:showtimeId" element={<BookingPage />} /> */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

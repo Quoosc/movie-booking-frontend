@@ -24,17 +24,37 @@ export function AuthProvider({ children }) {
   );
   const [loading, setLoading] = useState(false);
 
-  // Nếu đã có token, lấy profile
+  // Hàm dọn dẹp token + user (dùng chung cho /me fail + logout)
+  function clearAuthState() {
+    setUser(null);
+    setAccessToken("");
+    setRefreshToken("");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+  }
+
+  // Nếu đã có accessToken (từ localStorage) thì lấy profile
   useEffect(() => {
     let mounted = true;
 
     async function fetchProfile() {
       if (!accessToken) return;
+
       try {
         const res = await svc.me(accessToken);
-        if (mounted && res?.data) setUser(res.data);
-      } catch {
-        handleLogout();
+        if (!mounted) return;
+
+        if (res?.data) {
+          setUser(res.data);
+        } else {
+          // Sai shape hoặc 401 → clear token
+          clearAuthState();
+        }
+      } catch (err) {
+        console.error("Auth /me failed:", err);
+        if (mounted) {
+          clearAuthState();
+        }
       }
     }
 
@@ -43,8 +63,7 @@ export function AuthProvider({ children }) {
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // login flow đã tự gọi /me rồi nên để [] vẫn OK
+  }, [accessToken]);
 
   function persistTokens(at, rt, remember) {
     setAccessToken(at);
@@ -62,13 +81,22 @@ export function AuthProvider({ children }) {
   async function handleLogin({ email, password }, rememberMe = false) {
     setLoading(true);
     try {
+      // BE /auth/login hoặc mock
       const res = await svc.login({ email, password });
       const at = res?.access_token || "";
       const rt = res?.refresh_token || "";
+
+      if (!at) {
+        throw new Error("Missing access_token from login response");
+      }
+
       persistTokens(at, rt, rememberMe);
 
+      // Gọi /me bằng accessToken vừa nhận
       const profile = await svc.me(at);
-      if (profile?.data) setUser(profile.data);
+      if (profile?.data) {
+        setUser(profile.data);
+      }
 
       return true;
     } finally {
@@ -77,9 +105,9 @@ export function AuthProvider({ children }) {
   }
 
   async function handleRegister(payload) {
-    // Map đúng spec Excel: name/email/password/phone
+    // Map đúng spec: name/email/password/phone
     return svc.register({
-      name: payload.name ?? payload.fullName, // hỗ trợ form cũ fullName
+      name: payload.name ?? payload.fullName,
       email: payload.email,
       password: payload.password,
       phone: payload.phone || "",
@@ -88,27 +116,29 @@ export function AuthProvider({ children }) {
 
   async function handleLogout() {
     try {
-      if (accessToken) await svc.logout(accessToken);
-    } catch {
-      // ignore
+      if (accessToken) {
+        await svc.logout(accessToken);
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+      // ignore error, vẫn clear local
+    } finally {
+      clearAuthState();
     }
-    setUser(null);
-    setAccessToken("");
-    setRefreshToken("");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
   }
 
   const value = useMemo(() => {
     const role = user?.role || null;
 
     const isAuthenticated = !!user;
-    const isGuest = !user;
-    const isMember = role === "USER"; // guest member
+    const isGuest = !user; // guest thường = chưa login
+    const isMember = role === "USER";
     const isAdmin = role === "ADMIN";
 
     return {
+      // state
       user,
+      currentUser: user, // alias cho các page đang dùng currentUser
       role,
       isAuthenticated,
       isGuest,
@@ -119,6 +149,7 @@ export function AuthProvider({ children }) {
       accessToken,
       refreshToken,
 
+      // actions
       login: handleLogin,
       register: handleRegister,
       logout: handleLogout,

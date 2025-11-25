@@ -8,16 +8,18 @@ export default function AboutPage() {
   return (
     <div
       className="
-        min-h-screen flex flex-col
-        bg-gradient-to-b from-[#050018] via-[#080023] to-[#050018]
-        text-white relative overflow-hidden
+        min-h-screen
+        bg-gradient-to-b
+        from-[#050024] via-[#0b0630] to-[#020015]
+        text-white
+        relative overflow-hidden
       "
     >
-      {/* Neon background */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-40 left-[8%] w-[520px] h-[520px] bg-[radial-gradient(circle_at_center,#7b5cff55,transparent)] blur-[110px]" />
-        <div className="absolute top-[28%] right-[12%] w-[420px] h-[420px] bg-[radial-gradient(circle_at_center,#43e1ff40,transparent)] blur-[110px]" />
-        <div className="absolute bottom-[-60px] left-1/3 w-[640px] h-[320px] bg-[radial-gradient(circle_at_center,#ff7af640,transparent)] blur-[130px]" />
+      {/* nền neon nhẹ */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-32 left-[10%] w-[420px] h-[420px] bg-[radial-gradient(circle_at_center,#8a66ff70,transparent)] blur-[110px]" />
+        <div className="absolute top-[35%] right-[12%] w-[380px] h-[380px] bg-[radial-gradient(circle_at_center,#55e5ff55,transparent)] blur-[110px]" />
+        <div className="absolute bottom-[-40px] left-1/3 w-[520px] h-[260px] bg-[radial-gradient(circle_at_center,#ff92ff40,transparent)] blur-[120px]" />
       </div>
 
       <Navbar />
@@ -42,16 +44,18 @@ export default function AboutPage() {
                   uppercase
                 "
               >
-                CINESVERSE: KHÔNG CHỈ LÀ RẠP PHIM, <br className="hidden md:block" />
+                CINESVERSE: KHÔNG CHỈ LÀ RẠP PHIM,{" "}
+                <br className="hidden md:block" />
                 MÀ LÀ VŨ TRỤ GIẢI TRÍ TOÀN DIỆN.
               </h1>
 
               <p className="mt-4 text-sm md:text-[15px] text-white/75 leading-relaxed">
-                CinesVerse là hệ thống tổ hợp giải trí - điện ảnh hàng đầu tại Việt Nam,
-                được xây dựng với mục tiêu trở thành điểm đến văn hóa và giải trí số 1 cho
-                mọi thế hệ gia đình Việt. Với mạng lưới cụm rạp hiện đại trải dài khắp các
-                tỉnh thành trọng điểm, CinesVerse cam kết mang đến trải nghiệm điện ảnh
-                chất lượng cao và các dịch vụ giải trí đi kèm vượt trội.
+                CinesVerse là hệ thống tổ hợp giải trí - điện ảnh hàng đầu tại
+                Việt Nam, được xây dựng với mục tiêu trở thành điểm đến văn hóa
+                và giải trí số 1 cho mọi thế hệ gia đình Việt. Với mạng lưới cụm
+                rạp hiện đại trải dài khắp các tỉnh thành trọng điểm, CinesVerse
+                cam kết mang đến trải nghiệm điện ảnh chất lượng cao và các dịch
+                vụ giải trí đi kèm vượt trội.
               </p>
             </div>
 
@@ -81,9 +85,10 @@ export default function AboutPage() {
               </span>
             </h2>
             <p className="text-sm md:text-[15px] text-white/75 leading-relaxed mb-5">
-              Điều làm nên sự khác biệt của CinesVerse chính là mô hình giải trí &quot;All-in-one&quot;.
-              Chúng tôi tích hợp nhiều loại hình dịch vụ hấp dẫn, biến mỗi chuyến đi đến CinesVerse
-              thành một hành trình khám phá:
+              Điều làm nên sự khác biệt của CinesVerse chính là mô hình giải trí
+              &quot;All-in-one&quot;. Chúng tôi tích hợp nhiều loại hình dịch vụ
+              hấp dẫn, biến mỗi chuyến đi đến CinesVerse thành một hành trình
+              khám phá:
             </p>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -126,8 +131,8 @@ export default function AboutPage() {
               TẦM NHÌN &amp; SỨ MỆNH
             </h2>
             <p className="mt-3 text-sm md:text-[15px] text-white/70 max-w-2xl mx-auto">
-              CinesVerse hoạt động dựa trên ba sứ mệnh cốt lõi, hướng tới sự phát triển bền vững
-              của ngành điện ảnh và văn hóa Việt Nam:
+              CinesVerse hoạt động dựa trên ba sứ mệnh cốt lõi, hướng tới sự
+              phát triển bền vững của ngành điện ảnh và văn hóa Việt Nam:
             </p>
           </div>
 
@@ -151,8 +156,9 @@ export default function AboutPage() {
         <section className="max-w-5xl mx-auto px-4 pb-16">
           <div className="rounded-3xl border border-[#FFE700]/35 bg-[radial-gradient(circle_at_top,#FFE70020,transparent)] bg-[#050018]/90 px-6 md:px-10 py-8 md:py-10 text-center shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
             <p className="text-sm md:text-[15px] text-white/80 leading-relaxed mb-4">
-              Hãy đến với CinesVerse để không chỉ xem phim, mà còn để tận hưởng một ngày trọn vẹn
-              niềm vui, tiếng cười và những trải nghiệm đáng nhớ cùng gia đình, bạn bè.
+              Hãy đến với CinesVerse để không chỉ xem phim, mà còn để tận hưởng
+              một ngày trọn vẹn niềm vui, tiếng cười và những trải nghiệm đáng
+              nhớ cùng gia đình, bạn bè.
             </p>
             <p className="text-[15px] md:text-lg font-semibold mb-6">
               <span className="bg-gradient-to-r from-[#FFE700] via-[#FFB300] to-[#ff7af6] bg-clip-text text-transparent">

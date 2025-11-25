@@ -872,6 +872,66 @@ export async function getBookingById(bookingId) {
   return Array.isArray(json.data) ? json.data[0] : json.data;
 }
 
+const MOCK_MY_BOOKINGS = [
+  {
+    bookingId: "mock-booking-1",
+    showtimeId: "mock-showtime-1",
+    movieTitle: "Inception",
+    showtimeStartTime: "2025-12-01T19:30:00",
+    cinemaName: "CinesVerse Nguyễn Huệ",
+    roomName: "Phòng 1",
+    seats: [
+      {
+        rowLabel: "D",
+        seatNumber: 7,
+        seatType: "VIP",
+        price: 120000,
+      },
+      {
+        rowLabel: "D",
+        seatNumber: 8,
+        seatType: "VIP",
+        price: 120000,
+      },
+    ],
+    totalPrice: 240000,
+    discountReason: "WINTER2024 (-10%)",
+    discountValue: 24000,
+    finalPrice: 216000,
+    status: "CONFIRMED",
+    bookedAt: "2025-11-25T20:15:00",
+    qrCode: null,
+    qrPayload: null,
+    paymentExpiresAt: "2025-11-25T20:30:00",
+  },
+];
+/**
+ * GET /bookings/my-bookings
+ * - Chỉ dành cho member (role USER)
+ * - Dùng trong (protected)/account-history
+ */
+export async function getMyBookings() {
+  if (USE_MOCK) {
+    // Tạm thời: dùng mock cho UI History
+    return MOCK_MY_BOOKINGS;
+  }
+
+  // const res = await apiFetch("/bookings/my-bookings");
+  // const raw = res.data || res;
+  // const list = raw.data || raw;
+  // return Array.isArray(list) ? list : [];
+}
+
+
+/**
+ * GET /bookings/{bookingId}
+ * Response: BookingDetailResponse (theo spec v2.4)
+ */
+export async function getBookingDetail(bookingId) {
+  if (!bookingId) throw new Error("bookingId is required");
+  const res = await apiFetch(`/bookings/${bookingId}`);
+  return res.data ?? res;
+}
 
 
 

@@ -8,19 +8,19 @@ const promos = [
     id: 1,
     title: "C'SCHOOL - Vé từ 45K cho HSSV/U22/Giáo viên",
     image:
-      "https://api-website.cinestar.com.vn/media/wysiwyg/CMSPage/Promotions/HSSV-2.jpg",
+      "/public/movies/CINESVERSE1.jpg",
   },
   {
     id: 2,
     title: "HAPPY HOUR - Suất sớm & khuya chỉ từ 45K",
     image:
-      "https://api-website.cinestar.com.vn/media/wysiwyg/CMSPage/Promotions/C_TEN.jpg",
+      "/public/movies/CINESVERSE2.jpg",
   },
   {
     id: 3,
     title: "THỨ 4 HAPPY DAY - Ưu đãi siêu dễ",
     image:
-      "https://api-website.cinestar.com.vn/media/wysiwyg/CMSPage/Promotions/THU_4.jpg",
+      "/public/movies/CINESVERSE3.jpg",
   },
 ];
 

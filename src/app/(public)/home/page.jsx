@@ -58,23 +58,29 @@ export default function HomePage() {
   };
 
   return (
-    <div
+    //nền chung 
+     <div
       className="
         min-h-screen
-        flex flex-col
-        bg-gradient-to-b from-[#050018] via-[#080023] to-[#050018]
+        bg-gradient-to-b
+        from-[#050024] via-[#0b0630] to-[#020015]
         text-white
-        relative
-        overflow-hidden
+        relative overflow-hidden
       "
     >
-      {/* Neon background */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-40 left-[8%] w-[520px] h-[520px] bg-[radial-gradient(circle_at_center,#7b5cff55,transparent)] blur-[110px]" />
-        <div className="absolute top-[28%] right-[12%] w-[420px] h-[420px] bg-[radial-gradient(circle_at_center,#43e1ff40,transparent)] blur-[110px]" />
-        <div className="absolute bottom-[-60px] left-1/3 w-[640px] h-[320px] bg-[radial-gradient(circle_at_center,#ff7af640,transparent)] blur-[130px]" />
-      </div>
-
+      {/* nền neon nhẹ */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-32 left-[10%] w-[420px] h-[420px] bg-[radial-gradient(circle_at_center,#8a66ff70,transparent)] blur-[110px]" />
+        <div className="absolute top-[35%] right-[12%] w-[380px] h-[380px] bg-[radial-gradient(circle_at_center,#55e5ff55,transparent)] blur-[110px]" />
+        <div className="absolute bottom-[-40px] left-1/3 w-[520px] h-[260px] bg-[radial-gradient(circle_at_center,#ff92ff40,transparent)] blur-[120px]" />
+      </div> 
+      {/* đến đây
+      
+      
+      
+      
+      
+      */}
       <Navbar />
 
       {/* MAIN */}
