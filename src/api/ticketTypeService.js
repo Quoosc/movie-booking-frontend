@@ -1,7 +1,12 @@
 // src/api/ticketTypeService.js
 
+// import { apiFetch, USE_MOCK } from "./fetchConfig";
+
 const USE_MOCK = true;
 
+/**
+ * MOCK – dùng để test UI, tương đương dữ liệu spec cũ
+ */
 const MOCK_TICKET_TYPES = [
   {
     ticketTypeId: "adult",   // mock: tạm dùng code làm ID
@@ -35,40 +40,49 @@ const MOCK_TICKET_TYPES = [
   },
 ];
 
-function mapTicketTypeFromApi(api) {
-  if (!api) return null;
-
-  const code =
-    (api.code || api.ticketTypeId || api.id || api.ticket_type_id || "")
-      .toString()
-      .toLowerCase();
-
+function mapTicketType(t) {
   return {
-    // FE logic: vẫn dùng t.id === "member" / "double" ok
-    id: code,
-    code,
-    ticketTypeId: api.ticketTypeId || null, //uuid
-    label: api.label,
-    price: api.price,
+    // id dùng cho FE
+    id: t.ticketTypeId || t.id,
+    // giữ nguyên ticketTypeId để gửi lên price-preview / booking
+    ticketTypeId: t.ticketTypeId || t.id,
+    code: t.code,
+    label: t.label,
+    price: Number(t.price ?? 0),
   };
 }
 
+/**
+ * GET /ticket-types
+ *
+ * - Nếu truyền showtimeId => giá đã tính theo suất chiếu (API mới v2.3)
+ * - userId optional: dùng cho member sau này.
+ *
+ * Hiện tại:
+ *   - MOCK: luôn trả MOCK_TICKET_TYPES (không phụ thuộc showtimeId)
+ *   - BE thật: đọc theo spec mới { code, message, data: [...] }
+ */
 export async function getTicketTypes({ showtimeId, userId } = {}) {
   if (USE_MOCK) {
-    return MOCK_TICKET_TYPES.map(mapTicketTypeFromApi).filter(Boolean);
+    // MOCK: luôn trả list cố định để test UI
+    return MOCK_TICKET_TYPES.map(mapTicketType);
   }
 
-  // REAL API (khi bật):
-  // let url = "/ticket-types";
   // const params = new URLSearchParams();
-  // if (showtimeId) params.append("showtimeId", showtimeId);
-  // if (userId) params.append("userId", userId);
-  // const query = params.toString();
-  // if (query) url += `?${query}`;
-  //
-  // const res = await apiFetch(url);
-  // const raw = res?.data ?? res;
-  // return (Array.isArray(raw) ? raw : [])
-  //   .map(mapTicketTypeFromApi)
-  //   .filter(Boolean);
+
+  // if (showtimeId) {
+  //   params.set("showtimeId", showtimeId);
+  // }
+  // if (userId) {
+  //   params.set("userId", userId);
+  // }
+
+  // const qs = params.toString();
+  // const res = await apiFetch(`/ticket-types${qs ? `?${qs}` : ""}`);
+
+  // // BE spec: { code, message, data: [...] }
+  // const raw = res.data || res;
+  // const list = raw.data || raw;
+
+  // return (list || []).map(mapTicketType);
 }

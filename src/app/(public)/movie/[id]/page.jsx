@@ -17,11 +17,41 @@ const HOLD_SECONDS = 300; // 5 phút
 
 // Danh sách loại vé gốc (load từ API ticket-types)
 const DEFAULT_TICKET_TYPES = [
-  { id: "adult",  code: "adult",  ticketTypeId: null, label: "NGƯỜI LỚN",           price: 69000 },
-  { id: "student",code: "student",ticketTypeId: null, label: "HSSV/U22-GV",        price: 49000 },
-  { id: "senior", code: "senior", ticketTypeId: null, label: "NGƯỜI CAO TUỔI",     price: 55000 },
-  { id: "member", code: "member", ticketTypeId: null, label: "GIÁ VÉ THÀNH VIÊN",  price: 45000 },
-  { id: "double", code: "double", ticketTypeId: null, label: "GHẾ ĐÔI (2 NGƯỜI)",  price: 128000 },
+  {
+    id: "adult",
+    code: "adult",
+    ticketTypeId: null,
+    label: "NGƯỜI LỚN",
+    price: 69000,
+  },
+  {
+    id: "student",
+    code: "student",
+    ticketTypeId: null,
+    label: "HSSV/U22-GV",
+    price: 49000,
+  },
+  {
+    id: "senior",
+    code: "senior",
+    ticketTypeId: null,
+    label: "NGƯỜI CAO TUỔI",
+    price: 55000,
+  },
+  {
+    id: "member",
+    code: "member",
+    ticketTypeId: null,
+    label: "GIÁ VÉ THÀNH VIÊN",
+    price: 45000,
+  },
+  {
+    id: "double",
+    code: "double",
+    ticketTypeId: null,
+    label: "GHẾ ĐÔI (2 NGƯỜI)",
+    price: 128000,
+  },
 ];
 
 export default function MovieDetailPage() {
@@ -82,7 +112,7 @@ export default function MovieDetailPage() {
     fetchMovie();
   }, [id]);
 
-  /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) ===== */
+  /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) này dùng để sài mock ===== */
   useEffect(() => {
     const fetchTicketTypes = async () => {
       try {
@@ -103,24 +133,29 @@ export default function MovieDetailPage() {
     fetchTicketTypes();
   }, []);
 
-  /* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ) ===== */
+  /* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ – DÙNG API MỚI) ===== */
   // useEffect(() => {
-  //   // Chưa chọn suất chiếu thì không cần load
-  //   if (!activeShowtime) return;
+  //   // Chưa chọn suất chiếu thì reset về default
+  //   if (!activeShowtime?.showtimeId) {
+  //     setTicketTypes(
+  //       DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
+  //     );
+  //     return;
+  //   }
 
-  //   const fetchTicketTypes = async () => {
+  //   const fetchTicketTypesPerShowtime = async () => {
   //     try {
   //       const data = await getTicketTypes({
-  //         showtimeId: activeShowtime.showtimeId,      // bắt buộc
-  //         userId: currentUser?.id || null,           // member thì gửi, guest thì null
+  //         showtimeId: activeShowtime.showtimeId, // bắt buộc cho pricing theo suất
+  //         userId: user?.id || null,              // member thì gửi, guest thì null
   //       });
 
+  //       // data đã được mapTicketType() trong ticketTypeService rồi
   //       const list =
   //         Array.isArray(data) && data.length > 0
   //           ? data
   //           : DEFAULT_TICKET_TYPES;
 
-  //       // luôn gắn quantity = 0 cho UI
   //       setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
   //     } catch (err) {
   //       console.error("getTicketTypes error, dùng DEFAULT_TICKET_TYPES", err);
@@ -130,8 +165,8 @@ export default function MovieDetailPage() {
   //     }
   //   };
 
-  //   fetchTicketTypes();
-  // }, [activeShowtime?.showtimeId, currentUser?.id]);
+  //   fetchTicketTypesPerShowtime();
+  // }, [activeShowtime?.showtimeId, user?.id]);
 
   /* ===== LOAD SHOWTIMES THEO NGÀY ===== */
   useEffect(() => {
@@ -148,7 +183,7 @@ export default function MovieDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, selectedDate]);
 
-  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC ===== */
+  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC Đây là bản real api ===== */
 
   // useEffect(() => {
   //   if (!activeShowtime) {
@@ -230,7 +265,7 @@ export default function MovieDetailPage() {
   //   };
   // }, [activeShowtime, ticketTypes, selectedSnacks]);
 
-  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC ===== */
+  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC này là sài dùng để mock ===== */
   useEffect(() => {
     if (!activeShowtime) {
       setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
