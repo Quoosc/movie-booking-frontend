@@ -7,8 +7,7 @@ const MOCK_PROFILE = {
   email: "demo@cinestar.vn",
   username: "Đẳng Cấp",
   phoneNumber: "0912345678",
-  avatarUrl:
-    "https://lh3.googleusercontent.com/gg-dl/ABS2GSkCHALEn1s6lOtIQPstJfNLnIv_srghbJmAYYxSajhexltZZ1xc68AoQjzdDce3yDFoqOodNMEtqxPfVtDXXdv9palipC8CPl3dSAd2qI8oDlp9jCsUmIu_zyZws6wcyCW6aoRgd8sFzlP3sPNiFkx-Qx1hmbst8csc1VYsnYFBRLfo=s1024-rj",
+  avatarUrl: "/movies/proplayer.png",
   avatarCloudinaryId: "",
   loyaltyPoints: 1234,
   membershipTier: {
@@ -109,10 +108,10 @@ export async function getActiveMembershipTiers() {
 }
 
 export async function changePassword(payload) {
-    const res = await apiFetch("/users/password", {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-    });
-    // data là string primitive theo spec
-    return res.data;
+  const res = await apiFetch("/users/password", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+  // data là string primitive theo spec
+  return res.data;
 }

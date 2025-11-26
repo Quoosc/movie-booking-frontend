@@ -21,6 +21,7 @@ export default function AccountProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const avatarSrc = profile?.avatarUrl || form.avatarUrl || "";
 
   // Load profile
   useEffect(() => {
@@ -168,9 +169,17 @@ export default function AccountProfilePage() {
               <div className="relative p-6 pb-8">
                 <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/10">
                   <div className="relative">
-                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-400 via-fuchsia-500 to-emerald-400 p-[2px] shadow-lg shadow-purple-500/30">
-                      <div className="h-full w-full rounded-2xl bg-[#0b001f] flex items-center justify-center text-2xl font-bold">
-                        {displayName.charAt(0).toUpperCase()}
+                    <div className="h-32 w-32 rounded-3xl bg-gradient-to-br from-pink-400 via-purple-400 to-cyan-400 p-[4px] shadow-2xl shadow-purple-500/60">
+                      <div className="h-full w-full rounded-3xl bg-gray-900/95 backdrop-blur-sm flex items-center justify-center text-5xl font-black text-white overflow-hidden">
+                        {avatarSrc ? (
+                          <img
+                            src={avatarSrc}
+                            alt={displayName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          displayName.charAt(0).toUpperCase()
+                        )}
                       </div>
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#0b001f] flex items-center justify-center text-[10px] font-bold">
@@ -263,9 +272,17 @@ export default function AccountProfilePage() {
 
                 <div className="relative p-8 md:p-10 text-center">
                   <div className="relative inline-block mb-6">
-                    <div className="h-32 w-32 rounded-3xl bg-gradient-to-br from-pink-400 via-purple-400 to-cyan-400 p-[4px] shadow-2xl shadow-purple-500/60 animate-pulse">
-                      <div className="h-full w-full rounded-3xl bg-gray-900/95 backdrop-blur-sm flex items-center justify-center text-5xl font-black text-white">
-                        {displayName.charAt(0).toUpperCase()}
+                    <div className="h-32 w-32 rounded-3xl bg-gradient-to-br from-pink-400 via-purple-400 to-cyan-400 p-[4px] shadow-2xl shadow-purple-500/60">
+                      <div className="h-full w-full rounded-3xl bg-gray-900/95 backdrop-blur-sm flex items-center justify-center text-5xl font-black text-white overflow-hidden">
+                        {avatarSrc ? (
+                          <img
+                            src={avatarSrc}
+                            alt={displayName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          displayName.charAt(0).toUpperCase()
+                        )}
                       </div>
                     </div>
                     <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 border-4 border-gray-900 flex items-center justify-center text-lg font-bold shadow-2xl">
