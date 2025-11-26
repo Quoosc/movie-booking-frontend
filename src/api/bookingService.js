@@ -872,6 +872,12 @@ export async function getBookingById(bookingId) {
   return Array.isArray(json.data) ? json.data[0] : json.data;
 }
 
+
+
+
+
+
+//  api for user
 const MOCK_MY_BOOKINGS = [
   {
     bookingId: "mock-booking-1",
@@ -923,22 +929,91 @@ export async function getMyBookings() {
 }
 
 
-/**
- * GET /bookings/{bookingId}
- * Response: BookingDetailResponse (theo spec v2.4)
- */
+const MOCK_BOOKING_DETAIL = {
+  bookingId: "mock-booking-1",
+  bookingCode: "CV123456",
+  status: "CONFIRMED",
+  bookingStatus: "CONFIRMED",
+  createdAt: "2025-11-24T14:00:00Z",
+
+  // Thông tin suất chiếu
+  movieTitle: "INTERSTELLAR 2: CinesVerse Edition",
+  cinemaName: "CNS CinesVerse Quận 1",
+  roomName: "Phòng 3 – IMAX",
+  showtimeStartTime: "2025-11-30T13:30:00Z",
+  showtimeEndTime: "2025-11-30T15:45:00Z",
+
+  // Ghế
+  seats: [
+    {
+      seatId: "seat-e7",
+      rowLabel: "E",
+      seatNumber: 7,
+      seatType: "COUPLE",
+      ticketTypeName: "NGƯỜI LỚN",
+      ticketPrice: 95000,
+    },
+    {
+      seatId: "seat-e8",
+      rowLabel: "E",
+      seatNumber: 8,
+      seatType: "COUPLE",
+      ticketTypeName: "NGƯỜI LỚN",
+      ticketPrice: 95000,
+    },
+  ],
+
+  // Bắp nước
+  snacks: [
+    {
+      snackId: "snack-popcorn-big",
+      snackName: "Bắp phô mai lớn",
+      quantity: 1,
+      price: 55000,
+      totalPrice: 55000,
+    },
+    {
+      snackId: "snack-pepsi-500",
+      snackName: "Pepsi 500ml",
+      quantity: 2,
+      price: 25000,
+      totalPrice: 50000,
+    },
+  ],
+
+  // Giá tiền
+  totalTicketPrice: 190000,
+  totalSnackPrice: 105000,
+  discountValue: 30000,
+  finalPrice: 265000,
+
+  // Payment
+  paymentStatus: "SUCCESS",
+  paymentMethod: "MOMO",
+  paymentId: "MOCK-PAY-1",
+  paymentGatewayTransactionId: "MOCK-TX-123",
+};
+
 export async function getBookingDetail(bookingId) {
-  if (!bookingId) throw new Error("bookingId is required");
+  if (!bookingId) {
+    throw new Error("bookingId is required");
+  }
+
+  // 👉 Mock cho UI
+  if (USE_MOCK) {
+    // optional: delay nhẹ cho giống gọi API
+    await new Promise((r) => setTimeout(r, 400));
+    // giữ nguyên bookingId trên URL cho đẹp
+    return { ...MOCK_BOOKING_DETAIL, bookingId };
+  }
+
+  // 👉 Gọi BE thật
   const res = await apiFetch(`/bookings/${bookingId}`);
-  return res.data ?? res;
+  const raw = res.data || res;
+  return raw.data || raw;
 }
 
-
-
-
-
-
-
+//api for user
 
 
 

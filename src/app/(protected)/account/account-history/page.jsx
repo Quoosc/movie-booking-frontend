@@ -42,6 +42,7 @@ const FILTERS = [
 export default function AccountHistoryPage() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const nav = useNavigate();
   const location = useLocation();
 
   const [bookings, setBookings] = useState([]);
@@ -435,7 +436,10 @@ export default function AccountHistoryPage() {
                             )}
 
                             <div className="pt-4 flex justify-end">
-                              <button className="rounded-2xl bg-white/10 border border-white/20 px-6 py-3 font-bold text-sm hover:bg-white/20 transition-all">
+                              <button className="rounded-2xl bg-white/10 border border-white/20 px-6 py-3 font-bold text-sm hover:bg-white/20 transition-all"
+                                onClick={() =>
+                                nav(`/account/account-history/${b.bookingId}`)
+                              }>
                                 Xem chi tiết vé
                               </button>
                             </div>

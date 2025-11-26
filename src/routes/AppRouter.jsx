@@ -9,6 +9,7 @@ import AccountHistoryPage from "../app/(protected)/account/account-history/page"
 import AccountMemberPage from "../app/(protected)/account/account-member/page";
 import AccountProfilePage from "../app/(protected)/account/account-profile/page";
 import AccountPasswordPage from "@/app/(protected)/account/account-password/page.jsx";
+import BookingDetailPage from "@/app/(protected)/account/account-history/[bookingId]/page.jsx";
 
 // Auth
 import LoginPage from "@/app/(auth)/login/page";
@@ -67,6 +68,10 @@ export default function AppRouter() {
       <Route
         path="/account/account-password"
         element={<AccountPasswordPage />}
+      />
+      <Route
+        path="/account/account-history/:bookingId"
+        element={<BookingDetailPage />}
       />
       {/* <Route path="/booking/:showtimeId" element={<BookingPage />} /> */}
       <Route path="*" element={<Navigate to="/" replace />} />
