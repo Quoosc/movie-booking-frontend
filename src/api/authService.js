@@ -4,8 +4,8 @@ import { apiFetch, USE_MOCK } from "./fetchConfig";
 // MOCK user (phục vụ demo login)
 const MOCK_USER = {
   user_id: "u1",
-  name: "Demo User",
-  email: "demo@cinestar.vn",
+  name: "Phạm Trấn Quốc",
+  email: "Quocproplayer@cinesverse.vn",
   role: "USER",
   avatar_url: null,
 };
@@ -16,7 +16,7 @@ const MOCK_USER = {
  */
 export async function login({ email, password }) {
   if (USE_MOCK) {
-    if (email === "demo@cinestar.vn" && password === "123456") {
+    if (email === "Quocproplayer@cinesverse.vn" && password === "123456") {
       const tokens = {
         accessToken: "mock-access-token",
         refreshToken: "mock-refresh-token",

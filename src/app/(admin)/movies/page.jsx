@@ -1,285 +1,738 @@
 // src/app/(admin)/movies/page.jsx
-import { useEffect, useState } from "react";
-// TODO: implement theo spec v2.4
-// import { getAdminMovies } from "@/api/admin/movieService";
+import { useEffect, useMemo, useState } from "react";
+import { AdminMovieService } from "@/api/adminservice";
 
-const STATUS_BADGES = {
-  SHOWING: {
-    label: "Đang chiếu",
-    className: "bg-emerald-400/10 text-emerald-300 border-emerald-400/40",
-  },
-  UPCOMING: {
-    label: "Sắp chiếu",
-    className: "bg-cyan-400/10 text-cyan-300 border-cyan-400/40",
-  },
+const STATUS_OPTIONS = ["SHOWING", "UPCOMING"];
+
+const EMPTY_FORM = {
+  title: "",
+  genre: "",
+  duration: "",
+  minimumAge: "",
+  language: "",
+  status: "UPCOMING",
+  posterUrl: "",
+  trailerUrl: "",
+  description: "",
 };
 
 export default function AdminMoviesPage() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
+  // modal + form
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingMovie, setEditingMovie] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  // ================= API =================
+
+  const fetchMovies = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+
+      // Giả định AdminMovieService.getAllMovies() tồn tại
+      const data = await AdminMovieService.getAllMovies?.();
+      const list = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+        ? data
+        : [];
+      setMovies(list);
+    } catch (err) {
+      console.error("Fetch movies error:", err);
+      setError(err?.message || "Không tải được danh sách phim.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        setLoading(true);
-        setErr("");
-
-        // TODO: gọi API thật theo v2.4
-        // const res = await getAdminMovies();
-        // const list = Array.isArray(res?.data) ? res.data : res;
-        // setMovies(list ?? []);
-
-        // Tạm mock cho đẹp UI
-        const mock = [
-          {
-            movieId: "1",
-            title: "AVENGERS: ENDGAME",
-            status: "SHOWING",
-            durationMinutes: 180,
-            ageRating: "16+",
-            releaseDate: "2025-11-01",
-            language: "Phụ đề",
-          },
-          {
-            movieId: "2",
-            title: "SPIRITED AWAY",
-            status: "UPCOMING",
-            durationMinutes: 125,
-            ageRating: "P",
-            releaseDate: "2025-12-05",
-            language: "Lồng tiếng",
-          },
-        ];
-        setMovies(mock);
-      } catch (error) {
-        console.error(error);
-        setErr("Không thể tải danh sách phim.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMovies();
   }, []);
 
-  const filteredMovies = movies.filter((m) => {
-    const matchSearch =
-      !search ||
-      m.title?.toLowerCase().includes(search.toLowerCase()) ||
-      m.originalTitle?.toLowerCase().includes(search.toLowerCase());
+  const handleOpenCreateModal = () => {
+    setEditingMovie(null);
+    setForm(EMPTY_FORM);
+    setError(null);
+    setSuccess(null);
+    setIsModalOpen(true);
+  };
 
-    const matchStatus =
-      statusFilter === "ALL" || m.status === statusFilter;
+  const handleOpenEditModal = (movie) => {
+    setEditingMovie(movie || null);
+    setForm({
+      title: movie?.title || "",
+      genre: movie?.genre || "",
+      duration: movie?.duration || "",
+      minimumAge: movie?.minimumAge || "",
+      language: movie?.language || "",
+      status: movie?.status || "SHOWING",
+      posterUrl: movie?.posterUrl || "",
+      trailerUrl: movie?.trailerUrl || "",
+      description: movie?.description || "",
+    });
+    setError(null);
+    setSuccess(null);
+    setIsModalOpen(true);
+  };
 
-    return matchSearch && matchStatus;
-  });
+  const handleCloseModal = () => {
+    if (saving) return;
+    setIsModalOpen(false);
+  };
+
+  const handleFormChange = (field) => (e) => {
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!form.title.trim()) {
+      setError("Vui lòng nhập tên phim.");
+      return;
+    }
+    if (!form.duration || Number(form.duration) <= 0) {
+      setError("Thời lượng phim phải > 0 phút.");
+      return;
+    }
+
+    const payload = {
+      title: form.title.trim(),
+      genre: form.genre.trim() || null,
+      duration: Number(form.duration),
+      minimumAge: form.minimumAge ? Number(form.minimumAge) : null,
+      language: form.language.trim() || null,
+      status: form.status || "UPCOMING",
+      posterUrl: form.posterUrl.trim() || null,
+      trailerUrl: form.trailerUrl.trim() || null,
+      description: form.description.trim() || null,
+      // Các field khác (director, actors, posterCloudinaryId, ...) nếu BE yêu cầu
+      // có thể bổ sung sau.
+    };
+
+    try {
+      setSaving(true);
+
+      if (editingMovie?.movieId) {
+        // UPDATE
+        const res = await AdminMovieService.updateMovie?.(
+          editingMovie.movieId,
+          payload
+        );
+        const updated = res?.data || res || payload;
+
+        setMovies((prev) =>
+          prev.map((m) =>
+            m.movieId === editingMovie.movieId ? { ...m, ...updated } : m
+          )
+        );
+        setSuccess("Cập nhật thông tin phim thành công.");
+      } else {
+        // CREATE
+        const res = await AdminMovieService.createMovie?.(payload);
+        const created = res?.data || res || payload;
+        setMovies((prev) => [created, ...prev]);
+        setSuccess("Thêm phim mới thành công.");
+      }
+
+      setIsModalOpen(false);
+      setEditingMovie(null);
+      setForm(EMPTY_FORM);
+    } catch (err) {
+      console.error("Save movie error:", err);
+      setError(err?.message || "Lưu thông tin phim thất bại.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteMovie = async (movieId) => {
+    if (!window.confirm("Bạn chắc chắn muốn xóa phim này?")) return;
+
+    try {
+      setDeletingId(movieId);
+      setError(null);
+      setSuccess(null);
+
+      await AdminMovieService.deleteMovie?.(movieId);
+
+      setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
+      setSuccess("Xóa phim thành công.");
+    } catch (err) {
+      console.error("Delete movie error:", err);
+      setError(err?.message || "Xóa phim thất bại.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // ================= DERIVED DATA =================
+
+  const filteredMovies = useMemo(() => {
+    return movies.filter((m) => {
+      const q = search.trim().toLowerCase();
+      if (q) {
+        const haystack = `${m.title || ""} ${
+          m.genre || ""
+        } ${m.language || ""}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+
+      if (statusFilter !== "ALL") {
+        const st = (m.status || "").toUpperCase();
+        if (st !== statusFilter) return false;
+      }
+
+      return true;
+    });
+  }, [movies, search, statusFilter]);
+
+  const stats = useMemo(() => {
+    const total = movies.length;
+    let showing = 0,
+      upcoming = 0;
+
+    movies.forEach((m) => {
+      const st = (m.status || "").toUpperCase();
+      if (st === "SHOWING") showing++;
+      else if (st === "UPCOMING") upcoming++;
+    });
+
+    return { total, showing, upcoming };
+  }, [movies]);
+
+  // ================= RENDER =================
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 lg:space-y-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold tracking-[0.4em] uppercase text-cyan-400/70 mb-2">
-            ADMIN • MOVIES
-          </p>
-          <h1 className="text-3xl md:text-4xl font-black tracking-[0.12em] uppercase">
-            <span className="bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              QUẢN LÝ PHIM
-            </span>
-          </h1>
-          <p className="mt-3 text-sm text-white/60 max-w-2xl">
-            Tạo, chỉnh sửa và quản lý trạng thái phim theo chuẩn database & API v2.4.
-          </p>
-        </div>
+      <header className="space-y-3">
+        <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
+          ADMIN • MOVIES
+        </p>
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-[0.16em] uppercase">
+          <span className="bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Quản lý phim
+          </span>
+        </h1>
+        <p className="text-xs md:text-sm text-white/60 max-w-2xl">
+          Thêm mới, chỉnh sửa và quản lý trạng thái phim đang chiếu / sắp chiếu
+          trên CinesVerse.
+        </p>
+      </header>
 
-        <button
-          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-lg shadow-emerald-500/30 hover:scale-[1.02] transition-transform"
-        >
-          <span className="text-lg">＋</span>
-          Thêm phim mới
-        </button>
-      </div>
+      {/* Stats */}
+      <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <StatCard
+          label="Tổng số phim"
+          value={stats.total}
+          gradient="from-cyan-400/80 via-cyan-500/70 to-emerald-400/80"
+        />
+        <StatCard
+          label="Đang chiếu (SHOWING)"
+          value={stats.showing}
+          gradient="from-violet-500/80 via-fuchsia-500/80 to-pink-400/80"
+        />
+        <StatCard
+          label="Sắp chiếu (UPCOMING)"
+          value={stats.upcoming}
+          gradient="from-amber-400/80 via-orange-500/80 to-rose-400/80"
+        />
+      </section>
 
-      {/* Filter + Search */}
-      <div className="rounded-3xl bg-gradient-to-r from-white/5 via-white/5 to-transparent border border-white/10 backdrop-blur-xl p-5 shadow-2xl">
-        <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-          <div className="inline-flex rounded-2xl bg-white/5 border border-white/10 p-1.5">
-            <button
-              onClick={() => setStatusFilter("ALL")}
-              className={`rounded-2xl px-4 py-2 text-xs md:text-sm font-bold transition-all
-                ${
-                  statusFilter === "ALL"
-                    ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
-            >
-              Tất cả
-            </button>
-            <button
-              onClick={() => setStatusFilter("SHOWING")}
-              className={`rounded-2xl px-4 py-2 text-xs md:text-sm font-bold transition-all
-                ${
-                  statusFilter === "SHOWING"
-                    ? "bg-gradient-to-r from-emerald-500 to-cyan-400 text-black shadow"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
-            >
-              Đang chiếu
-            </button>
-            <button
-              onClick={() => setStatusFilter("UPCOMING")}
-              className={`rounded-2xl px-4 py-2 text-xs md:text-sm font-bold transition-all
-                ${
-                  statusFilter === "UPCOMING"
-                    ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
-            >
-              Sắp chiếu
-            </button>
-          </div>
+      {/* Bộ lọc + actions */}
+      <section className="relative rounded-3xl bg-gradient-to-br from-[#160033]/85 via-[#090019]/95 to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400" />
 
-          <div className="flex-1 flex items-center gap-3">
-            <div className="relative flex-1">
+        <div className="relative p-4 md:p-6 flex flex-col md:flex-row gap-4 md:items-center justify-between">
+          <div className="flex-1 flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                Tìm kiếm
+              </label>
               <input
+                type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm phim theo tên / tên gốc..."
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/70"
+                placeholder="Tìm theo tên phim, thể loại, ngôn ngữ..."
+                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 text-xs">
-                ⌕
-              </span>
+            </div>
+
+            <div className="w-full sm:w-48">
+              <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                Lọc theo trạng thái
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+              >
+                <option value="ALL">Tất cả</option>
+                <option value="SHOWING">Đang chiếu</option>
+                <option value="UPCOMING">Sắp chiếu</option>
+              </select>
             </div>
           </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={fetchMovies}
+              disabled={loading}
+              className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-xs font-semibold tracking-[0.16em] uppercase bg-white/5 border border-white/20 text-white hover:bg-white/10 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            >
+              {loading ? "Đang tải..." : "Làm mới"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenCreateModal}
+              className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-xs font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 transition-all"
+            >
+              + Thêm phim mới
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Alert */}
+      {(error || success) && (
+        <section className="space-y-3">
+          {error && (
+            <div className="rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="rounded-2xl border border-emerald-500/60 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+              {success}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Table */}
-      <div className="rounded-3xl bg-gradient-to-br from-[#1a0033]/80 via-[#0f001f] to-black/90 border border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
-        <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
-          <p className="text-sm text-white/70">
-            Tổng:{" "}
-            <span className="font-bold text-emerald-300">
-              {filteredMovies.length}
-            </span>{" "}
-            phim
-          </p>
-        </div>
+      <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a0033]/90 via-[#0b001f] to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-600/15 via-transparent to-cyan-500/15 pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
 
-        {loading ? (
-          <div className="py-16 text-center text-white/60 text-sm">
-            Đang tải danh sách phim...
+        <div className="relative p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm md:text-base font-extrabold tracking-[0.2em] uppercase text-white/80">
+              Danh sách phim
+            </h2>
+            <p className="text-[11px] text-white/40">
+              Hiển thị{" "}
+              <span className="font-semibold">{filteredMovies.length}</span> /{" "}
+              <span className="font-semibold">{movies.length}</span> movies
+            </p>
           </div>
-        ) : err ? (
-          <div className="py-16 text-center text-red-400 text-sm">
-            {err}
-          </div>
-        ) : filteredMovies.length === 0 ? (
-          <div className="py-16 text-center text-white/60 text-sm">
-            Chưa có phim nào phù hợp bộ lọc.
-          </div>
-        ) : (
+
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-white/50 border-b border-white/10">
-                  <th className="px-6 py-3 text-left font-medium">Phim</th>
-                  <th className="px-4 py-3 text-left font-medium">Trạng thái</th>
-                  <th className="px-4 py-3 text-left font-medium">Thời lượng</th>
-                  <th className="px-4 py-3 text-left font-medium">Giới hạn tuổi</th>
-                  <th className="px-4 py-3 text-left font-medium">Ngày khởi chiếu</th>
-                  <th className="px-4 py-3 text-left font-medium">Ngôn ngữ</th>
-                  <th className="px-4 py-3 text-right font-medium">Thao tác</th>
+                <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
+                  <th className="py-3 pr-4 text-left">Phim</th>
+                  <th className="py-3 px-4 text-left hidden md:table-cell">
+                    Thông tin
+                  </th>
+                  <th className="py-3 px-4 text-left hidden lg:table-cell">
+                    Trạng thái
+                  </th>
+                  <th className="py-3 pl-4 pr-2 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredMovies.map((m) => {
-                  const badge =
-                    STATUS_BADGES[m.status] ||
-                    {
-                      label: m.status || "UNKNOWN",
-                      className:
-                        "bg-slate-400/10 text-slate-200 border-slate-400/40",
-                    };
-
-                  const releaseDate = m.releaseDate
-                    ? new Date(m.releaseDate)
-                    : null;
-
-                  return (
-                    <tr
-                      key={m.movieId}
-                      className="border-b border-white/5 hover:bg-white/5/10 transition-colors"
+                {loading ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="py-8 text-center text-white/60 text-sm"
                     >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          {m.posterUrl && (
-                            <img
-                              src={m.posterUrl}
-                              alt={m.title}
-                              className="h-14 w-10 rounded-lg object-cover border border-white/10"
-                            />
-                          )}
-                          <div>
-                            <p className="font-semibold text-white">
-                              {m.title}
-                            </p>
-                            {m.originalTitle && (
-                              <p className="text-xs text-white/50">
-                                {m.originalTitle}
-                              </p>
-                            )}
+                      Đang tải dữ liệu...
+                    </td>
+                  </tr>
+                ) : filteredMovies.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="py-8 text-center text-white/60 text-sm"
+                    >
+                      Không tìm thấy phim nào khớp với bộ lọc.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredMovies.map((m) => {
+                    const status = (m.status || "").toUpperCase();
+                    return (
+                      <tr
+                        key={m.movieId}
+                        className="border-b border-white/5 hover:bg-white/5/10"
+                      >
+                        {/* Movie basic */}
+                        <td className="py-3 pr-4">
+                          <div className="flex items-center gap-3">
+                            {/* Poster / avatar */}
+                            <div className="relative">
+                              <div className="h-12 w-9 rounded-xl bg-gradient-to-br from-violet-400 via-fuchsia-500 to-emerald-400 p-[1px] overflow-hidden">
+                                <div className="h-full w-full rounded-[10px] bg-[#050012] flex items-center justify-center text-[10px] font-bold text-white/70">
+                                  {m.posterUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={m.posterUrl}
+                                      alt={m.title}
+                                      className="h-full w-full object-cover rounded-[9px]"
+                                    />
+                                  ) : (
+                                    "NO POSTER"
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs font-semibold text-white line-clamp-2">
+                                {m.title || "Chưa có tiêu đề"}
+                              </div>
+                              <div className="text-[11px] text-white/50 mt-0.5">
+                                {m.genre || "Thể loại: N/A"}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold ${badge.className}`}
-                        >
-                          {badge.label}
-                        </span>
-                      </td>
+                        {/* Detail */}
+                        <td className="py-3 px-4 align-top hidden md:table-cell">
+                          <div className="text-[11px] text-white/70">
+                            Thời lượng:{" "}
+                            <span className="font-semibold">
+                              {m.duration ? `${m.duration} phút` : "N/A"}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-white/70 mt-0.5">
+                            Độ tuổi:{" "}
+                            <span className="font-semibold">
+                              {m.minimumAge
+                                ? `${m.minimumAge}+`
+                                : "Không giới hạn"}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-white/60 mt-0.5">
+                            Ngôn ngữ:{" "}
+                            <span className="font-semibold">
+                              {m.language || "N/A"}
+                            </span>
+                          </div>
+                        </td>
 
-                      <td className="px-4 py-4 text-white/80">
-                        {m.durationMinutes ? `${m.durationMinutes} phút` : "—"}
-                      </td>
+                        {/* Status */}
+                        <td className="py-3 px-4 align-top hidden lg:table-cell">
+                          <StatusBadge status={status} />
+                        </td>
 
-                      <td className="px-4 py-4 text-white/80">
-                        {m.ageRating || "—"}
-                      </td>
+                        {/* Actions */}
+                        <td className="py-3 pl-4 pr-2 align-top">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(m)}
+                              className="rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase bg-white/5 border border-white/20 text-white hover:bg-white/10 transition-all"
+                            >
+                              Sửa
+                            </button>
 
-                      <td className="px-4 py-4 text-white/80">
-                        {releaseDate
-                          ? releaseDate.toLocaleDateString("vi-VN")
-                          : "—"}
-                      </td>
-
-                      <td className="px-4 py-4 text-white/80">
-                        {m.language || "—"}
-                      </td>
-
-                      <td className="px-4 py-4 text-right">
-                        <div className="inline-flex gap-2">
-                          <button className="rounded-xl bg-white/5 border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10">
-                            Sửa
-                          </button>
-                          <button className="rounded-xl bg-red-500/10 border border-red-500/40 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/20">
-                            Ẩn / Xoá
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMovie(m.movieId)}
+                              disabled={deletingId === m.movieId}
+                              className="rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase border border-red-500/60 bg-red-500/10 text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                            >
+                              {deletingId === m.movieId ? "Đang xóa..." : "Xóa"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+      </section>
+
+      {/* Modal Add / Edit */}
+      {isModalOpen && (
+        <MovieModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          form={form}
+          setForm={setForm}
+          onSubmit={handleSubmit}
+          saving={saving}
+          editingMovie={editingMovie}
+        />
+      )}
+    </div>
+  );
+}
+
+function StatCard({ label, value, gradient }) {
+  return (
+    <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#12002b]/90 via-[#090017] to-black/95 backdrop-blur-xl shadow-xl">
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20 pointer-events-none`}
+      />
+      <div className="absolute -top-6 -right-10 w-24 h-24 rounded-full bg-white/5 blur-2xl" />
+      <div className="relative px-4 py-4 md:px-5 md:py-5">
+        <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-white/60">
+          {label}
+        </p>
+        <p className="mt-2 text-xl md:text-2xl font-black text-white">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  let label = "Không rõ";
+  let cls =
+    "bg-white/5 border border-white/20 text-white text-[11px] px-2.5 py-1 rounded-2xl inline-flex items-center gap-1";
+
+  if (status === "SHOWING") {
+    label = "Đang chiếu";
+    cls =
+      "bg-emerald-500/10 border border-emerald-400/60 text-emerald-100 text-[11px] px-2.5 py-1 rounded-2xl inline-flex items-center gap-1";
+  } else if (status === "UPCOMING") {
+    label = "Sắp chiếu";
+    cls =
+      "bg-amber-500/10 border border-amber-400/60 text-amber-100 text-[11px] px-2.5 py-1 rounded-2xl inline-flex items-center gap-1";
+  }
+
+  return (
+    <span className={cls}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+      {label}
+    </span>
+  );
+}
+
+function MovieModal({
+  isOpen,
+  onClose,
+  form,
+  setForm,
+  onSubmit,
+  saving,
+  editingMovie,
+}) {
+  if (!isOpen) return null;
+
+  const handleChange = (field) => (e) => {
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const isEdit = Boolean(editingMovie?.movieId);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-xl">
+      <div className="relative w-full max-w-2xl rounded-3xl overflow-hidden bg-gradient-to-br from-[#160033]/95 via-[#080017] to-black border border-white/15 shadow-[0_0_60px_rgba(123,66,255,0.6)]">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-transparent to-cyan-500/20 pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
+
+        <div className="relative p-6 md:p-8 max-h-[80vh] overflow-y-auto">
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-cyan-400/70 mb-1">
+                {isEdit ? "CHỈNH SỬA PHIM" : "THÊM PHIM MỚI"}
+              </p>
+              <h2 className="text-xl md:text-2xl font-black tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-300 bg-clip-text text-transparent">
+                {isEdit ? editingMovie?.title || "Cập nhật phim" : "Thông tin phim"}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full bg-white/5 hover:bg-white/10 border border-white/20 w-8 h-8 flex items-center justify-center text-white/70 text-sm transition-all"
+            >
+              ✕
+            </button>
+          </div>
+
+          <form onSubmit={onSubmit} className="space-y-5">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Tên phim *
+                </label>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={handleChange("title")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="Tên phim..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Thể loại
+                </label>
+                <input
+                  type="text"
+                  value={form.genre}
+                  onChange={handleChange("genre")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="Ví dụ: Action, Drama..."
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Thời lượng (phút) *
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.duration}
+                  onChange={handleChange("duration")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="120"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Độ tuổi
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.minimumAge}
+                  onChange={handleChange("minimumAge")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="13, 16, 18..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Ngôn ngữ
+                </label>
+                <input
+                  type="text"
+                  value={form.language}
+                  onChange={handleChange("language")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="English, Tiếng Việt..."
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Trạng thái
+                </label>
+                <select
+                  value={form.status}
+                  onChange={handleChange("status")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                >
+                  {STATUS_OPTIONS.map((st) => (
+                    <option key={st} value={st}>
+                      {st === "SHOWING" ? "Đang chiếu" : "Sắp chiếu"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Trailer URL
+                </label>
+                <input
+                  type="text"
+                  value={form.trailerUrl}
+                  onChange={handleChange("trailerUrl")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="https://youtube.com/..."
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                Poster URL
+              </label>
+              <input
+                type="text"
+                value={form.posterUrl}
+                onChange={handleChange("posterUrl")}
+                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                placeholder="https://cdn.example.com/posters/..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                Mô tả
+              </label>
+              <textarea
+                value={form.description}
+                onChange={handleChange("description")}
+                rows={3}
+                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg:white/10 transition-all resize-none"
+                placeholder="Tóm tắt nội dung phim..."
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={saving}
+                className="flex-1 rounded-2xl border border-white/20 bg-white/5 py-3.5 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 py-3.5 font-black text-sm text-black shadow-xl shadow-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/70 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              >
+                {saving
+                  ? isEdit
+                    ? "Đang lưu..."
+                    : "Đang tạo..."
+                  : isEdit
+                  ? "Lưu thay đổi"
+                  : "Tạo phim"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

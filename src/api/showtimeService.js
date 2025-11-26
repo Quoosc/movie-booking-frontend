@@ -68,7 +68,7 @@ function mapShowtimeGroupFromApi(group) {
 // };
 const MOCK_SHOWTIMES_BY_MOVIE = {
   1: {
-    "2025-11-25": [
+    "2025-11-27": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
@@ -140,7 +140,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
         ],
       },
     ],
-    "2025-11-26": [
+    "2025-11-28": [
       {
         cinemaId: "c3",
         cinemaName: "CinesVerse Huỳnh Tấn Phát (Q.7)",
@@ -170,7 +170,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
         ],
       },
     ],
-    "2025-11-27": [
+    "2025-11-29": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
@@ -195,7 +195,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
     ],
   },
   2: {
-    "2025-11-25": [
+    "2025-11-27": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
@@ -260,7 +260,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
         ],
       },
     ],
-    "2025-11-26": [
+    "2025-11-28": [
       {
         cinemaId: "c2",
         cinemaName: "CinesVerse Hai Bà Trưng (Q.3)",
@@ -283,7 +283,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
         ],
       },
     ],
-    "2025-11-27": [
+    "2025-11-29": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
@@ -308,7 +308,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
     ],
   },
   3: {
-    "2025-11-25": [
+    "2025-11-27": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
@@ -366,7 +366,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
         ],
       },
     ],
-    "2025-11-26": [
+    "2025-11-28": [
       {
         cinemaId: "c2",
         cinemaName: "CinesVerse Hai Bà Trưng (Q.3)",
@@ -391,7 +391,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
     ],
   },
   4: {
-    "2025-11-25": [
+    "2025-11-27": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
@@ -449,7 +449,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
         ],
       },
     ],
-    "2025-11-26": [
+    "2025-11-28": [
       {
         cinemaId: "c3",
         cinemaName: "CinesVerse Huỳnh Tấn Phát (Q.7)",
@@ -479,7 +479,7 @@ const MOCK_SHOWTIMES_BY_MOVIE = {
         ],
       },
     ],
-    "2025-11-27": [
+    "2025-11-29": [
       {
         cinemaId: "c1",
         cinemaName: "CinesVerse Quốc ProPlayer (Q.1)",
