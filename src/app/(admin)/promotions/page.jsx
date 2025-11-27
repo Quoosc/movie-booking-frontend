@@ -197,7 +197,7 @@ export default function AdminPromotionsPage() {
       code: promo.code || "",
       name: promo.name || "",
       description: promo.description || "",
-      discountType: promo.discountType || "PERCENTAGE",
+      discountType: promo.discountType || "PERCENT",
       discountValue:
         promo.discountValue !== undefined && promo.discountValue !== null
           ? String(promo.discountValue)
@@ -474,9 +474,7 @@ export default function AdminPromotionsPage() {
             </h2>
             <p className="text-[11px] text-white/40">
               Hiển thị{" "}
-              <span className="font-semibold">
-                {filteredPromotions.length}
-              </span>{" "}
+              <span className="font-semibold">{filteredPromotions.length}</span>{" "}
               / <span className="font-semibold">{promotions.length}</span>{" "}
               promotions
             </p>
@@ -524,7 +522,7 @@ export default function AdminPromotionsPage() {
                     const isProcessing = processingId === p.promotionId;
 
                     const discountLabel =
-                      p.discountType === "PERCENTAGE"
+                      p.discountType === "PERCENT"
                         ? `${p.discountValue ?? 0}%`
                         : `${(p.discountValue ?? 0).toLocaleString("vi-VN")} đ`;
 
@@ -591,7 +589,7 @@ export default function AdminPromotionsPage() {
                             {discountLabel}
                           </div>
                           <div className="text-[11px] text-white/60 mt-1">
-                            {p.discountType === "PERCENTAGE"
+                            {p.discountType === "PERCENT"
                               ? "Giảm theo phần trăm"
                               : "Giảm theo số tiền"}
                           </div>

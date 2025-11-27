@@ -263,7 +263,7 @@ export default function AdminBookingsPage() {
                       </span>
                       <span className="text-white/60">
                         ({booking.membershipTier.discountValue}
-                        {booking.membershipTier.discountType === "PERCENTAGE"
+                        {booking.membershipTier.discountType === "PERCENT"
                           ? "%"
                           : "đ"}{" "}
                         off)

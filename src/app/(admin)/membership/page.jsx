@@ -1,8 +1,8 @@
 // src/app/(admin)/membership/page.jsx
 import { useEffect, useMemo, useState } from "react";
-import { AdminUserService } from "@/api/adminservice"; 
+import { AdminUserService } from "@/api/adminservice";
 const DISCOUNT_TYPE_OPTIONS = [
-  { value: "PERCENTAGE", label: "Phần trăm (%)" },
+  { value: "PERCENT", label: "Phần trăm (%)" },
   { value: "FIXED_AMOUNT", label: "Số tiền (VND)" },
 ];
 
@@ -26,7 +26,7 @@ export default function AdminMembershipPage() {
   const [form, setForm] = useState({
     name: "",
     minPoints: 0,
-    discountType: "PERCENTAGE",
+    discountType: "PERCENT",
     discountValue: 0,
     description: "",
     isActive: true,
@@ -67,7 +67,7 @@ export default function AdminMembershipPage() {
     setForm({
       name: "",
       minPoints: 0,
-      discountType: "PERCENTAGE",
+      discountType: "PERCENT",
       discountValue: 0,
       description: "",
       isActive: true,
@@ -85,7 +85,7 @@ export default function AdminMembershipPage() {
     setForm({
       name: tier.name || "",
       minPoints: tier.minPoints ?? 0,
-      discountType: tier.discountType || "PERCENTAGE",
+      discountType: tier.discountType || "PERCENT",
       discountValue: tier.discountValue ?? 0,
       description: tier.description || "",
       isActive: !!tier.isActive,
@@ -122,10 +122,10 @@ export default function AdminMembershipPage() {
     if (form.discountValue < 0) {
       return "Giá trị giảm không được âm.";
     }
-    if (!["PERCENTAGE", "FIXED_AMOUNT"].includes(form.discountType)) {
+    if (!["PERCENT", "FIXED_AMOUNT"].includes(form.discountType)) {
       return "Loại giảm giá không hợp lệ.";
     }
-    if (form.discountType === "PERCENTAGE" && form.discountValue > 100) {
+    if (form.discountType === "PERCENT" && form.discountValue > 100) {
       return "Giảm giá theo phần trăm không nên vượt quá 100%.";
     }
     return null;
@@ -605,7 +605,7 @@ export default function AdminMembershipPage() {
                       className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                     />
                     <p className="mt-1 text-[11px] text-white/50">
-                      {form.discountType === "PERCENTAGE"
+                      {form.discountType === "PERCENT"
                         ? "Ví dụ: 5 = giảm 5% trên tổng vé/snack (theo rule BE)."
                         : "Ví dụ: 20000 = giảm 20.000đ trên tổng vé/snack (theo rule BE)."}
                     </p>
@@ -679,7 +679,7 @@ function StatCard({ label, value, gradient }) {
 
 function renderDiscountValue(type, value) {
   if (value == null) return "—";
-  if (type === "PERCENTAGE") return `Giảm ${value}%`;
+  if (type === "PERCENT") return `Giảm ${value}%`;
   if (type === "FIXED_AMOUNT")
     return `Giảm ${Number(value).toLocaleString("vi-VN")}đ`;
   return `${value}`;
