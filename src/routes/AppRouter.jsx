@@ -1,5 +1,22 @@
 // src/routes/AppRouter.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
+//admin
+import AdminLayout from "@/layouts/AdminLayout";
+import AdminRoute from "./AdminRoute";
+// ==== admin pages ====
+import AdminDashboardPage from "@/app/(admin)/dashboard/page";
+import AdminUsersPage from "@/app/(admin)/users/page";
+import AdminMembershipPage from "@/app/(admin)/membership/page";
+import AdminMoviesPage from "@/app/(admin)/movies/page";
+import AdminCinemasPage from "@/app/(admin)/cinemas/page";
+import AdminShowtimesPage from "@/app/(admin)/showtimes/page";
+import AdminSeatsPage from "@/app/(admin)/seats/page";
+import AdminSnacksPage from "@/app/(admin)/snacks/page";
+import AdminPricingPage from "@/app/(admin)/pricing/page";
+import AdminPromotionsPage from "@/app/(admin)/promotions/page";
+import AdminBookingsPage from "@/app/(admin)/bookings/page";
+import AdminOrdersPage from "@/app/(admin)/orders/page";
+import AdminToolsPage from "@/app/(admin)/tools/page";
 
 // Public
 import Home from "@/app/(public)/home/page";
@@ -73,6 +90,31 @@ export default function AppRouter() {
         path="/account/account-history/:bookingId"
         element={<BookingDetailPage />}
       />
+
+      {/* Admin */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<AdminDashboardPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="membership" element={<AdminMembershipPage />} />
+        <Route path="movies" element={<AdminMoviesPage />} />
+        <Route path="cinemas" element={<AdminCinemasPage />} />
+        <Route path="showtimes" element={<AdminShowtimesPage />} />
+        <Route path="seats" element={<AdminSeatsPage />} />
+        <Route path="snacks" element={<AdminSnacksPage />} />
+        <Route path="pricing" element={<AdminPricingPage />} />
+        <Route path="promotions" element={<AdminPromotionsPage />} />
+        <Route path="bookings" element={<AdminBookingsPage />} />
+        <Route path="orders" element={<AdminOrdersPage />} />
+        <Route path="tools" element={<AdminToolsPage />} />
+      </Route>
+
       {/* <Route path="/booking/:showtimeId" element={<BookingPage />} /> */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

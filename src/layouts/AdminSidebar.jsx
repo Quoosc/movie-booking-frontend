@@ -15,6 +15,7 @@ const adminNavItems = [
   { id: "orders", label: "Đơn / thanh toán", path: "/admin/orders" },
   { id: "snacks", label: "Bắp nước", path: "/admin/snacks" },
   { id: "tools", label: "Tools & tiện ích", path: "/admin/tools" },
+  { id: "bookings", label: "Bookings / vé", path: "/admin/bookings" },
 ];
 
 export default function AdminSidebar({ isMobile = false }) {
