@@ -1,117 +1,151 @@
 // src/api/authService.js
 import { apiFetch, USE_MOCK } from "./fetchConfig";
+import * as mockAuth from "./mockAuthService";
 
-// MOCK user (phục vụ demo login)
-const MOCK_USER = {
-  user_id: "u1",
-  name: "Phạm Trấn Quốc",
-  email: "Quocproplayer@cinesverse.vn",
-  role: "USER",
-  avatar_url: null,
+const STORAGE_KEYS = {
+  access: "access_token",
+  refresh: "refresh_token",
+  user: "user",
 };
+
+function saveAuthToStorage({ accessToken, refreshToken, user }) {
+  if (accessToken) localStorage.setItem(STORAGE_KEYS.access, accessToken);
+  if (refreshToken) localStorage.setItem(STORAGE_KEYS.refresh, refreshToken);
+  if (user) localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+}
+
+export function getStoredUser() {
+  const raw = localStorage.getItem(STORAGE_KEYS.user);
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * LOGIN
- * frontend dùng: login({ email, password })
+ * body: { email, password }
+ * v2.4: trả về { accessToken, refreshToken?, user }
  */
 export async function login({ email, password }) {
   if (USE_MOCK) {
-    if (email === "Quocproplayer@cinesverse.vn" && password === "123456") {
-      const tokens = {
-        accessToken: "mock-access-token",
-        refreshToken: "mock-refresh-token",
-      };
-      localStorage.setItem("access_token", tokens.accessToken);
-      localStorage.setItem("refresh_token", tokens.refreshToken);
-      localStorage.setItem("user", JSON.stringify(MOCK_USER));
-      return { user: MOCK_USER, ...tokens };
-    }
-    throw new Error("Sai email hoặc mật khẩu (mock)");
+    // dùng mockAuthService v2.0
+    const loginRes = await mockAuth.login({ email, password });
+    const meRes = await mockAuth.me(loginRes.access_token);
+
+    const accessToken = loginRes.access_token;
+    const refreshToken = loginRes.refresh_token;
+    const user = meRes.data;
+
+    saveAuthToStorage({ accessToken, refreshToken, user });
+    return { accessToken, refreshToken, user };
   }
 
-  // Backend (gợi ý): POST /auth/login
   const res = await apiFetch("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
 
-  // expected: { accessToken, refreshToken, user }
-  localStorage.setItem("access_token", res.accessToken);
-  localStorage.setItem("refresh_token", res.refreshToken);
-  localStorage.setItem("user", JSON.stringify(res.user));
-  return res;
+  // hỗ trợ 2 kiểu: { code, message, data } hoặc { accessToken, ... }
+  const data = res.data || res;
+  const { accessToken, refreshToken, user } = data || {};
+
+  if (!accessToken || !user) {
+    throw new Error("Phản hồi đăng nhập không hợp lệ từ server");
+  }
+
+  saveAuthToStorage({ accessToken, refreshToken, user });
+  return data;
 }
 
 /**
  * REGISTER
- * frontend dùng: register({ name, email, password, ... })
+ * body: { name, email, password, phone? }
  */
 export async function register(payload) {
   if (USE_MOCK) {
-    // chỉ giả lập thành công
-    return { message: "Đăng ký mock thành công, hãy kiểm tra email (giả lập)" };
+    return mockAuth.register(payload);
   }
 
-  // Backend (gợi ý): POST /auth/register
-  return apiFetch("/auth/register", {
+  const res = await apiFetch("/auth/register", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+
+  return res.data || res; // { code, message, data? }
 }
 
 /**
- * VERIFY ACCOUNT (cho VerifyModal)
- * frontend dùng: verifyAccount({ email, codeId })
+ * LẤY PROFILE HIỆN TẠI (me)
+ * v2.4: dùng /users/profile
+ */
+export async function me() {
+  if (USE_MOCK) {
+    // mock: đã có sẵn
+    return mockAuth.me();
+  }
+
+  const res = await apiFetch("/users/profile");
+  // chuẩn hoá trả về { data: user } cho AuthContext xài
+  if (res?.data) return { data: res.data };
+  return { data: res };
+}
+
+/**
+ * VERIFY ACCOUNT (nếu có)
  */
 export async function verifyAccount({ email, codeId }) {
   if (USE_MOCK) {
-    // luôn coi như verify thành công
-    return { message: "Xác minh mock thành công" };
+    return mockAuth.verifyAccount({ email, codeId });
   }
 
-  // tuỳ API thật của bạn, ví dụ:
-  // POST /auth/verify
-  return apiFetch("/auth/verify", {
+  const res = await apiFetch("/auth/verify", {
     method: "POST",
     body: JSON.stringify({ email, code: codeId }),
   });
+
+  return res.data || res;
 }
 
 /**
- * RESEND VERIFY CODE (cho VerifyModal)
- * frontend dùng: resendCode({ email })
+ * RESEND VERIFY CODE
  */
 export async function resendCode({ email }) {
   if (USE_MOCK) {
-    // chỉ log + trả về ok
-    console.info("Mock resend verify code to:", email);
-    return { message: "Mã xác thực mock đã được gửi lại" };
+    return mockAuth.resendCode({ email });
   }
 
-  // tuỳ API thật, ví dụ:
-  // POST /auth/resend-code
-  return apiFetch("/auth/resend-code", {
+  const res = await apiFetch("/auth/resend-code", {
     method: "POST",
     body: JSON.stringify({ email }),
   });
+
+  return res.data || res;
 }
 
 /**
  * LOGOUT
  */
 export async function logout() {
-  // clear local
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
-  localStorage.removeItem("user");
+  // clear local trước
+  localStorage.removeItem(STORAGE_KEYS.access);
+  localStorage.removeItem(STORAGE_KEYS.refresh);
+  localStorage.removeItem(STORAGE_KEYS.user);
 
-  if (!USE_MOCK) {
+  if (USE_MOCK) {
     try {
-      // Backend (gợi ý): POST /auth/logout
-      await apiFetch("/auth/logout", { method: "POST" });
+      await mockAuth.logout();
     } catch {
-      // bỏ qua lỗi logout
+      // ignore
     }
+    return;
+  }
+
+  try {
+    await apiFetch("/auth/logout", { method: "POST" });
+  } catch {
+    // bỏ qua lỗi logout (token hết hạn, v.v.)
   }
 }
 
@@ -119,19 +153,33 @@ export async function logout() {
  * REFRESH TOKEN
  */
 export async function refreshToken() {
-  const refreshToken = localStorage.getItem("refresh_token");
-  if (!refreshToken || USE_MOCK) return null;
+  const storedRefresh = localStorage.getItem(STORAGE_KEYS.refresh);
+  if (!storedRefresh) return null;
 
-  // Backend (gợi ý): POST /auth/refresh-token
-  const res = await apiFetch("/auth/refresh-token", {
-    method: "POST",
-    body: JSON.stringify({ refreshToken }),
-  });
-
-  localStorage.setItem("access_token", res.accessToken);
-  if (res.refreshToken) {
-    localStorage.setItem("refresh_token", res.refreshToken);
+  if (USE_MOCK) {
+    const res = await mockAuth.refreshToken();
+    const accessToken = res.access_token || res.data?.accessToken;
+    if (accessToken) {
+      localStorage.setItem(STORAGE_KEYS.access, accessToken);
+      return accessToken;
+    }
+    return null;
   }
 
-  return res.accessToken;
+  const res = await apiFetch("/auth/refresh-token", {
+    method: "POST",
+    body: JSON.stringify({ refreshToken: storedRefresh }),
+  });
+
+  const data = res.data || res;
+  const { accessToken, refreshToken } = data || {};
+
+  if (accessToken) {
+    localStorage.setItem(STORAGE_KEYS.access, accessToken);
+  }
+  if (refreshToken) {
+    localStorage.setItem(STORAGE_KEYS.refresh, refreshToken);
+  }
+
+  return accessToken || null;
 }

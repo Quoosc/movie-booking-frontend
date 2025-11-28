@@ -4,7 +4,8 @@ import { FiMail, FiLock, FiUser, FiPhone } from "react-icons/fi";
 import { toast } from "react-toastify";
 import LoadingIcon from "@/components/shared/LoadingIcon";
 import TextInput from "@/components/shared/TextInput";
-// import { register as registerApi } from "@/api/authService"; // TẠM THỜI CHƯA DÙNG API THẬT
+import { register as registerApi } from "@/api/authService"; // ✅ dùng API thật
+import { useNavigate } from "react-router-dom";
 
 export default function RegisterFields() {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +19,8 @@ export default function RegisterFields() {
     password: "",
     confirmPassword: "",
   });
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,22 +39,18 @@ export default function RegisterFields() {
     const password = formData.password;
     const confirmPassword = formData.confirmPassword;
 
-    // Họ tên
     if (!fullName) {
       newErrors.fullName = ["Vui lòng nhập họ và tên."];
     } else if (fullName.length < 2) {
       newErrors.fullName = ["Họ tên quá ngắn."];
     }
 
-    // Email
     if (!email) {
       newErrors.email = ["Vui lòng nhập email."];
-
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = ["Định dạng email không hợp lệ."];
     }
 
-    // SĐT (không bắt buộc, nhưng nếu nhập thì phải đúng)
     if (phone) {
       const cleaned = phone.replace(/\s+/g, "");
       if (!/^[0-9]{9,11}$/.test(cleaned)) {
@@ -59,18 +58,14 @@ export default function RegisterFields() {
       }
     }
 
-    // Mật khẩu
     if (!password) {
       newErrors.password = ["Vui lòng nhập mật khẩu."];
     } else if (password.length < 6) {
       newErrors.password = ["Mật khẩu phải có ít nhất 6 ký tự."];
-
     }
 
-    // Xác nhận mật khẩu
     if (!confirmPassword) {
       newErrors.confirmPassword = ["Vui lòng xác nhận mật khẩu."];
-
     } else if (password !== confirmPassword) {
       newErrors.confirmPassword = ["Mật khẩu không trùng khớp."];
     }
@@ -87,22 +82,19 @@ export default function RegisterFields() {
 
     setIsLoading(true);
     try {
-      // 🔒 SAU NÀY DÙNG API THẬT THÌ BỎ COMMENT ĐOẠN NÀY
-      // await registerApi({
-      //   name: formData.fullName.trim(),
-      //   email: formData.email.trim(),
-      //   password: formData.password,
-      //   phone: formData.phone.trim() || "",
-      // });
-
-      // 🧪 MOCK: giả lập gọi API để test UI
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // ✅ Gọi API thật theo spec v2.4
+      await registerApi({
+        name: formData.fullName.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        phone: formData.phone.trim() || "",
+      });
 
       toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
-      setIsLoading(false);
-      window.location.href = "/auth/login";
+      navigate("/auth/login");
     } catch (error) {
       toast.error(error?.message || "Đăng ký thất bại");
+    } finally {
       setIsLoading(false);
     }
   };

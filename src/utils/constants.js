@@ -1,9 +1,14 @@
+// src/utils/constants.js
 
-// Bật mock khi chưa có backend
-export const USE_MOCK_API = true;
+// Nếu vẫn còn chỗ nào dùng, set false khi dùng BE thật
+export const USE_MOCK_API = false;
 
-// (tuỳ chọn) bật verify email khi backend có
+// Bật khi backend đã có /auth/verify & /auth/resend-code
 export const USE_EMAIL_VERIFY = false;
 
-// Role đúng DB v2.0
-export const ROLES = { ADMIN: "ADMIN", USER: "USER" };
+// Role đúng DB v2.4
+export const ROLES = {
+  ADMIN: "ADMIN",
+  USER: "USER",
+  GUEST: "GUEST",
+};

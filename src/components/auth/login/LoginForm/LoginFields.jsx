@@ -9,7 +9,6 @@ import { useAuth } from "@/context/AuthContext";
 import { USE_EMAIL_VERIFY } from "@/utils/constants";
 import { useNavigate } from "react-router-dom";
 
-
 export default function LoginFields() {
   const { login } = useAuth();
 
@@ -22,7 +21,6 @@ export default function LoginFields() {
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const navigate = useNavigate();
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,8 +76,8 @@ export default function LoginFields() {
         rememberMe
       );
       toast.success("Đăng nhập thành công!");
-      navigate("/src/app/(public)/home/page.jsx");
-    } catch (error) { 
+      navigate("/");
+    } catch (error) {
       const msg = error?.message || "Đăng nhập thất bại";
 
       if (USE_EMAIL_VERIFY && msg.includes("chưa được kích hoạt")) {
@@ -164,11 +162,7 @@ export default function LoginFields() {
             "
           />
           <span className="relative z-10">
-            {isLoading ? (
-              <LoadingIcon text="Đang đăng nhập..." />
-            ) : (
-              "Đăng nhập"
-            )}
+            {isLoading ? <LoadingIcon text="Đang đăng nhập..." /> : "Đăng nhập"}
           </span>
         </button>
       </form>
