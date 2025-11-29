@@ -24,7 +24,7 @@ export async function capturePayment({ transactionId, paymentMethod }) {
     }),
   });
 
-  // apiFetch đã parse JSON rồi → json = { code, message, data, ... }
+
   return json;
 }
 

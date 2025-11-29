@@ -54,7 +54,7 @@ export async function getMoviesByCinema(cinemaId, status) {
   const res = await apiFetch(
     `/cinemas/${cinemaId}/movies${buildQuery({ status })}`
   );
-  return res; // API trả trực tiếp array movie, không bọc code/message
+  res.data || res; 
 }
 
 /* ===================== ROOMS ===================== */

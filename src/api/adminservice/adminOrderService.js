@@ -15,7 +15,7 @@ const buildQuery = (params = {}) => {
 /** Chi tiết booking */
 export async function getBookingById(bookingId) {
   const res = await apiFetch(`/bookings/${bookingId}`);
-  return res;
+  return res; // swagger: trả BookingResponse trực tiếp
 }
 
 /** Cập nhật / lưu QR code URL cho booking */
@@ -24,7 +24,7 @@ export async function updateBookingQr(bookingId, qrCodeUrl) {
     method: "PATCH",
     body: JSON.stringify({ qrCodeUrl }),
   });
-  return res.data;
+  return res; // swagger: trả BookingResponse trực tiếp
 }
 
 /* ===================== PAYMENTS & REFUNDS ===================== */
@@ -45,7 +45,7 @@ export async function searchPayments(filters = {}) {
       endDate,
     })}`
   );
-  return res.data;
+  return res; // swagger: trả List<PaymentResponse>
 }
 
 /** Tạo payment order (trường hợp admin tạo lại giao dịch) */
@@ -54,7 +54,7 @@ export async function createPaymentOrder(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res.data;
+  return res; // swagger: InitiatePaymentResponse
 }
 
 /** Capture / confirm payment với gateway */
@@ -63,7 +63,7 @@ export async function capturePayment(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res.data;
+  return res; // swagger: PaymentResponse
 }
 
 /** Request refund cho 1 payment */
@@ -72,14 +72,14 @@ export async function requestRefund(paymentId, reason) {
     method: "POST",
     body: JSON.stringify({ reason }),
   });
-  return res.data;
+  return res; // swagger: PaymentResponse
 }
 
 /* ===================== MOMO IPN (DEV TOOL) ===================== */
 
 export async function getMomoIpnTest() {
   const res = await apiFetch("/payments/momo/ipn");
-  return res.data;
+  return res; // swagger: IpnResponse
 }
 
 export async function postMomoIpnTest(body) {
@@ -87,5 +87,5 @@ export async function postMomoIpnTest(body) {
     method: "POST",
     body: JSON.stringify(body),
   });
-  return res.data;
+  return res; // swagger: IpnResponse
 }
