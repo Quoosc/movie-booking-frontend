@@ -536,5 +536,4 @@ export async function getShowtimeDetail(id) {
   // TODO: nếu sau này bạn có GET /showtimes/{id} public
   const res = await apiFetch(`/showtimes/${id}`);
   return res.data || res;
-  return null;
 }

@@ -493,65 +493,28 @@ export async function getSnacksByCinema(cinemaId) {
  * FE đang gọi:
  *   holdSeats(showtimeId, seatIds, HOLD_SECONDS)
  */
-export async function holdSeats(
-  showtimeId,
-  seatIds,
-  holdSeconds = 300,
-  userId = null
-) {
-  if (USE_MOCK) {
-    const expiresAt = new Date(Date.now() + holdSeconds * 1000).toISOString();
-
-    return {
-      code: 201,
-      message: "Seats locked (mock, v1)",
-      data: {
-        lockId: `mock-hold-${Date.now()}`,
-        status: "LOCKED",
-        showtimeId,
-        seats: (seatIds || []).map((id) => ({ seatId: id })),
-        totalPrice: 0,
-        expiresAt,
-        remainingSeconds: holdSeconds,
-        message: `Seats locked for ${holdSeconds} seconds (mock v1)`,
-      },
-    };
-  }
-
-  // Nếu muốn dùng API thật cho v1:
-  return apiFetch("/bookings/lock", {
-    method: "POST",
-    body: JSON.stringify({
-      showtimeId,
-      userId,
-      seatIds,
-      holdSeconds,
-    }),
-  });
+export async function holdSeats(showtimeId, seatIds, holdSeconds = 300) {
+  return lockSeats({ showtimeId, seatIds, holdSeconds });
 }
 
 /**
- * Release ghế (huỷ lock v1)
+ * Release ghế (huỷ lock)
  *
- * FE hiện đang gọi:
- *   releaseSeats(showtimeId, seatIds)
+ * FE gọi:
+ *   await releaseSeats(showtimeId)
  *
- * Trong mock mình vẫn giữ signature này cho đỡ sửa code,
- * nhưng API thật sẽ bỏ qua seatIds và dùng showtimeId + userId.
+ * BE: DELETE /seat-locks/showtime/{showtimeId}
+ * - Không cần gửi userId/seatIds, BE tự check lock owner.
  */
-export async function releaseSeats(showtimeId, seatIds, userId = null) {
-  if (USE_MOCK) {
-    return { code: 200, message: "Seats released (mock v1)" };
+export async function releaseSeats(showtimeId) {
+  if (!showtimeId) {
+    throw new Error("releaseSeats: thiếu showtimeId");
   }
+  await apiFetch(`/seat-locks/showtime/${showtimeId}`, {
+    method: "DELETE",
+  });
 
-  //  API thật ( /bookings/lock/release):
-
-  return apiFetch(
-    `/bookings/lock/release?showtimeId=${showtimeId}&userId=${userId}`,
-    {
-      method: "DELETE",
-    }
-  );
+  return { message: "Seats released" };
 }
 
 /* ======================================================
@@ -614,7 +577,6 @@ export async function previewPrice({
     };
   }
 
-  //  API thật
   return apiFetch("/bookings/price-preview", {
     method: "POST",
     body: JSON.stringify({
@@ -651,7 +613,6 @@ export async function lockSeats({
   showtimeId,
   seatIds = [],
   holdSeconds = 600, // mặc định 10 phút
-  userId = null,
 }) {
   if (!showtimeId || !Array.isArray(seatIds) || seatIds.length === 0) {
     throw new Error("lockSeats: thiếu showtimeId hoặc seatIds");
@@ -662,30 +623,25 @@ export async function lockSeats({
     const expiresAt = new Date(now + holdSeconds * 1000).toISOString();
 
     return {
-      code: 201,
-      message: "Seats locked successfully (mock)",
-      data: {
-        lockId: `mock-lock-${now}`,
-        status: "LOCKED",
-        showtimeId,
-        seats: seatIds.map((id) => ({ seatId: id })),
-        expiresAt,
-        remainingSeconds: holdSeconds,
-        userId,
-      },
+      lockId: `mock-lock-${now}`,
+      status: "LOCKED",
+      showtimeId,
+      seats: seatIds.map((id) => ({ seatId: id })),
+      expiresAt,
+      remainingSeconds: holdSeconds,
     };
   }
 
-  //  BE thật
-  return apiFetch("/bookings/lock", {
+  const res = await apiFetch("/seat-locks", {
     method: "POST",
     body: JSON.stringify({
       showtimeId,
-      userId,
       seatIds,
-      holdSeconds, // nếu BE cần
+      holdSeconds,
     }),
   });
+
+  return res;
 }
 
 /* ======================================================
@@ -747,14 +703,13 @@ export async function createBooking(payload = {}) {
     };
   }
 
-  //  BE thật – FLOW CHÍNH: tạo booking từ lockId
-  //
   return apiFetch("/bookings/confirm", {
     method: "POST",
     body: JSON.stringify({
       lockId,
-      userId,
       promotionCode,
+      // nếu là guest flow: thêm guestInfo tại đây
+      // guestInfo: { fullName, email, phoneNumber }
     }),
   });
 }
@@ -767,7 +722,7 @@ export async function createBooking(payload = {}) {
 export async function createPaymentSession({
   bookingId,
   amount,
-  method, // "MOMO" | "PAYPAL"
+  method,   // "PAYPAL" | "MOMO"
   returnUrl,
   cancelUrl,
 }) {
@@ -775,34 +730,24 @@ export async function createPaymentSession({
     throw new Error("createPaymentSession: thiếu bookingId/amount/method");
   }
 
-  if (USE_MOCK) {
-    const now = Date.now();
-    return {
-      code: 200,
-      message: "Payment session created (mock)",
-      data: {
-        paymentId: `mock-payment-${now}`,
-        paymentUrl: "/mock-payment-success", // hoặc "#" cho đỡ redirect
-        method,
-        amount,
-      },
-    };
-  }
+  const normalizedMethod = String(method).toUpperCase();
 
-  // BE – điều chỉnh URL theo spec Payment thực tế của bạn.
-  // POST /payments/checkout
-
-  return apiFetch("/payments/checkout", {
+  const res = await apiFetch("/payments/order", {
     method: "POST",
     body: JSON.stringify({
       bookingId,
+      method: normalizedMethod,
       amount,
-      method,
+      // nếu InitiatePaymentRequest bên BE có thêm returnUrl/cancelUrl thì gửi kèm:
       returnUrl,
       cancelUrl,
     }),
   });
+
+  // res chính là InitiatePaymentResponse
+  return res;
 }
+
 
 /* ======================================================
  *  TẠO LỆNH THANH TOÁN (PAYMENT ORDER)
@@ -828,15 +773,12 @@ export async function createPaymentSession({
 
 export async function createPaymentOrder({ bookingId, method, amount }) {
   if (!bookingId || !method || amount == null) {
-    throw new Error(
-      "createPaymentOrder: bookingId, method, amount là bắt buộc"
-    );
+    throw new Error("createPaymentOrder: bookingId, method, amount là bắt buộc");
   }
 
-  // Đảm bảo method là "PAYPAL" | "MOMO"
   const normalizedMethod = String(method).toUpperCase();
 
-  const json = await apiFetch("/payments/order", {
+  const res = await apiFetch("/payments/order", {
     method: "POST",
     body: JSON.stringify({
       bookingId,
@@ -845,27 +787,24 @@ export async function createPaymentOrder({ bookingId, method, amount }) {
     }),
   });
 
-  if (json.code !== 200 || !json.data) {
-    throw new Error(json.message || "Không tạo được lệnh thanh toán.");
-  }
-  return json;
+  // res chính là InitiatePaymentResponse
+  return res;
 }
+
 
 export async function getBookingById(bookingId) {
   if (!bookingId) {
     throw new Error("getBookingById: bookingId là bắt buộc");
   }
 
-  const json = await apiFetch(`/bookings/${bookingId}`, {
-    method: "GET",
-  });
+  const res = await apiFetch(`/bookings/${bookingId}`);
+  const raw = res.data || res;
+  return raw.data || raw; // support cả kiểu bọc { data: ... } sau này nếu bạn đổi BE
+}
 
-  if (json.code !== 200 || !json.data) {
-    throw new Error(json.message || "Không lấy được thông tin vé.");
-  }
-
-  // BE có thể trả 1 object hoặc 1 mảng → lấy phần tử đầu nếu là mảng
-  return Array.isArray(json.data) ? json.data[0] : json.data;
+export async function getBookingDetail(bookingId) {
+  // dùng chung logic
+  return getBookingById(bookingId);
 }
 
 //  api for user
@@ -984,24 +923,49 @@ const MOCK_BOOKING_DETAIL = {
   paymentGatewayTransactionId: "MOCK-TX-123",
 };
 
-export async function getBookingDetail(bookingId) {
-  if (!bookingId) {
-    throw new Error("bookingId is required");
-  }
 
-  // 👉 Mock cho UI
-  if (USE_MOCK) {
-    // optional: delay nhẹ cho giống gọi API
-    await new Promise((r) => setTimeout(r, 400));
-    // giữ nguyên bookingId trên URL cho đẹp
-    return { ...MOCK_BOOKING_DETAIL, bookingId };
-  }
 
-  // 👉 Gọi BE thật
-  const res = await apiFetch(`/bookings/${bookingId}`);
-  const raw = res.data || res;
-  return raw.data || raw;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export async function getBookingDetail(bookingId) {
+//   if (!bookingId) {
+//     throw new Error("bookingId is required");
+//   }
+//   const res = await apiFetch(`/bookings/${bookingId}`);
+//   const raw = res.data || res;
+//   return raw.data || raw;
+// }
+
+
+
+
+
+
+
+
+
+
+
 
 //api for user
 
