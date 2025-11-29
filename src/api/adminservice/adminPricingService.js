@@ -17,7 +17,7 @@ export async function createPriceBase(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res; // PriceBaseResponse
+   return res || res.data;  // PriceBaseResponse
 }
 
 export async function updatePriceBase(id, payload) {
@@ -25,27 +25,27 @@ export async function updatePriceBase(id, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res;
+   return res || res.data; 
 }
 
 export async function deletePriceBase(id) {
   const res = await apiFetch(`/price-base/${id}`, { method: "DELETE" });
-  return res;
+   return res || res.data; 
 }
 
 export async function getPriceBaseById(id) {
   const res = await apiFetch(`/price-base/${id}`);
-  return res;
+   return res || res.data; 
 }
 
 export async function getPriceBases() {
   const res = await apiFetch("/price-base");
-  return res; // List
+   return res || res.data;  // List
 }
 
 export async function getActivePriceBase() {
   const res = await apiFetch("/price-base/active");
-  return res;
+   return res || res.data; 
 }
 
 /* ===================== PRICE MODIFIERS ===================== */
@@ -55,7 +55,7 @@ export async function createPriceModifier(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res;
+   return res || res.data; 
 }
 
 export async function updatePriceModifier(id, payload) {
@@ -63,36 +63,36 @@ export async function updatePriceModifier(id, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res;
+   return res || res.data; 
 }
 
 export async function deletePriceModifier(id) {
   const res = await apiFetch(`/price-modifiers/${id}`, {
     method: "DELETE",
   });
-  return res;
+   return res || res.data; 
 }
 
 export async function getPriceModifierById(id) {
   const res = await apiFetch(`/price-modifiers/${id}`);
-  return res;
+   return res || res.data; 
 }
 
 export async function getPriceModifiers() {
   const res = await apiFetch("/price-modifiers");
-  return res;
+   return res || res.data; 
 }
 
 export async function getActivePriceModifiers() {
   const res = await apiFetch("/price-modifiers/active");
-  return res;
+   return res || res.data; 
 }
 
 export async function getPriceModifiersByCondition(conditionType) {
   const res = await apiFetch(
     `/price-modifiers/by-condition${buildQuery({ conditionType })}`
   );
-  return res;
+   return res || res.data; 
 }
 
 /* ===================== TICKET TYPES ===================== */
@@ -105,13 +105,13 @@ export async function getPublicTicketTypes(showtimeId, userId) {
   const res = await apiFetch(
     `/ticket-types${buildQuery({ showtimeId, userId })}`
   );
-  return res; // List<TicketTypeResponse>
+   return res || res.data;  // List<TicketTypeResponse>
 }
 
 /** Admin: lấy toàn bộ ticket types (kể cả inactive) */
 export async function getAdminTicketTypes() {
   const res = await apiFetch("/ticket-types/admin");
-  return res;
+   return res || res.data; 
 }
 
 export async function createTicketType(payload) {
@@ -119,7 +119,7 @@ export async function createTicketType(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res;
+   return res || res.data; 
 }
 
 export async function updateTicketType(id, payload) {
@@ -127,21 +127,21 @@ export async function updateTicketType(id, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res;
+   return res || res.data; 
 }
 
 export async function deleteTicketType(id) {
   const res = await apiFetch(`/ticket-types/${id}`, {
     method: "DELETE",
   });
-  return res;
+   return res || res.data; 
 }
 
 /* ========== SHOWTIME TICKET TYPES (gán ticket type cho showtime) ========== */
 
 export async function getShowtimeTicketTypes(showtimeId) {
   const res = await apiFetch(`/showtimes/${showtimeId}/ticket-types`);
-  return res; // { showtimeId, assignedTicketTypeIds: [...] }
+   return res || res.data;  // { showtimeId, assignedTicketTypeIds: [...] }
 }
 
 /** Thay thế toàn bộ danh sách ticketTypeIds của showtime */
@@ -150,7 +150,7 @@ export async function replaceShowtimeTicketTypes(showtimeId, ticketTypeIds) {
     method: "PUT",
     body: JSON.stringify({ ticketTypeIds }),
   });
-  return res;
+   return res || res.data; 
 }
 
 /** Gán thêm nhiều ticketTypeIds cho showtime */
@@ -159,7 +159,7 @@ export async function addShowtimeTicketTypes(showtimeId, ticketTypeIds) {
     method: "POST",
     body: JSON.stringify({ ticketTypeIds }),
   });
-  return res;
+   return res || res.data; 
 }
 
 /** Gán 1 ticket type (dùng path param) */
@@ -168,7 +168,7 @@ export async function addShowtimeTicketType(showtimeId, ticketTypeId) {
     `/showtimes/${showtimeId}/ticket-types/${ticketTypeId}`,
     { method: "POST" }
   );
-  return res;
+   return res || res.data; 
 }
 
 /** Bỏ gán 1 ticket type khỏi showtime */
@@ -177,26 +177,26 @@ export async function removeShowtimeTicketType(showtimeId, ticketTypeId) {
     `/showtimes/${showtimeId}/ticket-types/${ticketTypeId}`,
     { method: "DELETE" }
   );
-  return res;
+   return res || res.data; 
 }
 
 /* ===================== SHOWTIME SEATS (GIÁ + TRẠNG THÁI) ===================== */
 
 export async function getShowtimeSeatById(id) {
   const res = await apiFetch(`/showtime-seats/${id}`);
-  return res;
+   return res || res.data; 
 }
 
 export async function getShowtimeSeats(showtimeId) {
   const res = await apiFetch(`/showtime-seats/showtime/${showtimeId}`);
-  return res;
+   return res || res.data; 
 }
 
 export async function getAvailableShowtimeSeats(showtimeId) {
   const res = await apiFetch(
     `/showtime-seats/showtime/${showtimeId}/available`
   );
-  return res;
+   return res || res.data; 
 }
 
 /**
@@ -208,7 +208,7 @@ export async function updateShowtimeSeat(id, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res;
+   return res || res.data; 
 }
 
 /** Reset 1 showtime seat về AVAILABLE + giá gốc */
@@ -216,7 +216,7 @@ export async function resetShowtimeSeat(id) {
   const res = await apiFetch(`/showtime-seats/${id}/reset`, {
     method: "PUT",
   });
-  return res;
+   return res || res.data; 
 }
 
 /** Recalculate giá cho toàn bộ seats của 1 showtime */
@@ -225,5 +225,5 @@ export async function recalculateShowtimeSeatPrices(showtimeId) {
     `/showtime-seats/showtime/${showtimeId}/recalculate-prices`,
     { method: "POST" }
   );
-  return res;
+   return res || res.data; 
 }
