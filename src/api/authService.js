@@ -108,10 +108,10 @@ export async function refreshToken() {
  * ĐĂNG KÝ GUEST
  * POST /auth/guest/register
  */
-export async function registerGuest({ email, username, phoneNumber }) {
-  const res = await apiFetch("/auth/guest/register", {
-    method: "POST",
-    body: JSON.stringify({ email, username, phoneNumber }),
-  });
-  return res.data || res; // { userId }
-}
+// export async function registerGuest({ email, username, phoneNumber }) {
+//   const res = await apiFetch("/auth/guest/register", {
+//     method: "POST",
+//     body: JSON.stringify({ email, username, phoneNumber }),
+//   });
+//   return res.data || res; // { userId }
+// }

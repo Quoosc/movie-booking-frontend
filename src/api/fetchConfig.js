@@ -1,25 +1,24 @@
+// src/api/fetchConfig.js
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === "false";
+// TRUE khi muốn dùng mock (ví dụ trong một số service cụ thể)
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 export { USE_MOCK };
 
 export async function apiFetch(path, options = {}) {
-  const token = localStorage.getItem("access_token");
-
   const headers = {
     "Content-Type": "application/json",
+    Accept: "application/json",
     ...(options.headers || {}),
   };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
+    // Quan trọng: gửi cookie (access/refresh token) sang BE
+    credentials: "include",
   });
 
   let data = null;
@@ -28,7 +27,7 @@ export async function apiFetch(path, options = {}) {
       data = await res.json();
     }
   } catch {
-    // ignore parse error
+    // ignore parse error nếu không phải JSON
   }
 
   if (!res.ok) {

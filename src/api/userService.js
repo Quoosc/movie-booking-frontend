@@ -112,6 +112,7 @@ export async function changePassword(payload) {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
-  // data là string primitive theo spec
-  return res.data;
+  return typeof res === "string"
+    ? res
+    : res?.message || "Password updated successfully";
 }
