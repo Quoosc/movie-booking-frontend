@@ -5,7 +5,7 @@ import { apiFetch } from "../fetchConfig";
 
 export async function getMyProfile() {
   const res = await apiFetch("/users/profile");
- return res || res.data;  // UserProfileResponse
+  return res.data || res; // UserProfileResponse
 }
 
 export async function updateMyProfile(payload) {
@@ -13,7 +13,7 @@ export async function updateMyProfile(payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
- return res || res.data;  // UserProfileResponse
+  return res.data || res; // UserProfileResponse
 }
 
 export async function changeMyPassword(payload) {
@@ -22,31 +22,31 @@ export async function changeMyPassword(payload) {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
- return res || res.data;  // string (message)
+  return res.data || res; // string (message)
 }
 
 export async function getMyLoyaltyInfo() {
   const res = await apiFetch("/users/loyalty");
- return res || res.data;  // UserLoyaltyResponse (giống profile nhưng focus loyalty)
+  return res.data || res; // UserLoyaltyResponse (giống profile nhưng focus loyalty)
 }
 
 /* ===================== USER MANAGEMENT (ADMIN) ===================== */
 
 export async function getUsers() {
   const res = await apiFetch("/users");
- return res || res.data;  // List<UserDataResponse>
+  return res.data || res; // List<UserDataResponse>
 }
 
 export async function getUserById(userId) {
   const res = await apiFetch(`/users/${userId}`);
- return res || res.data; 
+  return res.data || res;
 }
 
 export async function deleteUser(userId) {
   const res = await apiFetch(`/users/${userId}`, {
     method: "DELETE",
   });
- return res || res.data;  // string (OK / message)
+  return res.data || res; // string (OK / message)
 }
 
 /**
@@ -59,7 +59,7 @@ export async function updateUserRole(userId, role) {
     // swagger: body là plain JSON string
     body: JSON.stringify(role),
   });
- return res || res.data;  // UserDataResponse
+  return res.data || res; // UserDataResponse
 }
 
 /* ===================== MEMBERSHIP TIERS (ADMIN) ===================== */
@@ -69,7 +69,7 @@ export async function createMembershipTier(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
- return res || res.data;  // MembershipTierResponse
+  return res.data || res; // MembershipTierResponse
 }
 
 export async function updateMembershipTier(tierId, payload) {
@@ -77,39 +77,39 @@ export async function updateMembershipTier(tierId, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
- return res || res.data; 
+  return res.data || res;
 }
 
 export async function deactivateMembershipTier(tierId) {
   const res = await apiFetch(`/membership-tiers/${tierId}/deactivate`, {
     method: "PATCH",
   });
- return res || res.data;  // thường là 200 OK / empty, để FE tự handle
+  return res.data || res; // thường là 200 OK / empty, để FE tự handle
 }
 
 export async function deleteMembershipTier(tierId) {
   const res = await apiFetch(`/membership-tiers/${tierId}`, {
     method: "DELETE",
   });
- return res || res.data; 
+  return res.data || res;
 }
 
 export async function getMembershipTierById(tierId) {
   const res = await apiFetch(`/membership-tiers/${tierId}`);
- return res || res.data; 
+  return res.data || res;
 }
 
 export async function getMembershipTierByName(name) {
   const res = await apiFetch(`/membership-tiers/name/${name}`);
- return res || res.data; 
+  return res.data || res;
 }
 
 export async function getMembershipTiers() {
   const res = await apiFetch("/membership-tiers");
- return res || res.data;  // List<MembershipTierResponse>
+  return res.data || res; // List<MembershipTierResponse>
 }
 
 export async function getActiveMembershipTiers() {
   const res = await apiFetch("/membership-tiers/active");
- return res || res.data; 
+  return res.data || res;
 }

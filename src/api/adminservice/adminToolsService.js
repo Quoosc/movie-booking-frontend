@@ -25,7 +25,7 @@ export async function createSeatLock(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res || res.data;  // LockSeatsResponse
+return res.data || res; // LockSeatsResponse
 }
 
 /**
@@ -36,7 +36,7 @@ export async function getSeatLockAvailability(showtimeId) {
   const res = await apiFetch(
     `/seat-locks/availability/showtime/${showtimeId}`
   );
-  return res || res.data;  // SeatAvailabilityResponse
+return res.data || res; // SeatAvailabilityResponse
 }
 
 /** Giải phóng mọi lock của 1 showtime (trước timeout) */
@@ -44,7 +44,7 @@ export async function releaseSeatLocks(showtimeId) {
   const res = await apiFetch(`/seat-locks/showtime/${showtimeId}`, {
     method: "DELETE",
   });
-  return res || res.data; 
+return res.data || res;
 }
 
 /* ===================== CHECKOUT PRICE PREVIEW (TOOLS) ===================== */
@@ -58,7 +58,7 @@ export async function previewBookingPrice(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res || res.data;  // sẽ là BookingPricePreviewResponse (theo design)
+return res.data || res; // sẽ là BookingPricePreviewResponse (theo design)
 }
 
 /* ===================== PROMOTIONS ===================== */
@@ -68,7 +68,7 @@ export async function createPromotion(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res || res.data; 
+return res.data || res;
 }
 
 export async function updatePromotion(promotionId, payload) {
@@ -76,31 +76,31 @@ export async function updatePromotion(promotionId, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res || res.data; 
+return res.data || res;
 }
 
 export async function deactivatePromotion(promotionId) {
   const res = await apiFetch(`/promotions/${promotionId}/deactivate`, {
     method: "PATCH",
   });
-  return res || res.data; 
+return res.data || res;
 }
 
 export async function deletePromotion(promotionId) {
   const res = await apiFetch(`/promotions/${promotionId}`, {
     method: "DELETE",
   });
-  return res || res.data; 
+return res.data || res;
 }
 
 export async function getPromotionById(promotionId) {
   const res = await apiFetch(`/promotions/${promotionId}`);
-  return res || res.data; 
+return res.data || res;
 }
 
 export async function getPromotionByCode(code) {
   const res = await apiFetch(`/promotions/code/${code}`);
-  return res || res.data; 
+return res.data || res;
 }
 
 /**
@@ -111,15 +111,15 @@ export async function getPromotionByCode(code) {
  */
 export async function getPromotions(filter) {
   const res = await apiFetch(`/promotions${buildQuery({ filter })}`);
-  return res || res.data; 
+return res.data || res;
 }
 
 export async function getActivePromotions() {
   const res = await apiFetch("/promotions/active");
-  return res || res.data; 
+return res.data || res;
 }
 
 export async function getValidPromotions() {
   const res = await apiFetch("/promotions/valid");
-  return res || res.data; 
+return res.data || res;
 }

@@ -26,8 +26,7 @@ export default function AdminUsersPage() {
       setError(null);
       setSuccess(null);
 
-      const data = await AdminUserService.getAllUsers();
-      // data kiểu { code, message, data: [] } hoặc [] tùy backend
+      const data = await AdminUserService.getUsers();
       const list = Array.isArray(data?.data)
         ? data.data
         : Array.isArray(data)

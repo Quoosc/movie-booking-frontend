@@ -28,7 +28,7 @@ export async function createCinema(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res || res.data;
+return res.data || res;
 }
 
 export async function updateCinema(cinemaId, payload) {
@@ -36,14 +36,14 @@ export async function updateCinema(cinemaId, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res || res.data;
+return res.data || res;
 }
 
 export async function deleteCinema(cinemaId) {
   const res = await apiFetch(`/cinemas/${cinemaId}`, {
     method: "DELETE",
   });
-  return res || res.data; // có thể là "OK" / empty, tùy apiFetch xử lý
+return res.data || res; // có thể là "OK" / empty, tùy apiFetch xử lý
 }
 
 /**
@@ -54,19 +54,19 @@ export async function getMoviesByCinema(cinemaId, status) {
   const res = await apiFetch(
     `/cinemas/${cinemaId}/movies${buildQuery({ status })}`
   );
-  return res || res.data; // List<MovieDataResponse>
+return res.data || res; // List<MovieDataResponse>
 }
 
 /* ===================== ROOMS ===================== */
 
 export async function getRooms() {
   const res = await apiFetch("/cinemas/rooms");
-  return res || res.data; // List<RoomDataResponse>
+return res.data || res; // List<RoomDataResponse>
 }
 
 export async function getRoomById(roomId) {
   const res = await apiFetch(`/cinemas/rooms/${roomId}`);
-  return res || res.data; // RoomDataResponse
+return res.data || res; // RoomDataResponse
 }
 
 export async function createRoom(payload) {
@@ -74,7 +74,7 @@ export async function createRoom(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res || res.data;
+return res.data || res;
 }
 
 export async function updateRoom(roomId, payload) {
@@ -82,26 +82,26 @@ export async function updateRoom(roomId, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res || res.data;
+return res.data || res;
 }
 
 export async function deleteRoom(roomId) {
   const res = await apiFetch(`/cinemas/rooms/${roomId}`, {
     method: "DELETE",
   });
-  return res || res.data;
+return res.data || res;
 }
 
 /* ===================== SNACKS ===================== */
 
 export async function getSnacks() {
   const res = await apiFetch("/cinemas/snacks");
-  return res || res.data; // List<SnackDataResponse>
+return res.data || res; // List<SnackDataResponse>
 }
 
 export async function getSnackById(snackId) {
   const res = await apiFetch(`/cinemas/snacks/${snackId}`);
-  return res || res.data;
+return res.data || res;
 }
 
 export async function createSnack(payload) {
@@ -109,7 +109,7 @@ export async function createSnack(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res || res.data;
+return res.data || res;
 }
 
 export async function updateSnack(snackId, payload) {
@@ -117,14 +117,14 @@ export async function updateSnack(snackId, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res || res.data;
+return res.data || res;
 }
 
 export async function deleteSnack(snackId) {
   const res = await apiFetch(`/cinemas/snacks/${snackId}`, {
     method: "DELETE",
   });
-  return res || res.data;
+return res.data || res;
 }
 
 /* ===================== SEATS (ROOM LEVEL) ===================== */
@@ -134,7 +134,7 @@ export async function createSeat(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res || res.data;
+return res.data || res;
 }
 
 /** Generate toàn bộ sơ đồ ghế cho 1 room */
@@ -143,13 +143,13 @@ export async function generateSeats(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res || res.data; // BulkSeatResponse
+return res.data || res; // BulkSeatResponse
 }
 
 /** Preview nhãn hàng ghế (A, B, C, ...) */
 export async function getSeatRowLabels(rows) {
   const res = await apiFetch(`/seats/row-labels${buildQuery({ rows })}`);
-  return res || res.data; // RowLabelsResponse
+return res.data || res; // RowLabelsResponse
 }
 
 export async function updateSeat(seatId, payload) {
@@ -157,29 +157,29 @@ export async function updateSeat(seatId, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res || res.data;
+return res.data || res;
 }
 
 export async function deleteSeat(seatId) {
   const res = await apiFetch(`/seats/${seatId}`, {
     method: "DELETE",
   });
-  return res || res.data;
+return res.data || res;
 }
 
 export async function getSeatById(seatId) {
   const res = await apiFetch(`/seats/${seatId}`);
-  return res || res.data;
+return res.data || res;
 }
 
 export async function getAllSeats() {
   const res = await apiFetch("/seats");
-  return res || res.data;
+return res.data || res;
 }
 
 export async function getSeatsByRoom(roomId) {
   const res = await apiFetch(`/seats/room/${roomId}`);
-  return res || res.data;
+return res.data || res;
 }
 
 /** Layout seats cho 1 showtime (status AVAILABLE/LOCKED/BOOKED) */
@@ -187,5 +187,5 @@ export async function getSeatLayoutByShowtime(showtimeId) {
   const res = await apiFetch(
     `/seats/layout${buildQuery({ showtime_id: showtimeId })}`
   );
-  return res || res.data; // List<SeatLayoutResponse> theo swagger
+return res.data || res; // List<SeatLayoutResponse> theo swagger
 }
