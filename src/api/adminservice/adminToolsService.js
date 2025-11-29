@@ -25,7 +25,7 @@ export async function createSeatLock(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res.data;
+  return res; // LockSeatsResponse
 }
 
 /**
@@ -36,7 +36,7 @@ export async function getSeatLockAvailability(showtimeId) {
   const res = await apiFetch(
     `/seat-locks/availability/showtime/${showtimeId}`
   );
-  return res.data;
+  return res; // SeatAvailabilityResponse
 }
 
 /** Giải phóng mọi lock của 1 showtime (trước timeout) */
@@ -44,7 +44,7 @@ export async function releaseSeatLocks(showtimeId) {
   const res = await apiFetch(`/seat-locks/showtime/${showtimeId}`, {
     method: "DELETE",
   });
-  return res.data;
+  return res;
 }
 
 /* ===================== CHECKOUT PRICE PREVIEW (TOOLS) ===================== */
@@ -58,7 +58,7 @@ export async function previewBookingPrice(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res.data;
+  return res; // sẽ là BookingPricePreviewResponse (theo design)
 }
 
 /* ===================== PROMOTIONS ===================== */
@@ -68,7 +68,7 @@ export async function createPromotion(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res.data;
+  return res;
 }
 
 export async function updatePromotion(promotionId, payload) {
@@ -76,31 +76,31 @@ export async function updatePromotion(promotionId, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res.data;
+  return res;
 }
 
 export async function deactivatePromotion(promotionId) {
   const res = await apiFetch(`/promotions/${promotionId}/deactivate`, {
     method: "PATCH",
   });
-  return res.data;
+  return res;
 }
 
 export async function deletePromotion(promotionId) {
   const res = await apiFetch(`/promotions/${promotionId}`, {
     method: "DELETE",
   });
-  return res.data;
+  return res;
 }
 
 export async function getPromotionById(promotionId) {
   const res = await apiFetch(`/promotions/${promotionId}`);
-  return res.data;
+  return res;
 }
 
 export async function getPromotionByCode(code) {
   const res = await apiFetch(`/promotions/code/${code}`);
-  return res.data;
+  return res;
 }
 
 /**
@@ -110,18 +110,16 @@ export async function getPromotionByCode(code) {
  * - filter = "valid"    -> active + trong date range
  */
 export async function getPromotions(filter) {
-  const res = await apiFetch(
-    `/promotions${buildQuery({ filter })}`
-  );
-  return res.data;
+  const res = await apiFetch(`/promotions${buildQuery({ filter })}`);
+  return res;
 }
 
 export async function getActivePromotions() {
   const res = await apiFetch("/promotions/active");
-  return res.data;
+  return res;
 }
 
 export async function getValidPromotions() {
   const res = await apiFetch("/promotions/valid");
-  return res.data;
+  return res;
 }
