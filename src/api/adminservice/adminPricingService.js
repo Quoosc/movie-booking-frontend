@@ -17,7 +17,7 @@ export async function createPriceBase(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res.data;
+  return res.data || res;
 }
 
 export async function updatePriceBase(id, payload) {
@@ -25,30 +25,29 @@ export async function updatePriceBase(id, payload) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return res.data;
+  return res.data || res;
 }
 
 export async function deletePriceBase(id) {
-  const res = await apiFetch(`/price-base/${id}`, {
-    method: "DELETE",
-  });
-  return res.data;
+  const res = await apiFetch(`/price-base/${id}`, { method: "DELETE" });
+  return res.data || res;
 }
 
 export async function getPriceBaseById(id) {
   const res = await apiFetch(`/price-base/${id}`);
-  return res.data;
+  return res.data || res;
 }
 
 export async function getPriceBases() {
   const res = await apiFetch("/price-base");
-  return res.data;
+  return res.data || res;
 }
 
 export async function getActivePriceBase() {
   const res = await apiFetch("/price-base/active");
-  return res.data;
+  return res.data || res;
 }
+
 
 /* ===================== PRICE MODIFIERS ===================== */
 
@@ -82,20 +81,21 @@ export async function getPriceModifierById(id) {
 
 export async function getPriceModifiers() {
   const res = await apiFetch("/price-modifiers");
-  return res.data;
+  return res.data || res;
 }
 
 export async function getActivePriceModifiers() {
   const res = await apiFetch("/price-modifiers/active");
-  return res.data;
+  return res.data || res;
 }
 
 export async function getPriceModifiersByCondition(conditionType) {
   const res = await apiFetch(
     `/price-modifiers/by-condition${buildQuery({ conditionType })}`
   );
-  return res.data;
+  return res.data || res;
 }
+
 
 /* ===================== TICKET TYPES ===================== */
 

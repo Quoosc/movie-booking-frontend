@@ -13,7 +13,6 @@ import { getMovieById, getMovieShowtimesByDate } from "@/api/movieService";
 import { getSeatLayout, getSnacksByCinema } from "@/api/bookingService";
 
 const DAYS = 7;
-const HOLD_SECONDS = 300; // 5 phút
 
 // Danh sách loại vé gốc (load từ API ticket-types)
 const DEFAULT_TICKET_TYPES = [
@@ -185,109 +184,109 @@ export default function MovieDetailPage() {
 
   /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC Đây là bản real api ===== */
 
-  useEffect(() => {
-    if (!activeShowtime) {
-      setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-      return;
-    }
-
-    const ticketPayload = ticketTypes
-      .filter((t) => t.quantity > 0)
-      .map((t) => ({
-        id: t.id,
-        label: t.label,
-        price: t.price,
-        quantity: t.quantity,
-      }));
-
-    const snackPayload = Object.values(selectedSnacks).map((s) => ({
-      snack_id: s.snack_id,
-      name: s.name,
-      price: s.price,
-      quantity: s.quantity,
-    }));
-
-    if (ticketPayload.length === 0 && snackPayload.length === 0) {
-      setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-      return;
-    }
-
-    let cancelled = false;
-
-    const fetchPrice = async () => {
-      try {
-        const seatIds = selectedSeats.map((s) => s.seat_id);
-
-        const res = await previewPrice({
-          showtimeId: activeShowtime.showtimeId,
-          seatIds,
-          ticketTypes: ticketPayload,
-          snacks: snackPayload,
-          promotionCode: null,
-          userId: null,
-        });
-
-        const data = res.data || res;
-
-        if (!cancelled) {
-          setPriceSummary({
-            subtotal: data.subtotal ?? 0,
-            discount: data.discount ?? 0,
-            total: data.total ?? 0,
-          });
-        }
-      } catch (error) {
-        console.error("previewPrice failed, fallback local calc", error);
-
-        // fallback: dùng logic cũ để không chết UI
-        const ticketTotal = ticketTypes.reduce(
-          (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
-          0
-        );
-        const snackTotal = Object.values(selectedSnacks).reduce(
-          (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
-          0
-        );
-        const subtotal = ticketTotal + snackTotal;
-        const discount = 0;
-        const total = subtotal - discount;
-
-        if (!cancelled) {
-          setPriceSummary({ subtotal, discount, total });
-        }
-      }
-    };    //             BẢN NÀY CÓ VẤN ĐỀ VỀ PRICE-PREVIEW
-
-    fetchPrice();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeShowtime, ticketTypes, selectedSnacks]);
-
-  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC này là sài dùng để mock ===== */
   // useEffect(() => {
   //   if (!activeShowtime) {
   //     setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
   //     return;
   //   }
 
-  //   const ticketTotal = ticketTypes.reduce(
-  //     (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
-  //     0
-  //   );
+  //   const ticketPayload = ticketTypes
+  //     .filter((t) => t.quantity > 0)
+  //     .map((t) => ({
+  //       id: t.id,
+  //       label: t.label,
+  //       price: t.price,
+  //       quantity: t.quantity,
+  //     }));
 
-  //   const snackTotal = Object.values(selectedSnacks).reduce(
-  //     (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
-  //     0
-  //   );
+  //   const snackPayload = Object.values(selectedSnacks).map((s) => ({
+  //     snack_id: s.snack_id,
+  //     name: s.name,
+  //     price: s.price,
+  //     quantity: s.quantity,
+  //   }));
 
-  //   const subtotal = ticketTotal + snackTotal;
-  //   const discount = 0; // MovieDetailPage chỉ tạm tính, chưa áp dụng khuyến mãi
-  //   const total = subtotal - discount;
+  //   if (ticketPayload.length === 0 && snackPayload.length === 0) {
+  //     setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+  //     return;
+  //   }
 
-  //   setPriceSummary({ subtotal, discount, total });
+  //   let cancelled = false;
+
+  //   const fetchPrice = async () => {
+  //     try {
+  //       const seatIds = selectedSeats.map((s) => s.seat_id);
+
+  //       const res = await previewPrice({
+  //         showtimeId: activeShowtime.showtimeId,
+  //         seatIds,
+  //         ticketTypes: ticketPayload,
+  //         snacks: snackPayload,
+  //         promotionCode: null,
+  //         userId: null,
+  //       });
+
+  //       const data = res.data || res;
+
+  //       if (!cancelled) {
+  //         setPriceSummary({
+  //           subtotal: data.subtotal ?? 0,
+  //           discount: data.discount ?? 0,
+  //           total: data.total ?? 0,
+  //         });
+  //       }
+  //     } catch (error) {
+  //       console.error("previewPrice failed, fallback local calc", error);
+
+  //       // fallback: dùng logic cũ để không chết UI
+  //       const ticketTotal = ticketTypes.reduce(
+  //         (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
+  //         0
+  //       );
+  //       const snackTotal = Object.values(selectedSnacks).reduce(
+  //         (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
+  //         0
+  //       );
+  //       const subtotal = ticketTotal + snackTotal;
+  //       const discount = 0;
+  //       const total = subtotal - discount;
+
+  //       if (!cancelled) {
+  //         setPriceSummary({ subtotal, discount, total });
+  //       }
+  //     }
+  //   };    //             BẢN NÀY CÓ VẤN ĐỀ VỀ PRICE-PREVIEW
+
+  //   fetchPrice();
+
+  //   return () => {
+  //     cancelled = true;
+  //   };
   // }, [activeShowtime, ticketTypes, selectedSnacks]);
+
+  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC này là sài dùng để mock ===== */
+  useEffect(() => {
+    if (!activeShowtime) {
+      setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
+      return;
+    }
+
+    const ticketTotal = ticketTypes.reduce(
+      (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
+      0
+    );
+
+    const snackTotal = Object.values(selectedSnacks).reduce(
+      (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
+      0
+    );
+
+    const subtotal = ticketTotal + snackTotal;
+    const discount = 0; // MovieDetailPage chỉ tạm tính, chưa áp dụng khuyến mãi
+    const total = subtotal - discount;
+
+    setPriceSummary({ subtotal, discount, total });
+  }, [activeShowtime, ticketTypes, selectedSnacks]);
 
   /* ===== SEAT LAYOUT THEO ROW ===== */
   const layoutByRow = useMemo(() => {
@@ -1493,13 +1492,6 @@ function countLonelyA(statusArr) {
   return lonely;
 }
 
-// Check rule cho 1 hàng (row) cụ thể
-// seatLayout: toàn bộ ghế từ getSeatLayout()
-// selectedSeats: ghế đang chọn
-// rowName: ví dụ "A", "B", ...
-//logic check chỗ ngồi tránh để trống ghế khó bán
-// Check rule "không để ghế lẻ" cho 1 hàng (row)
-// Check rule "không để ghế lẻ" cho 1 hàng (row)
 function violatesSeatGapRuleForRow(seatLayout, selectedSeats, rowName) {
   const rowSeats = seatLayout
     .filter((s) => s.row === rowName)
