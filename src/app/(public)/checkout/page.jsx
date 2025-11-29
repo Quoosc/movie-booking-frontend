@@ -537,9 +537,15 @@ export default function CheckoutPage() {
       // 2️ Xác nhận booking từ lockId: /bookings/confirm
       const bookingRes = await createBooking({
         lockId: lockInfo.lockId,
-        userId: currentUser?.userId || null, // guest = null
         promotionCode: promoCodeToUse,
-        // Nếu sau này BE nhận thêm fullName/email/phone thì gắn thêm ở đây
+        snackCombos: snacksPayload,
+        guestInfo: currentUser
+          ? null // member có JWT, BE tự đọc user -> guestInfo sẽ bị ignore
+          : {
+              email: customer.email,
+              username: customer.fullName,
+              phoneNumber: customer.phone,
+            },
       });
 
       const bookingWrapper = bookingRes || {};
@@ -571,7 +577,7 @@ export default function CheckoutPage() {
       // Tạo lệnh thanh toán: /payments/order
       const paymentRes = await createPaymentOrder({
         bookingId,
-        method: gatewayMethod, // "PAYPAL" | "MOMO"
+        paymentMethod: gatewayMethod, // "PAYPAL" | "MOMO"
         amount: finalTotal,
       });
 

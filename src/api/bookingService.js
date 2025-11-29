@@ -665,13 +665,19 @@ export async function lockSeats({
 export async function createBooking(payload = {}) {
   const {
     lockId = null,
-    userId = null,
-    showtimeId = null, // legacy
-    seatIds = [], // legacy
-    snacks = [], // legacy
     promotionCode = null,
+
+    // NEW: chuẩn Swagger
+    snackCombos = null,
+    guestInfo = null,
+
+    // LEGACY (mock + flow cũ)
+    showtimeId = null,
+    seatIds = [],
+    snacks = [],
   } = payload;
 
+  // Vẫn cho phép mock legacy: showtimeId + seatIds
   if (!lockId && (!showtimeId || seatIds.length === 0)) {
     throw new Error(
       "createBooking: cần lockId (flow mới) hoặc showtimeId + seatIds (legacy mock)"
@@ -682,19 +688,23 @@ export async function createBooking(payload = {}) {
     const now = Date.now();
     const bookingId = `mock-booking-${now}`;
 
+    const legacySnacks = (snackCombos && snackCombos.length > 0
+      ? snackCombos
+      : snacks
+    ).map((s) => ({
+      snack_id: s.snack_id || s.snackId,
+      quantity: s.quantity,
+    }));
+
     return {
       code: 201,
       message: "Booking created (mock)",
       data: {
         booking_id: bookingId,
         lock_id: lockId,
-        user_id: userId,
         showtime_id: showtimeId,
         seat_ids: seatIds,
-        snacks: snacks.map((s) => ({
-          snack_id: s.snack_id,
-          quantity: s.quantity,
-        })),
+        snacks: legacySnacks,
         promotion_code: promotionCode,
         status: "PENDING_PAYMENT",
         finalPrice: null,
@@ -703,16 +713,40 @@ export async function createBooking(payload = {}) {
     };
   }
 
+  // Chuẩn hóa snackCombos cho BE
+  const finalSnackCombos =
+    Array.isArray(snackCombos) && snackCombos.length > 0
+      ? snackCombos
+      : Array.isArray(snacks)
+      ? snacks.map((s) => ({
+          snackId: s.snackId || s.snack_id,
+          quantity: s.quantity,
+        }))
+      : [];
+
+  const body = {
+    lockId,
+    promotionCode: promotionCode || null,
+  };
+
+  if (finalSnackCombos.length > 0) {
+    body.snackCombos = finalSnackCombos;
+  }
+
+  if (guestInfo) {
+    body.guestInfo = {
+      email: guestInfo.email,
+      username: guestInfo.username,
+      phoneNumber: guestInfo.phoneNumber,
+    };
+  }
+
   return apiFetch("/bookings/confirm", {
     method: "POST",
-    body: JSON.stringify({
-      lockId,
-      promotionCode,
-      // nếu là guest flow: thêm guestInfo tại đây
-      // guestInfo: { fullName, email, phoneNumber }
-    }),
+    body: JSON.stringify(body),
   });
 }
+
 
 /* ======================================================
  *  TẠO PHIÊN THANH TOÁN (OPTIONAL)
@@ -771,25 +805,34 @@ export async function createPaymentSession({
  *    }
  * ==================================================== */
 
-export async function createPaymentOrder({ bookingId, method, amount }) {
-  if (!bookingId || !method || amount == null) {
-    throw new Error("createPaymentOrder: bookingId, method, amount là bắt buộc");
+export async function createPaymentOrder({
+  bookingId,
+  paymentMethod,
+  method,
+  amount,
+}) {
+  const rawMethod = paymentMethod || method;
+
+  if (!bookingId || !rawMethod || amount == null) {
+    throw new Error(
+      "createPaymentOrder: bookingId, paymentMethod/method, amount là bắt buộc"
+    );
   }
 
-  const normalizedMethod = String(method).toUpperCase();
+  const normalizedMethod = String(rawMethod).toUpperCase();
 
   const res = await apiFetch("/payments/order", {
     method: "POST",
     body: JSON.stringify({
       bookingId,
-      method: normalizedMethod,
+      paymentMethod: normalizedMethod, //  đúng key theo Swagger
       amount,
     }),
   });
 
-  // res chính là InitiatePaymentResponse
   return res;
 }
+
 
 
 export async function getBookingById(bookingId) {
