@@ -1,7 +1,7 @@
 // src/api/showtimeService.js
-// import { apiFetch, USE_MOCK } from "./fetchConfig";
+import { apiFetch } from "./fetchConfig";
 
-const USE_MOCK = true;
+const USE_MOCK =false;
 
 // Helper: format ISO -> "HH:mm"
 function formatTimeToHHMM(isoString) {
@@ -516,10 +516,10 @@ export async function getShowtimesByMovie(movieId, date) {
   }
 
   // 🚀 API thật (future, đã chuẩn camelCase):
-  // GET /movies/{id}/showtimes?date=YYYY-MM-DD
-  // const res = await apiFetch(`/movies/${movieId}/showtimes?date=${date}`);
-  // const data = res.data || res;
-  // return (data || []).map(mapShowtimeGroupFromApi);
+ //GET /movies/{id}/showtimes?date=YYYY-MM-DD
+  const res = await apiFetch(`/movies/${movieId}/showtimes?date=${date}`);
+  const data = res.data || res;
+  return (data || []).map(mapShowtimeGroupFromApi);
 }
 
 /**
@@ -534,7 +534,7 @@ export async function getShowtimeDetail(id) {
   }
 
   // TODO: nếu sau này bạn có GET /showtimes/{id} public
-  // const res = await apiFetch(`/showtimes/${id}`);
-  // return res.data || res;
+  const res = await apiFetch(`/showtimes/${id}`);
+  return res.data || res;
   return null;
 }

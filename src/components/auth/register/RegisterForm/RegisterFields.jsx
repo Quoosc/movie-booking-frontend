@@ -6,12 +6,14 @@ import LoadingIcon from "@/components/shared/LoadingIcon";
 import TextInput from "@/components/shared/TextInput";
 import { register as registerApi } from "@/api/authService"; // ✅ dùng API thật
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterFields() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -82,16 +84,15 @@ export default function RegisterFields() {
 
     setIsLoading(true);
     try {
-      // ✅ Gọi API thật theo spec v2.4
-      await registerApi({
-        name: formData.fullName.trim(),
+      await register({
+        fullName: formData.fullName.trim(),
         email: formData.email.trim(),
+        phone: formData.phone.trim(),
         password: formData.password,
-        phone: formData.phone.trim() || "",
       });
 
       toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
-      navigate("/auth/login");
+      window.location.href = "/auth/login";
     } catch (error) {
       toast.error(error?.message || "Đăng ký thất bại");
     } finally {

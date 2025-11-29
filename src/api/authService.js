@@ -1,17 +1,16 @@
 // src/api/authService.js
-import { apiFetch, USE_MOCK } from "./fetchConfig";
-import * as mockAuth from "./mockAuthService";
+import { apiFetch } from "./fetchConfig";
 
 const STORAGE_KEYS = {
-  access: "access_token",
-  refresh: "refresh_token",
   user: "user",
 };
 
-function saveAuthToStorage({ accessToken, refreshToken, user }) {
-  if (accessToken) localStorage.setItem(STORAGE_KEYS.access, accessToken);
-  if (refreshToken) localStorage.setItem(STORAGE_KEYS.refresh, refreshToken);
-  if (user) localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+function saveUserToStorage(user) {
+  if (user) {
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.user);
+  }
 }
 
 export function getStoredUser() {
@@ -24,162 +23,95 @@ export function getStoredUser() {
 }
 
 /**
+ * ĐĂNG KÝ USER THƯỜNG
+ * POST /auth/register
+ */
+export async function register({ fullName, email, phone, password }) {
+  const body = {
+    phoneNumber: phone || "",
+    email,
+    username: fullName, // map sang username của BE
+    password,
+    confirmPassword: password,
+  };
+
+  await apiFetch("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+  // 201 + body rỗng → chỉ cần không lỗi là OK
+  return { success: true };
+}
+
+/**
  * LOGIN
- * body: { email, password }
- * v2.4: trả về { accessToken, refreshToken?, user }
+ * POST /auth/login
+ * BE set cookie accessToken + refreshToken, body rỗng
  */
 export async function login({ email, password }) {
-  if (USE_MOCK) {
-    // dùng mockAuthService v2.0
-    const loginRes = await mockAuth.login({ email, password });
-    const meRes = await mockAuth.me(loginRes.access_token);
-
-    const accessToken = loginRes.access_token;
-    const refreshToken = loginRes.refresh_token;
-    const user = meRes.data;
-
-    saveAuthToStorage({ accessToken, refreshToken, user });
-    return { accessToken, refreshToken, user };
-  }
-
-  const res = await apiFetch("/auth/login", {
+  await apiFetch("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
 
-  // hỗ trợ 2 kiểu: { code, message, data } hoặc { accessToken, ... }
+  // cookie đã được set, FE sẽ tự gọi /users/profile để lấy user
+  return { success: true };
+}
+
+/**
+ * LẤY PROFILE HIỆN TẠI
+ * (dùng cookie accessToken)
+ */
+export async function me() {
+  const res = await apiFetch("/users/profile");
   const data = res.data || res;
-  const { accessToken, refreshToken, user } = data || {};
-
-  if (!accessToken || !user) {
-    throw new Error("Phản hồi đăng nhập không hợp lệ từ server");
-  }
-
-  saveAuthToStorage({ accessToken, refreshToken, user });
+  saveUserToStorage(data);
   return data;
 }
 
 /**
- * REGISTER
- * body: { name, email, password, phone? }
- */
-export async function register(payload) {
-  if (USE_MOCK) {
-    return mockAuth.register(payload);
-  }
-
-  const res = await apiFetch("/auth/register", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-
-  return res.data || res; // { code, message, data? }
-}
-
-/**
- * LẤY PROFILE HIỆN TẠI (me)
- * v2.4: dùng /users/profile
- */
-export async function me() {
-  if (USE_MOCK) {
-    // mock: đã có sẵn
-    return mockAuth.me();
-  }
-
-  const res = await apiFetch("/users/profile");
-  // chuẩn hoá trả về { data: user } cho AuthContext xài
-  if (res?.data) return { data: res.data };
-  return { data: res };
-}
-
-/**
- * VERIFY ACCOUNT (nếu có)
- */
-export async function verifyAccount({ email, codeId }) {
-  if (USE_MOCK) {
-    return mockAuth.verifyAccount({ email, codeId });
-  }
-
-  const res = await apiFetch("/auth/verify", {
-    method: "POST",
-    body: JSON.stringify({ email, code: codeId }),
-  });
-
-  return res.data || res;
-}
-
-/**
- * RESEND VERIFY CODE
- */
-export async function resendCode({ email }) {
-  if (USE_MOCK) {
-    return mockAuth.resendCode({ email });
-  }
-
-  const res = await apiFetch("/auth/resend-code", {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
-
-  return res.data || res;
-}
-
-/**
- * LOGOUT
+ * LOGOUT HIỆN TẠI
+ * POST /auth/logout
  */
 export async function logout() {
-  // clear local trước
-  localStorage.removeItem(STORAGE_KEYS.access);
-  localStorage.removeItem(STORAGE_KEYS.refresh);
-  localStorage.removeItem(STORAGE_KEYS.user);
-
-  if (USE_MOCK) {
-    try {
-      await mockAuth.logout();
-    } catch {
-      // ignore
-    }
-    return;
-  }
+  saveUserToStorage(null);
 
   try {
     await apiFetch("/auth/logout", { method: "POST" });
   } catch {
-    // bỏ qua lỗi logout (token hết hạn, v.v.)
+    // token hết hạn thì bỏ qua
   }
 }
 
 /**
- * REFRESH TOKEN
+ * LOGOUT TẤT CẢ PHIÊN
+ * POST /auth/logout-all?email=...
+ */
+export async function logoutAll(email) {
+  await apiFetch(`/auth/logout-all?email=${encodeURIComponent(email)}`, {
+    method: "POST",
+  });
+}
+
+/**
+ * REFRESH ACCESS TOKEN
+ * GET /auth/refresh
  */
 export async function refreshToken() {
-  const storedRefresh = localStorage.getItem(STORAGE_KEYS.refresh);
-  if (!storedRefresh) return null;
+  await apiFetch("/auth/refresh", { method: "GET" });
+  // cookie đã được set lại → FE chỉ cần biết là thành công
+  return true;
+}
 
-  if (USE_MOCK) {
-    const res = await mockAuth.refreshToken();
-    const accessToken = res.access_token || res.data?.accessToken;
-    if (accessToken) {
-      localStorage.setItem(STORAGE_KEYS.access, accessToken);
-      return accessToken;
-    }
-    return null;
-  }
-
-  const res = await apiFetch("/auth/refresh-token", {
+/**
+ * ĐĂNG KÝ GUEST
+ * POST /auth/guest/register
+ */
+export async function registerGuest({ email, username, phoneNumber }) {
+  const res = await apiFetch("/auth/guest/register", {
     method: "POST",
-    body: JSON.stringify({ refreshToken: storedRefresh }),
+    body: JSON.stringify({ email, username, phoneNumber }),
   });
-
-  const data = res.data || res;
-  const { accessToken, refreshToken } = data || {};
-
-  if (accessToken) {
-    localStorage.setItem(STORAGE_KEYS.access, accessToken);
-  }
-  if (refreshToken) {
-    localStorage.setItem(STORAGE_KEYS.refresh, refreshToken);
-  }
-
-  return accessToken || null;
+  return res.data || res; // { userId }
 }

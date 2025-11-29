@@ -1,9 +1,9 @@
 // src/api/cinemaService.js
 
 
-// import { apiFetch, USE_MOCK } from "./fetchConfig";
+import { apiFetch } from "./fetchConfig";
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 const MOCK_CINEMAS = [
   {
@@ -72,9 +72,9 @@ export async function getAllCinemas() {
     return MOCK_CINEMAS.map(mapCinema);
   }
 
-  // const res = await apiFetch("/cinemas");
-  // const data = res.data || res;
-  // return (data || []).map(mapCinema);
+  const res = await apiFetch("/cinemas");
+  const data = res.data || res;
+  return (data || []).map(mapCinema);
 }
 
 /** GET /cinemas/{id} – chi tiết 1 rạp */
@@ -84,7 +84,7 @@ export async function getCinemaById(id) {
     return found ? mapCinema(found) : null;
   }
 
-  // const res = await apiFetch(`/cinemas/${id}`);
-  // const data = res.data || res;
-  // return mapCinema(data);
+  const res = await apiFetch(`/cinemas/${id}`);
+  const data = res.data || res;
+  return mapCinema(data);
 }

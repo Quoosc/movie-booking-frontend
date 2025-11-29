@@ -1,11 +1,10 @@
 // src/api/movieService.js
 
-// 👉 Sau này bật khi có backend thật:
-// import { apiFetch, USE_MOCK } from "./fetchConfig";
+import { apiFetch } from "./fetchConfig";
 import { getShowtimesByMovie } from "./showtimeService";
 const CLOUDINARY_BASE_URL = import.meta.env.VITE_CLOUDINARY_BASE_URL || "";
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 const MOCK_MOVIES = [
   {
@@ -315,8 +314,8 @@ export async function getAllMovies() {
     return MOCK_MOVIES.map(mapMovie);
   }
 
-  // const res = await apiFetch("/movies");
-  // return (res.data || res).map(mapMovie);
+  const res = await apiFetch("/movies");
+  return (res.data || res).map(mapMovie);
 }
 
 /** GET /movies?status=SHOWING */
@@ -325,8 +324,8 @@ export async function getShowingMovies() {
     return MOCK_MOVIES.filter((m) => m.status === "SHOWING").map(mapMovie);
   }
 
-  // const res = await apiFetch("/movies?status=SHOWING");
-  // return (res.data || res).map(mapMovie);
+  const res = await apiFetch("/movies?status=SHOWING");
+  return (res.data || res).map(mapMovie);
 }
 
 /** GET /movies?status=UPCOMING */
@@ -335,8 +334,8 @@ export async function getUpcomingMovies() {
     return MOCK_MOVIES.filter((m) => m.status === "UPCOMING").map(mapMovie);
   }
 
-  // const res = await apiFetch("/movies?status=UPCOMING");
-  // return (res.data || res).map(mapMovie);
+  const res = await apiFetch("/movies?status=UPCOMING");
+  return (res.data || res).map(mapMovie);
 }
 
 /** GET /movies/{id} */
@@ -346,8 +345,8 @@ export async function getMovieById(id) {
     return found ? mapMovie(found) : null;
   }
 
-  // const res = await apiFetch(`/movies/${id}`);
-  // return mapMovie(res.data || res);
+  const res = await apiFetch(`/movies/${id}`);
+  return mapMovie(res.data || res);
 }
 
 /**
@@ -394,10 +393,10 @@ export async function searchMoviesByTitle(title) {
     ).map(mapMovie);
   }
 
-  // const res = await apiFetch(
-  //   `/movies/search/title?title=${encodeURIComponent(keyword)}`
-  // );
-  // return (res.data || res).map(mapMovie);
+  const res = await apiFetch(
+    `/movies/search/title?title=${encodeURIComponent(keyword)}`
+  );
+  return (res.data || res).map(mapMovie);
 }
 
 /**
@@ -417,10 +416,10 @@ export async function filterMoviesByStatus(status) {
     ).map(mapMovie);
   }
 
-  // const res = await apiFetch(
-  //   `/movies/filter/status?status=${encodeURIComponent(normalized)}`
-  // );
-  // return (res.data || res).map(mapMovie);
+  const res = await apiFetch(
+    `/movies/filter/status?status=${encodeURIComponent(normalized)}`
+  );
+  return (res.data || res).map(mapMovie);
 }
 
 /**
@@ -444,15 +443,11 @@ export async function filterMoviesByGenre(genre) {
     ).map(mapMovie);
   }
 
-  // const res = await apiFetch(
-  //   `/movies/filter/genre?genre=${encodeURIComponent(keyword)}`
-  // );
-  // return (res.data || res).map(mapMovie);
+  const res = await apiFetch(
+    `/movies/filter/genre?genre=${encodeURIComponent(keyword)}`
+  );
+  return (res.data || res).map(mapMovie);
 }
-
-
-
-
 
 // ==================== CINEMA MOVIES (NEW) ====================
 
@@ -494,15 +489,12 @@ export async function getCinemaMovies(cinemaId, status) {
   if (USE_MOCK) {
     // SHOWING: chỉ lấy các phim có thật suất chiếu tại rạp (dựa trên MOCK)
     if (normalizedStatus === "SHOWING") {
-      const idsForCinema = new Set(
-        MOCK_CINEMA_MOVIES_SHOWING[cinemaId] || []
-      );
+      const idsForCinema = new Set(MOCK_CINEMA_MOVIES_SHOWING[cinemaId] || []);
 
       const list = MOCK_MOVIES.filter((m) => {
         const idStr = String(m.movie_id || m.movieId || m.id);
         const matchCinema = idsForCinema.has(idStr);
-        const matchStatus =
-          (m.status || "").toUpperCase() === "SHOWING";
+        const matchStatus = (m.status || "").toUpperCase() === "SHOWING";
         return matchCinema && matchStatus;
       });
 
@@ -522,11 +514,9 @@ export async function getCinemaMovies(cinemaId, status) {
   }
 
   // 🚀 BE thật:
-  // const res = await apiFetch(
-  //   `/cinemas/${cinemaId}/movies?status=${encodeURIComponent(normalizedStatus)}`
-  // );
-  // const data = res.data || res;
-  // return (data || []).map(mapMovie);
+  const res = await apiFetch(
+    `/cinemas/${cinemaId}/movies?status=${encodeURIComponent(normalizedStatus)}`
+  );
+  const data = res.data || res;
+  return (data || []).map(mapMovie);
 }
-
-

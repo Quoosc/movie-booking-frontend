@@ -1,8 +1,8 @@
 // src/api/bookingService.js
-// import { apiFetch, USE_MOCK } from "./fetchConfig";
+import { apiFetch } from "./fetchConfig";
 
 // TẠM THỜI: booking vẫn luôn dùng mock (không gọi BE)
-const USE_MOCK = true; // TẠM THỜI: chỉ để test UI. Sau này gắn BE thì đổi thành false.
+const USE_MOCK = false; // TẠM THỜI: chỉ để test UI. Sau này gắn BE thì đổi thành false.
 
 /* ======================================================
  *  MOCK SEAT LAYOUT
@@ -121,13 +121,11 @@ export async function getSeatLayout(showtimeId) {
     return MOCK_SEATS[showtimeId];
   }
 
-  // 🚀 API thật sau này (đã chuẩn theo BE mới):
-  //
-  // const res = await apiFetch(`/seats/layout?showtime_id=${showtimeId}`);
-  // const data = res.data || res;
-  // return (Array.isArray(data) ? data : [])
-  //   .map(mapSeatFromApi)
-  //   .filter(Boolean);
+  //  API thật sau này (đã chuẩn theo BE mới):
+
+  const res = await apiFetch(`/seats/layout?showtime_id=${showtimeId}`);
+  const data = res.data || res;
+  return (Array.isArray(data) ? data : []).map(mapSeatFromApi).filter(Boolean);
 }
 
 /* ======================================================
@@ -475,13 +473,13 @@ export async function getSnacksByCinema(cinemaId) {
     return apiSnacks.map(mapSnackFromApiToUi).filter(Boolean);
   }
 
-  // 🚀 REAL API
-  // const res = await apiFetch(`/cinemas/snacks?cinemaId=${cinemaId}`);
-  // const data = res.data || res;
-  //
-  // return (Array.isArray(data) ? data : [])
-  //   .map(mapSnackFromApiToUi)
-  //   .filter(Boolean);
+  // REAL API
+  const res = await apiFetch(`/cinemas/snacks?cinemaId=${cinemaId}`);
+  const data = res.data || res;
+
+  return (Array.isArray(data) ? data : [])
+    .map(mapSnackFromApiToUi)
+    .filter(Boolean);
 }
 
 /* ======================================================
@@ -520,16 +518,16 @@ export async function holdSeats(
     };
   }
 
-  // 🚀 Nếu muốn dùng API thật cho v1:
-  // return apiFetch("/bookings/lock", {
-  //   method: "POST",
-  //   body: JSON.stringify({
-  //     showtimeId,
-  //     userId,
-  //     seatIds,
-  //     holdSeconds,
-  //   }),
-  // });
+  // Nếu muốn dùng API thật cho v1:
+  return apiFetch("/bookings/lock", {
+    method: "POST",
+    body: JSON.stringify({
+      showtimeId,
+      userId,
+      seatIds,
+      holdSeconds,
+    }),
+  });
 }
 
 /**
@@ -546,14 +544,14 @@ export async function releaseSeats(showtimeId, seatIds, userId = null) {
     return { code: 200, message: "Seats released (mock v1)" };
   }
 
-  // 🚀 API thật ( /bookings/lock/release):
-  //
-  // return apiFetch(
-  //   `/bookings/lock/release?showtimeId=${showtimeId}&userId=${userId}`,
-  //   {
-  //     method: "DELETE",
-  //   }
-  // );
+  //  API thật ( /bookings/lock/release):
+
+  return apiFetch(
+    `/bookings/lock/release?showtimeId=${showtimeId}&userId=${userId}`,
+    {
+      method: "DELETE",
+    }
+  );
 }
 
 /* ======================================================
@@ -616,25 +614,24 @@ export async function previewPrice({
     };
   }
 
-  // 🚀 API thật
-  // return apiFetch("/bookings/price-preview", {
-  // return apiFetch("/bookings/price-preview", {
-  //   method: "POST",
-  //   body: JSON.stringify({
-  //     showtimeId,
-  //     seatIds,
-  //     ticketTypes: ticketTypes.map((t) => ({
-  //       ticketTypeId: t.ticketTypeId || t.id,
-  //       quantity: t.quantity,
-  //     })),
-  //     snacks: snacks.map((s) => ({
-  //       snackId: s.snackId || s.snack_id,
-  //       quantity: s.quantity,
-  //     })),
-  //     promotionCode,
-  //     userId,
-  //   }),
-  // });
+  //  API thật
+  return apiFetch("/bookings/price-preview", {
+    method: "POST",
+    body: JSON.stringify({
+      showtimeId,
+      seatIds,
+      ticketTypes: ticketTypes.map((t) => ({
+        ticketTypeId: t.ticketTypeId || t.id,
+        quantity: t.quantity,
+      })),
+      snacks: snacks.map((s) => ({
+        snackId: s.snackId || s.snack_id,
+        quantity: s.quantity,
+      })),
+      promotionCode,
+      userId,
+    }),
+  });
 }
 
 /* ======================================================
@@ -679,16 +676,16 @@ export async function lockSeats({
     };
   }
 
-  // 🚀 BE thật
-  // return apiFetch("/bookings/lock", {
-  //   method: "POST",
-  //   body: JSON.stringify({
-  //     showtimeId,
-  //     userId,
-  //     seatIds,
-  //     holdSeconds, // nếu BE cần
-  //   }),
-  // });
+  //  BE thật
+  return apiFetch("/bookings/lock", {
+    method: "POST",
+    body: JSON.stringify({
+      showtimeId,
+      userId,
+      seatIds,
+      holdSeconds, // nếu BE cần
+    }),
+  });
 }
 
 /* ======================================================
@@ -750,16 +747,16 @@ export async function createBooking(payload = {}) {
     };
   }
 
-  // 🚀 BE thật – FLOW CHÍNH: tạo booking từ lockId
+  //  BE thật – FLOW CHÍNH: tạo booking từ lockId
   //
-  // return apiFetch("/bookings/confirm", {
-  //   method: "POST",
-  //   body: JSON.stringify({
-  //     lockId,
-  //     userId,
-  //     promotionCode,
-  //   }),
-  // });
+  return apiFetch("/bookings/confirm", {
+    method: "POST",
+    body: JSON.stringify({
+      lockId,
+      userId,
+      promotionCode,
+    }),
+  });
 }
 
 /* ======================================================
@@ -793,18 +790,18 @@ export async function createPaymentSession({
   }
 
   // BE – điều chỉnh URL theo spec Payment thực tế của bạn.
-  //   POST /payments/checkout
-  //
-  // return apiFetch("/payments/checkout", {
-  //   method: "POST",
-  //   body: JSON.stringify({
-  //     bookingId,
-  //     amount,
-  //     method,
-  //     returnUrl,
-  //     cancelUrl,
-  //   }),
-  // });
+  // POST /payments/checkout
+
+  return apiFetch("/payments/checkout", {
+    method: "POST",
+    body: JSON.stringify({
+      bookingId,
+      amount,
+      method,
+      returnUrl,
+      cancelUrl,
+    }),
+  });
 }
 
 /* ======================================================
@@ -854,7 +851,6 @@ export async function createPaymentOrder({ bookingId, method, amount }) {
   return json;
 }
 
-
 export async function getBookingById(bookingId) {
   if (!bookingId) {
     throw new Error("getBookingById: bookingId là bắt buộc");
@@ -871,11 +867,6 @@ export async function getBookingById(bookingId) {
   // BE có thể trả 1 object hoặc 1 mảng → lấy phần tử đầu nếu là mảng
   return Array.isArray(json.data) ? json.data[0] : json.data;
 }
-
-
-
-
-
 
 //  api for user
 const MOCK_MY_BOOKINGS = [
@@ -922,12 +913,11 @@ export async function getMyBookings() {
     return MOCK_MY_BOOKINGS;
   }
 
-  // const res = await apiFetch("/bookings/my-bookings");
-  // const raw = res.data || res;
-  // const list = raw.data || raw;
-  // return Array.isArray(list) ? list : [];
+  const res = await apiFetch("/bookings/my-bookings");
+  const raw = res.data || res;
+  const list = raw.data || raw;
+  return Array.isArray(list) ? list : [];
 }
-
 
 const MOCK_BOOKING_DETAIL = {
   bookingId: "mock-booking-1",
@@ -1014,16 +1004,6 @@ export async function getBookingDetail(bookingId) {
 }
 
 //api for user
-
-
-
-
-
-
-
-
-
-
 
 // sài để mock tesst step3 và
 // export async function getBookingById(bookingId) {

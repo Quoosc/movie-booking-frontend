@@ -1,6 +1,6 @@
 import { apiFetch } from "./fetchConfig";
 
-const USE_USER_MOCK = true; // <--- bật mock để test UI
+const USE_USER_MOCK = false; // <--- bật mock để test UI
 
 const MOCK_PROFILE = {
   userId: "mock-user-1",

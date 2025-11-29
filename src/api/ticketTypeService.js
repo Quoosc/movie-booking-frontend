@@ -1,8 +1,8 @@
 // src/api/ticketTypeService.js
 
-// import { apiFetch, USE_MOCK } from "./fetchConfig";
+import { apiFetch } from "./fetchConfig";
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 /**
  * MOCK – dùng để test UI, tương đương dữ liệu spec cũ
@@ -68,21 +68,21 @@ export async function getTicketTypes({ showtimeId, userId } = {}) {
     return MOCK_TICKET_TYPES.map(mapTicketType);
   }
 
-  // const params = new URLSearchParams();
+  const params = new URLSearchParams();
 
-  // if (showtimeId) {
-  //   params.set("showtimeId", showtimeId);
-  // }
-  // if (userId) {
-  //   params.set("userId", userId);
-  // }
+  if (showtimeId) {
+    params.set("showtimeId", showtimeId);
+  }
+  if (userId) {
+    params.set("userId", userId);
+  }
 
-  // const qs = params.toString();
-  // const res = await apiFetch(`/ticket-types${qs ? `?${qs}` : ""}`);
+  const qs = params.toString();
+  const res = await apiFetch(`/ticket-types${qs ? `?${qs}` : ""}`);
 
-  // // BE spec: { code, message, data: [...] }
-  // const raw = res.data || res;
-  // const list = raw.data || raw;
+  // BE spec: { code, message, data: [...] }
+  const raw = res.data || res;
+  const list = raw.data || raw;
 
-  // return (list || []).map(mapTicketType);
+  return (list || []).map(mapTicketType);
 }
