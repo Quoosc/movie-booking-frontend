@@ -20,6 +20,7 @@ import AdminPromotionsPage from "@/app/(admin)/promotions/page";
 import AdminBookingsPage from "@/app/(admin)/bookings/page";
 import AdminOrdersPage from "@/app/(admin)/orders/page";
 import AdminToolsPage from "@/app/(admin)/tools/page";
+import AdminRoomsPage from "../app/(admin)/rooms/page";
 
 // Public
 import Home from "@/app/(public)/home/page";
@@ -129,6 +130,7 @@ export default function AppRouter() {
         <Route path="bookings" element={<AdminBookingsPage />} />
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="tools" element={<AdminToolsPage />} />
+        <Route path="rooms" element={<AdminRoomsPage />} />
       </Route>
 
       {/* Fallback */}

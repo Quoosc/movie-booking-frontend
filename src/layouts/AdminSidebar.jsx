@@ -5,9 +5,10 @@ import { useAuth } from "@/context/AuthContext";
 const adminNavItems = [
   { id: "dashboard", label: "Tổng quan", path: "/admin" },
   { id: "movies", label: "Quản lý phim", path: "/admin/movies" },
-  { id: "cinemas", label: "Rạp & phòng", path: "/admin/cinemas" },
+  { id: "cinemas", label: "Rạp chiếu", path: "/admin/cinemas" },
   { id: "showtimes", label: "Suất chiếu", path: "/admin/showtimes" },
   { id: "seats", label: "Ghế & layout", path: "/admin/seats" },
+  { id: "rooms", label: "Phòng chiếu", path: "/admin/rooms" },
   { id: "pricing", label: "Giá & ticket", path: "/admin/pricing" },
   { id: "promotions", label: "Khuyến mãi", path: "/admin/promotions" },
   { id: "membership", label: "Membership tiers", path: "/admin/membership" },

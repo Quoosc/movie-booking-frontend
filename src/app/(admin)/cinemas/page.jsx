@@ -417,12 +417,12 @@ export default function AdminCinemasPage() {
                               <div className="text-xs font-semibold text-white line-clamp-1">
                                 {name}
                               </div>
-                              <div className="text-[11px] text-white/50 mt-0.5">
+                              {/* <div className="text-[11px] text-white/50 mt-0.5">
                                 Mã rạp:{" "}
                                 <span className="font-mono text-[10px]">
                                   {code}
                                 </span>
-                              </div>
+                              </div> */}
                             </div>
                           </div>
                         </td>
