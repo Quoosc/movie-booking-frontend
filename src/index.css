@@ -5,5 +5,8 @@
 
 html, body {
   @apply bg-gradient-to-b from-[#070018] via-[#050015] to-[#02000f] text-white;
+  select {
+  color-scheme: dark;
+}
 }
  #root { height: 100%; }

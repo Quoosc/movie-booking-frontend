@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminUserService } from "@/api/adminservice";
 
-const ROLE_OPTIONS = ["ADMIN", "USER", "GUEST"];
+const ROLE_OPTIONS = ["ADMIN", "USER"];
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
@@ -165,9 +165,9 @@ export default function AdminUsersPage() {
       </header>
 
       {/* Thống kê nhanh */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <StatCard
-          label="Tổng user"
+          label="Tổng tài khoản"
           value={stats.total}
           gradient="from-cyan-400/80 via-cyan-500/70 to-emerald-400/80"
         />
@@ -180,11 +180,6 @@ export default function AdminUsersPage() {
           label="Member (USER)"
           value={stats.members}
           gradient="from-emerald-400/80 via-teal-400/80 to-cyan-400/80"
-        />
-        <StatCard
-          label="Guest"
-          value={stats.guests}
-          gradient="from-amber-400/80 via-orange-500/80 to-rose-400/80"
         />
       </section>
 
@@ -208,19 +203,22 @@ export default function AdminUsersPage() {
               />
             </div>
 
-            <div className="w-full sm:w-48">
+            <div className="w-full sm:w-52">
               <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
-                Lọc theo role
+                Lọc theo quyền
               </label>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
               >
                 <option value="ALL">Tất cả</option>
                 <option value="ADMIN">Admin</option>
                 <option value="USER">Member (USER)</option>
-                <option value="GUEST">Guest</option>
               </select>
             </div>
           </div>
@@ -381,7 +379,11 @@ export default function AdminUsersPage() {
                             onChange={(e) =>
                               handleChangeRoleDraft(u.userId, e.target.value)
                             }
-                            className="rounded-2xl bg-white/5 border border-white/15 px-3 py-2 text-xs text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                            className="role-select rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+             border border-cyan-400/60 px-4 py-2 text-[11px] font-semibold text-white
+             shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+             focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+             transition-all"
                           >
                             {ROLE_OPTIONS.map((r) => (
                               <option key={r} value={r}>
