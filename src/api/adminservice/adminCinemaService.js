@@ -43,7 +43,7 @@ export async function deleteCinema(cinemaId) {
   const res = await apiFetch(`/cinemas/${cinemaId}`, {
     method: "DELETE",
   });
-return res.data || res; // có thể là "OK" / empty, tùy apiFetch xử lý
+return true; // có thể là "OK" / empty, tùy apiFetch xử lý
 }
 
 /**
@@ -89,7 +89,7 @@ export async function deleteRoom(roomId) {
   const res = await apiFetch(`/cinemas/rooms/${roomId}`, {
     method: "DELETE",
   });
-return res.data || res;
+return true;
 }
 
 /* ===================== SNACKS ===================== */
@@ -124,7 +124,7 @@ export async function deleteSnack(snackId) {
   const res = await apiFetch(`/cinemas/snacks/${snackId}`, {
     method: "DELETE",
   });
-return res.data || res;
+return true;
 }
 
 /* ===================== SEATS (ROOM LEVEL) ===================== */
@@ -164,7 +164,7 @@ export async function deleteSeat(seatId) {
   const res = await apiFetch(`/seats/${seatId}`, {
     method: "DELETE",
   });
-return res.data || res;
+return true;
 }
 
 export async function getSeatById(seatId) {

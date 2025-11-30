@@ -46,7 +46,7 @@ export async function deleteUser(userId) {
   const res = await apiFetch(`/users/${userId}`, {
     method: "DELETE",
   });
-  return res.data || res; // string (OK / message)
+  return true; // string (OK / message)
 }
 
 /**
@@ -91,7 +91,7 @@ export async function deleteMembershipTier(tierId) {
   const res = await apiFetch(`/membership-tiers/${tierId}`, {
     method: "DELETE",
   });
-  return res.data || res;
+  return true;
 }
 
 export async function getMembershipTierById(tierId) {

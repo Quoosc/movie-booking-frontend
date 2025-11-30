@@ -90,7 +90,7 @@ export async function deletePromotion(promotionId) {
   const res = await apiFetch(`/promotions/${promotionId}`, {
     method: "DELETE",
   });
-return res.data || res;
+return true;
 }
 
 export async function getPromotionById(promotionId) {

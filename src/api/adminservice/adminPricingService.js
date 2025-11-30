@@ -30,7 +30,7 @@ return res.data || res;
 
 export async function deletePriceBase(id) {
   const res = await apiFetch(`/price-base/${id}`, { method: "DELETE" });
-return res.data || res;
+return true;
 }
 
 export async function getPriceBaseById(id) {
@@ -70,7 +70,7 @@ export async function deletePriceModifier(id) {
   const res = await apiFetch(`/price-modifiers/${id}`, {
     method: "DELETE",
   });
-return res.data || res;
+return true;
 }
 
 export async function getPriceModifierById(id) {
@@ -134,7 +134,7 @@ export async function deleteTicketType(id) {
   const res = await apiFetch(`/ticket-types/${id}`, {
     method: "DELETE",
   });
-return res.data || res;
+return true;
 }
 
 /* ========== SHOWTIME TICKET TYPES (gán ticket type cho showtime) ========== */
