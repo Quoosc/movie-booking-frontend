@@ -5,7 +5,6 @@ import { AdminCinemaService } from "@/api/adminservice";
 const STATUS_FILTERS = ["ALL", "ACTIVE", "INACTIVE"];
 
 const EMPTY_FORM = {
-  code: "",
   name: "",
   address: "",
   city: "",
@@ -40,7 +39,11 @@ export default function AdminCinemasPage() {
       setSuccess(null);
 
       const data = await AdminCinemaService.getCinemas();
-      const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
       setCinemas(list);
     } catch (err) {
       console.error("Fetch cinemas error:", err);
@@ -89,8 +92,7 @@ export default function AdminCinemasPage() {
   };
 
   const handleFormChange = (field) => (e) => {
-    const value =
-      field === "isActive" ? e.target.checked : e.target.value;
+    const value = field === "isActive" ? e.target.checked : e.target.value;
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -102,21 +104,23 @@ export default function AdminCinemasPage() {
       setSuccess(null);
       return;
     }
-    if (!form.code.trim()) {
-      setError("Vui lòng nhập mã rạp (code).");
-      setSuccess(null);
-      return;
-    }
 
+    // const payload = {
+    //   name: form.name.trim(),
+    //   address: form.address.trim() || null,
+    //   city: form.city.trim() || null,
+    //   district: form.district.trim() || null,
+    //   hotline: form.hotline.trim() || null,
+    //   description: form.description.trim() || null,
+    //   isActive: !!form.isActive,
+    // };
     const payload = {
-      code: form.code.trim(),
+      // 🔹 BE hiện tại chỉ có 3 field này
       name: form.name.trim(),
       address: form.address.trim() || null,
-      city: form.city.trim() || null,
-      district: form.district.trim() || null,
       hotline: form.hotline.trim() || null,
-      description: form.description.trim() || null,
-      isActive: !!form.isActive,
+      // 🔸 Các field còn lại (code, city, district, description, isActive)
+      // chỉ dùng nội bộ FE / để dành sau này, KHÔNG gửi lên BE cho đúng swagger.
     };
 
     try {
@@ -155,7 +159,9 @@ export default function AdminCinemasPage() {
 
     if (
       !window.confirm(
-        `Bạn chắc chắn muốn xóa rạp "${cinema.name || cinema.cinemaName || ""}"?`
+        `Bạn chắc chắn muốn xóa rạp "${
+          cinema.name || cinema.cinemaName || ""
+        }"?`
       )
     )
       return;
@@ -191,7 +197,8 @@ export default function AdminCinemasPage() {
 
       const q = search.trim().toLowerCase();
       if (q) {
-        const haystack = `${name} ${code} ${address} ${city} ${district} ${hotline}`.toLowerCase();
+        const haystack =
+          `${name} ${code} ${address} ${city} ${district} ${hotline}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
 
@@ -275,14 +282,18 @@ export default function AdminCinemasPage() {
               />
             </div>
 
-            <div className="w-full sm:w-48">
+            <div className="w-full sm:w-52">
               <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
                 Trạng thái
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
               >
                 <option value="ALL">Tất cả</option>
                 <option value="ACTIVE">Đang hoạt động</option>
@@ -339,10 +350,8 @@ export default function AdminCinemasPage() {
             </h2>
             <p className="text-[11px] text-white/40">
               Hiển thị{" "}
-              <span className="font-semibold">
-                {filteredCinemas.length}
-              </span>{" "}
-              / <span className="font-semibold">{cinemas.length}</span> rạp
+              <span className="font-semibold">{filteredCinemas.length}</span> /{" "}
+              <span className="font-semibold">{cinemas.length}</span> rạp
             </p>
           </div>
 
@@ -572,7 +581,7 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
+                {/* <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
                   Mã rạp (code) *
                 </label>
                 <input
@@ -581,7 +590,7 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
                   onChange={onChange("code")}
                   className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                   placeholder="CNS_VINCOM_Q1"
-                />
+                /> */}
               </div>
             </div>
 

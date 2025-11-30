@@ -294,14 +294,18 @@ export default function AdminMoviesPage() {
               />
             </div>
 
-            <div className="w-full sm:w-48">
+            <div className="w-full sm:w-52">
               <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
                 Lọc theo trạng thái
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
               >
                 <option value="ALL">Tất cả</option>
                 <option value="SHOWING">Đang chiếu</option>
