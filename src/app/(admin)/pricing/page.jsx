@@ -55,10 +55,15 @@ export default function AdminPricingPage() {
       setError(null);
       setSuccess(null);
 
+      // const [baseRes, modRes, ticketRes] = await Promise.all([
+      //   AdminPricingService.getAllPriceBases(),
+      //   AdminPricingService.getAllPriceModifiers(),
+      //   AdminPricingService.getTicketTypesAdmin(),
+      // ]);
       const [baseRes, modRes, ticketRes] = await Promise.all([
-        AdminPricingService.getAllPriceBases(),
-        AdminPricingService.getAllPriceModifiers(),
-        AdminPricingService.getTicketTypesAdmin(),
+        AdminPricingService.getPriceBases(),
+        AdminPricingService.getPriceModifiers(),
+        AdminPricingService.getAdminTicketTypes(),
       ]);
 
       const unwrap = (res) =>
@@ -253,8 +258,8 @@ export default function AdminPricingPage() {
           </span>
         </h1>
         <p className="text-xs md:text-sm text-white/60 max-w-2xl">
-          Quản lý base price, các price modifier (theo loại ghế, suất chiếu…)
-          và ticket types cho hệ thống.
+          Quản lý base price, các price modifier (theo loại ghế, suất chiếu…) và
+          ticket types cho hệ thống.
         </p>
       </header>
 
@@ -335,7 +340,9 @@ export default function AdminPricingPage() {
               </form>
 
               {loading ? (
-                <p className="text-[11px] text-white/60">Đang tải base price...</p>
+                <p className="text-[11px] text-white/60">
+                  Đang tải base price...
+                </p>
               ) : priceBases.length === 0 ? (
                 <p className="text-[11px] text-white/60">
                   Chưa có base price nào.
@@ -422,10 +429,7 @@ export default function AdminPricingPage() {
                     <select
                       value={ticketTypeForm.modifierType}
                       onChange={(e) =>
-                        handleTicketTypeChange(
-                          "modifierType",
-                          e.target.value
-                        )
+                        handleTicketTypeChange("modifierType", e.target.value)
                       }
                       className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2.5 text-xs text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                     >
@@ -441,10 +445,7 @@ export default function AdminPricingPage() {
                       type="number"
                       value={ticketTypeForm.modifierValue}
                       onChange={(e) =>
-                        handleTicketTypeChange(
-                          "modifierValue",
-                          e.target.value
-                        )
+                        handleTicketTypeChange("modifierValue", e.target.value)
                       }
                       className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2.5 text-xs text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                     />
@@ -512,9 +513,7 @@ export default function AdminPricingPage() {
                         <div>
                           <p className="font-semibold">
                             {t.label}{" "}
-                            <span className="text-white/60">
-                              ({t.code})
-                            </span>
+                            <span className="text-white/60">({t.code})</span>
                           </p>
                           <p className="text-white/50">
                             {t.modifierType} {t.modifierValue}
@@ -522,9 +521,7 @@ export default function AdminPricingPage() {
                         </div>
                         <button
                           type="button"
-                          onClick={() =>
-                            handleDeleteTicketType(t.ticketTypeId)
-                          }
+                          onClick={() => handleDeleteTicketType(t.ticketTypeId)}
                           disabled={deletingId === t.ticketTypeId}
                           className="text-[10px] rounded-2xl border border-red-500/60 bg-red-500/10 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                         >
@@ -565,9 +562,7 @@ export default function AdminPricingPage() {
                 <input
                   type="text"
                   value={modifierForm.name}
-                  onChange={(e) =>
-                    handleModifierChange("name", e.target.value)
-                  }
+                  onChange={(e) => handleModifierChange("name", e.target.value)}
                   placeholder="VIP Seat Premium..."
                   className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-xs text-white placeholder-white/30 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/40 focus:bg-white/10 transition-all"
                 />
@@ -635,10 +630,7 @@ export default function AdminPricingPage() {
                     type="number"
                     value={modifierForm.modifierValue}
                     onChange={(e) =>
-                      handleModifierChange(
-                        "modifierValue",
-                        e.target.value
-                      )
+                      handleModifierChange("modifierValue", e.target.value)
                     }
                     placeholder="20000 hoặc 10 (%)"
                     className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2.5 text-xs text-white placeholder-white/30 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/40 focus:bg-white/10 transition-all"
@@ -660,9 +652,7 @@ export default function AdminPricingPage() {
             </form>
 
             {loading ? (
-              <p className="text-[11px] text-white/60">
-                Đang tải modifiers...
-              </p>
+              <p className="text-[11px] text-white/60">Đang tải modifiers...</p>
             ) : modifiers.length === 0 ? (
               <p className="text-[11px] text-white/60">
                 Chưa có price modifier nào.
@@ -679,9 +669,7 @@ export default function AdminPricingPage() {
                         <p className="font-semibold">{m.name}</p>
                         <p className="text-white/60">
                           {m.conditionType} ={" "}
-                          <span className="font-mono">
-                            {m.conditionValue}
-                          </span>
+                          <span className="font-mono">{m.conditionValue}</span>
                         </p>
                         <p className="text-white/50">
                           {m.modifierType} {m.modifierValue}
@@ -689,9 +677,7 @@ export default function AdminPricingPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() =>
-                          handleDeleteModifier(m.priceModifierId)
-                        }
+                        onClick={() => handleDeleteModifier(m.priceModifierId)}
                         disabled={deletingId === m.priceModifierId}
                         className="mt-1 text-[10px] rounded-2xl border border-red-500/60 bg-red-500/10 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                       >

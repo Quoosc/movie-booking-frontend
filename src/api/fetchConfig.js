@@ -1,8 +1,8 @@
 // src/api/fetchConfig.js
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-// TRUE khi muốn dùng mock (ví dụ trong một số service cụ thể)
+
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "false";
 
 export { USE_MOCK };

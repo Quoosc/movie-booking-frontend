@@ -1,11 +1,5 @@
 // src/context/AuthContext.jsx
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as authApi from "@/api/authService";
 
 const AuthContext = createContext(null);
@@ -41,11 +35,11 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       await authApi.login({ email, password }); // set cookie
-      const profile = await authApi.me();       // lấy profile
+      const profile = await authApi.me(); // lấy profile từ /users/profile
       setUser(profile);
 
-      // hiện tại cookie lo hết, rememberMe nếu muốn thì sau này ta tự xử lý thêm
-      return true;
+      // 👇 TRẢ PROFILE RA ĐỂ LOGIN PAGE BIẾT ROLE
+      return profile;
     } finally {
       setLoading(false);
     }
@@ -71,14 +65,19 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => {
     const role = user?.role || user?.userRole || null;
 
+    const isAuthenticated = !!user;
+    const isAdmin = role === "ADMIN";
+    const isMember = isAuthenticated && !isAdmin;
+
     return {
       user,
       currentUser: user,
       role,
-      isAuthenticated: !!user,
-      isGuest: !user,
-      isMember: role === "USER",
-      isAdmin: role === "ADMIN",
+
+      isAuthenticated,
+      isGuest: !isAuthenticated,
+      isMember,
+      isAdmin,
 
       loading: loading || initializing,
 
@@ -89,9 +88,7 @@ export function AuthProvider({ children }) {
     };
   }, [user, loading, initializing]);
 
-  return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

@@ -52,9 +52,9 @@ export default function AdminDashboardPage() {
       setError(null);
 
       const [usersRes, moviesRes, cinemasRes, bookingsRes] = await Promise.all([
-        AdminUserService.getAllUsers(),
-        AdminMovieService.getAllMovies?.() ??
-          AdminMovieService.getMovies?.(),
+        // AdminUserService.getAllUsers(),
+        AdminUserService.getAllUsers?.() ?? AdminUserService.getUsers?.(),
+        AdminMovieService.getAllMovies?.() ?? AdminMovieService.getMovies?.(),
         AdminCinemaService.getAllCinemas?.() ??
           AdminCinemaService.getCinemas?.(),
         AdminOrderService.getAllBookings?.() ??
@@ -227,10 +227,8 @@ export default function AdminDashboardPage() {
                         b.user?.username ||
                         b.user?.email ||
                         "Khách vãng lai";
-                      const total =
-                        b.total ?? b.totalPrice ?? b.amount ?? 0;
-                      const status =
-                        b.status || b.bookingStatus || "UNKNOWN";
+                      const total = b.total ?? b.totalPrice ?? b.amount ?? 0;
+                      const status = b.status || b.bookingStatus || "UNKNOWN";
 
                       return (
                         <tr
@@ -245,9 +243,7 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3 px-4 text-white/60 hidden md:table-cell">
                             {formatDate(
-                              b.createdAt ||
-                                b.bookingTime ||
-                                b.paymentTime
+                              b.createdAt || b.bookingTime || b.paymentTime
                             )}
                           </td>
                           <td className="py-3 px-4 text-emerald-200 font-semibold">

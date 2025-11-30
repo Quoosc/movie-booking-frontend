@@ -324,7 +324,7 @@ export async function getShowingMovies() {
     return MOCK_MOVIES.filter((m) => m.status === "SHOWING").map(mapMovie);
   }
 
-  const res = await apiFetch("/movies?status=SHOWING");
+  const res = await apiFetch("/movies/filter/status?status=SHOWING");
   return (res.data || res).map(mapMovie);
 }
 
@@ -334,7 +334,7 @@ export async function getUpcomingMovies() {
     return MOCK_MOVIES.filter((m) => m.status === "UPCOMING").map(mapMovie);
   }
 
-  const res = await apiFetch("/movies?status=UPCOMING");
+  const res = await apiFetch("/movies/filter/status?status=UPCOMING");
   return (res.data || res).map(mapMovie);
 }
 

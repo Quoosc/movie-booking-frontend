@@ -7,7 +7,7 @@ import LoadingIcon from "@/components/shared/LoadingIcon";
 import TextInput from "@/components/shared/TextInput";
 import { useAuth } from "@/context/AuthContext";
 import { USE_EMAIL_VERIFY } from "@/utils/constants";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function LoginFields() {
   const { login } = useAuth();
@@ -21,6 +21,8 @@ export default function LoginFields() {
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "/";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,22 +63,34 @@ export default function LoginFields() {
     setErrors({});
     setIsLoading(true);
 
-    // ❗Nếu validate fail thì không gọi API
     if (!validate()) {
       setIsLoading(false);
       return;
     }
 
     try {
-      await login(
+      // 🔥 login trả về profile (đã sửa trong AuthContext)
+      const profile = await login(
         {
           email: formData.email.trim(),
           password: formData.password,
         },
         rememberMe
       );
+
+      const role = profile?.role || profile?.userRole;
+
       toast.success("Đăng nhập thành công!");
-      navigate("/");
+
+      if (role === "ADMIN") {
+        // 👉 ADMIN: quăng thẳng vào trang admin
+        navigate("/admin", { replace: true });
+      } else {
+        // 👉 USER / guest member: quay về trang trước (nếu có) hoặc /
+        const target =
+          from === "/auth/login" || from === "/auth/register" ? "/" : from;
+        navigate(target, { replace: true });
+      }
     } catch (error) {
       const msg = error?.message || "Đăng nhập thất bại";
 
@@ -153,14 +167,6 @@ export default function LoginFields() {
             transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed
           "
         >
-          <span
-            className="
-              absolute inset-0 -translate-x-full
-              bg-gradient-to-r from-transparent via-white/25 to-transparent
-              group-hover:translate-x-full
-              transition-transform duration-1000
-            "
-          />
           <span className="relative z-10">
             {isLoading ? <LoadingIcon text="Đang đăng nhập..." /> : "Đăng nhập"}
           </span>

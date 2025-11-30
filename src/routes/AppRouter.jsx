@@ -1,8 +1,11 @@
 // src/routes/AppRouter.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
-//admin
+
+// admin
 import AdminLayout from "@/layouts/AdminLayout";
 import AdminRoute from "./AdminRoute";
+import PrivateRoute from "./PrivateRoute"; // 👈 THÊM IMPORT NÀY
+
 // ==== admin pages ====
 import AdminDashboardPage from "@/app/(admin)/dashboard/page";
 import AdminUsersPage from "@/app/(admin)/users/page";
@@ -21,7 +24,7 @@ import AdminToolsPage from "@/app/(admin)/tools/page";
 // Public
 import Home from "@/app/(public)/home/page";
 
-//user
+// user (protected)
 import AccountHistoryPage from "../app/(protected)/account/account-history/page";
 import AccountMemberPage from "../app/(protected)/account/account-member/page";
 import AccountProfilePage from "../app/(protected)/account/account-profile/page";
@@ -47,17 +50,20 @@ import PaymentCallbackPage from "@/app/(public)/payment-callback/page";
 import CheckoutSuccessPage from "@/app/(public)/checkout-success/page";
 import MovieSearchPage from "@/app/(public)/movie/search/page";
 import CinemaPage from "@/app/(public)/cinema/[cinemaId]/page.jsx";
+
 export default function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+
       {/* Auth */}
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
 
+      {/* Public pages */}
       <Route path="/promotions" element={<PromotionsPage />} />
-
       <Route path="/about" element={<AboutPage />} />
+
       {/* Movies list + detail */}
       <Route path="/movie/movies" element={<MoviesPage />} />
       <Route path="/movie/moviesShowing" element={<MoviesShowingPage />} />
@@ -71,27 +77,37 @@ export default function AppRouter() {
 
       {/* Movie detail + booking */}
       <Route path="/movie/:id" element={<MovieDetailPage />} />
-      {/*  step 1 và 2 */}
+
+      {/* Checkout step 1 + 2 */}
       <Route path="/checkout" element={<CheckoutPage />} />
-      {/*call  back thanh toán  quét qr  */}
+
+      {/* Payment callback */}
       <Route path="/payment/callback" element={<PaymentCallbackPage />} />
       <Route path="/payment-callback" element={<PaymentCallbackPage />} />
       <Route path="/checkout-success" element={<CheckoutSuccessPage />} />
 
-      {/* Protected*/}
-      <Route path="/account/account-history" element={<AccountHistoryPage />} />
-      <Route path="/account/account-member" element={<AccountMemberPage />} />
-      <Route path="/account/account-profile" element={<AccountProfilePage />} />
-      <Route
-        path="/account/account-password"
-        element={<AccountPasswordPage />}
-      />
-      <Route
-        path="/account/account-history/:bookingId"
-        element={<BookingDetailPage />}
-      />
+      {/* ====== PROTECTED MEMBER ROUTES (cần login) ====== */}
+      <Route element={<PrivateRoute />}>
+        <Route
+          path="/account/account-history"
+          element={<AccountHistoryPage />}
+        />
+        <Route path="/account/account-member" element={<AccountMemberPage />} />
+        <Route
+          path="/account/account-profile"
+          element={<AccountProfilePage />}
+        />
+        <Route
+          path="/account/account-password"
+          element={<AccountPasswordPage />}
+        />
+        <Route
+          path="/account/account-history/:bookingId"
+          element={<BookingDetailPage />}
+        />
+      </Route>
 
-      {/* Admin */}
+      {/* ====== ADMIN ROUTES ====== */}
       <Route
         path="/admin"
         element={
@@ -115,7 +131,7 @@ export default function AppRouter() {
         <Route path="tools" element={<AdminToolsPage />} />
       </Route>
 
-      {/* <Route path="/booking/:showtimeId" element={<BookingPage />} /> */}
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
