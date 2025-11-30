@@ -7,13 +7,16 @@ const STATUS_OPTIONS = ["SHOWING", "UPCOMING"];
 const EMPTY_FORM = {
   title: "",
   genre: "",
+  description: "",
   duration: "",
   minimumAge: "",
-  language: "",
-  status: "UPCOMING",
+  director: "",
+  actors: "",
   posterUrl: "",
+  posterCloudinaryId: "",
   trailerUrl: "",
-  description: "",
+  status: "UPCOMING",
+  language: "",
 };
 
 export default function AdminMoviesPage() {
@@ -41,14 +44,27 @@ export default function AdminMoviesPage() {
       setError(null);
       setSuccess(null);
 
-      // Giả định AdminMovieService.getAllMovies() tồn tại
-      const data = await AdminMovieService.getAllMovies?.();
-      const list = Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data)
-        ? data
-        : [];
-      setMovies(list);
+      // Gọi 2 API: SHOWING + UPCOMING rồi gộp lại
+      const [showingRes, upcomingRes] = await Promise.all([
+        AdminMovieService.filterMoviesByStatus("SHOWING"),
+        AdminMovieService.filterMoviesByStatus("UPCOMING"),
+      ]);
+
+      const unwrap = (res) =>
+        Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+
+      const showingList = unwrap(showingRes);
+      const upcomingList = unwrap(upcomingRes);
+
+      const map = new Map();
+      [...showingList, ...upcomingList].forEach((m) => {
+        if (!m) return;
+        if (m.movieId && !map.has(m.movieId)) {
+          map.set(m.movieId, m);
+        }
+      });
+
+      setMovies(Array.from(map.values()));
     } catch (err) {
       console.error("Fetch movies error:", err);
       setError(err?.message || "Không tải được danh sách phim.");
@@ -74,13 +90,16 @@ export default function AdminMoviesPage() {
     setForm({
       title: movie?.title || "",
       genre: movie?.genre || "",
+      description: movie?.description || "",
       duration: movie?.duration || "",
       minimumAge: movie?.minimumAge || "",
-      language: movie?.language || "",
-      status: movie?.status || "SHOWING",
+      director: movie?.director || "",
+      actors: movie?.actors || "",
       posterUrl: movie?.posterUrl || "",
+      posterCloudinaryId: movie?.posterCloudinaryId || "",
       trailerUrl: movie?.trailerUrl || "",
-      description: movie?.description || "",
+      status: movie?.status || "SHOWING",
+      language: movie?.language || "",
     });
     setError(null);
     setSuccess(null);
@@ -113,15 +132,16 @@ export default function AdminMoviesPage() {
     const payload = {
       title: form.title.trim(),
       genre: form.genre.trim() || null,
-      duration: Number(form.duration),
-      minimumAge: form.minimumAge ? Number(form.minimumAge) : null,
-      language: form.language.trim() || null,
-      status: form.status || "UPCOMING",
-      posterUrl: form.posterUrl.trim() || null,
-      trailerUrl: form.trailerUrl.trim() || null,
       description: form.description.trim() || null,
-      // Các field khác (director, actors, posterCloudinaryId, ...) nếu BE yêu cầu
-      // có thể bổ sung sau.
+      duration: Number(form.duration),
+      minimumAge: form.minimumAge ? Number(form.minimumAge) : 0,
+      director: form.director.trim() || null,
+      actors: form.actors.trim() || null,
+      posterUrl: form.posterUrl.trim() || null,
+      posterCloudinaryId: form.posterCloudinaryId.trim() || null,
+      trailerUrl: form.trailerUrl.trim() || null,
+      status: form.status || "UPCOMING",
+      language: form.language.trim() || null,
     };
 
     try {
@@ -186,9 +206,9 @@ export default function AdminMoviesPage() {
     return movies.filter((m) => {
       const q = search.trim().toLowerCase();
       if (q) {
-        const haystack = `${m.title || ""} ${
-          m.genre || ""
-        } ${m.language || ""}`.toLowerCase();
+        const haystack = `${m.title || ""} ${m.genre || ""} ${
+          m.language || ""
+        }`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
 
@@ -552,19 +572,38 @@ function MovieModal({
   const isEdit = Boolean(editingMovie?.movieId);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-xl">
-      <div className="relative w-full max-w-2xl rounded-3xl overflow-hidden bg-gradient-to-br from-[#160033]/95 via-[#080017] to-black border border-white/15 shadow-[0_0_60px_rgba(123,66,255,0.6)]">
+    <div
+      className="
+        fixed inset-0 z-[60]
+        flex items-start justify-center
+        px-4 py-8
+        bg-black/70 backdrop-blur-xl
+        overflow-y-auto
+      "
+    >
+      <div
+        className="
+          relative w-full max-w-2xl
+          max-h-[85vh] overflow-y-auto
+          rounded-3xl overflow-hidden
+          bg-gradient-to-br from-[#160033]/95 via-[#080017] to-black
+          border border-white/15
+          shadow-[0_0_60px_rgba(123,66,255,0.6)]
+        "
+      >
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
 
-        <div className="relative p-6 md:p-8 max-h-[80vh] overflow-y-auto">
+        <div className="relative p-6 md:p-8 ">
           <div className="flex items-start justify-between gap-4 mb-6">
             <div>
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-cyan-400/70 mb-1">
                 {isEdit ? "CHỈNH SỬA PHIM" : "THÊM PHIM MỚI"}
               </p>
               <h2 className="text-xl md:text-2xl font-black tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-300 bg-clip-text text-transparent">
-                {isEdit ? editingMovie?.title || "Cập nhật phim" : "Thông tin phim"}
+                {isEdit
+                  ? editingMovie?.title || "Cập nhật phim"
+                  : "Thông tin phim"}
               </h2>
             </div>
             <button
@@ -648,6 +687,31 @@ function MovieModal({
                   placeholder="English, Tiếng Việt..."
                 />
               </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Đạo diễn
+                </label>
+                <input
+                  type="text"
+                  value={form.director}
+                  onChange={handleChange("director")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="Tên đạo diễn…"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Diễn viên
+                </label>
+                <input
+                  type="text"
+                  value={form.actors}
+                  onChange={handleChange("actors")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="Danh sách diễn viên chính…"
+                />
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
@@ -692,6 +756,18 @@ function MovieModal({
                 onChange={handleChange("posterUrl")}
                 className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                 placeholder="https://cdn.example.com/posters/..."
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                Poster Cloudinary Id
+              </label>
+              <input
+                type="text"
+                value={form.posterCloudinaryId}
+                onChange={handleChange("posterCloudinaryId")}
+                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                placeholder="cloudinary_public_id..."
               />
             </div>
 
