@@ -1,5 +1,6 @@
 // src/app/(admin)/rooms/page.jsx
 import { useEffect, useMemo, useState } from "react";
+import WarningModal from "@/components/shared/WarningModal";
 import { AdminCinemaService } from "@/api/adminservice";
 
 const EMPTY_FORM = {
@@ -26,6 +27,19 @@ export default function AdminRoomsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+
+  // Shared warning modal
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning({ open: false, title: "", message: "", onConfirm: null });
 
   // ====== LOAD DATA ======
   const fetchData = async () => {
@@ -168,28 +182,30 @@ export default function AdminRoomsPage() {
     const cinema = cinemaMap[room.cinemaId];
     const cinemaName = cinema?.name || cinema?.cinemaName || "Rạp";
 
-    if (
-      !window.confirm(
-        `Bạn chắc chắn muốn xóa phòng ${room.roomNumber} (${room.roomType}) của ${cinemaName}?`
-      )
-    )
-      return;
+    const confirmDelete = async () => {
+      try {
+        setDeletingId(roomId);
+        setError(null);
+        setSuccess(null);
 
-    try {
-      setDeletingId(roomId);
-      setError(null);
-      setSuccess(null);
+        await AdminCinemaService.deleteRoom(roomId);
 
-      await AdminCinemaService.deleteRoom(roomId);
+        setRooms((prev) => prev.filter((r) => r.roomId !== roomId));
+        setSuccess("Xóa phòng chiếu thành công.");
+      } catch (err) {
+        console.error("Delete room error:", err);
+        setError(err?.message || "Xóa phòng chiếu thất bại.");
+      } finally {
+        setDeletingId(null);
+        closeWarning();
+      }
+    };
 
-      setRooms((prev) => prev.filter((r) => r.roomId !== roomId));
-      setSuccess("Xóa phòng chiếu thành công.");
-    } catch (err) {
-      console.error("Delete room error:", err);
-      setError(err?.message || "Xóa phòng chiếu thất bại.");
-    } finally {
-      setDeletingId(null);
-    }
+    showWarning(
+      `Bạn chắc chắn muốn xóa phòng ${room.roomNumber} (${room.roomType}) của ${cinemaName}?`,
+      "Lưu ý!",
+      confirmDelete
+    );
   };
 
   // ====== DERIVED DATA ======
@@ -231,6 +247,14 @@ export default function AdminRoomsPage() {
   // ====== RENDER ======
   return (
     <div className="space-y-8 lg:space-y-10">
+      {/* Shared warning modal */}
+      <WarningModal
+        open={warning.open}
+        title={warning.title}
+        message={warning.message}
+        onCancel={closeWarning}
+        onConfirm={warning.onConfirm}
+      />
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">

@@ -1,5 +1,6 @@
 // src/app/(admin)/bookings/page.jsx
 import { useMemo, useState } from "react";
+import WarningModal from "@/components/shared/WarningModal";
 import { AdminOrderService } from "@/api/adminservice";
 
 const STATUS_COLORS = {
@@ -30,6 +31,19 @@ export default function AdminBookingsPage() {
   const [qrDraft, setQrDraft] = useState("");
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+
+  // Warning modal state (Seats-style)
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning({ open: false, title: "", message: "", onConfirm: null });
 
   // ==== handlers ====
 
@@ -65,30 +79,38 @@ export default function AdminBookingsPage() {
   const handleSaveQr = async () => {
     if (!booking?.bookingId) return;
 
-    try {
-      setQrSaving(true);
-      setError(null);
-      setSuccess(null);
+    const confirmSave = async () => {
+      try {
+        setQrSaving(true);
+        setError(null);
+        setSuccess(null);
 
-      const updated = await AdminOrderService.updateBookingQr(
-        booking.bookingId,
-        qrDraft.trim() || null
-      );
+        const updated = await AdminOrderService.updateBookingQr(
+          booking.bookingId,
+          qrDraft.trim() || null
+        );
 
-      // merge lại state
-      setBooking((prev) => ({
-        ...(prev || {}),
-        ...(updated || {}),
-        qrCodeUrl: qrDraft.trim() || null,
-      }));
+        setBooking((prev) => ({
+          ...(prev || {}),
+          ...(updated || {}),
+          qrCodeUrl: qrDraft.trim() || null,
+        }));
 
-      setSuccess("Cập nhật QR code cho booking thành công.");
-    } catch (err) {
-      console.error("updateBookingQr error:", err);
-      setError(err?.message || "Cập nhật QR code thất bại.");
-    } finally {
-      setQrSaving(false);
-    }
+        setSuccess("Cập nhật QR code cho booking thành công.");
+      } catch (err) {
+        console.error("updateBookingQr error:", err);
+        setError(err?.message || "Cập nhật QR code thất bại.");
+      } finally {
+        setQrSaving(false);
+        closeWarning();
+      }
+    };
+
+    showWarning(
+      "Bạn có chắc muốn lưu QR cho booking này?",
+      "Lưu ý!",
+      confirmSave
+    );
   };
 
   // ==== derived ====
@@ -135,6 +157,14 @@ export default function AdminBookingsPage() {
 
   return (
     <div className="space-y-8 lg:space-y-10">
+      {/* Shared warning modal */}
+      <WarningModal
+        open={warning.open}
+        title={warning.title}
+        message={warning.message}
+        onCancel={closeWarning}
+        onConfirm={warning.onConfirm}
+      />
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">

@@ -1,5 +1,6 @@
 // src/app/(admin)/cinemas/page.jsx
 import { useEffect, useMemo, useState } from "react";
+import WarningModal from "@/components/shared/WarningModal";
 import { AdminCinemaService } from "@/api/adminservice";
 
 const STATUS_FILTERS = ["ALL", "ACTIVE", "INACTIVE"];
@@ -29,6 +30,19 @@ export default function AdminCinemasPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCinema, setEditingCinema] = useState(null); // null = create
   const [form, setForm] = useState(EMPTY_FORM);
+
+  // Warning modal state (Seats-style)
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning({ open: false, title: "", message: "", onConfirm: null });
 
   // =============== API ===============
 
@@ -157,30 +171,30 @@ export default function AdminCinemasPage() {
     const id = cinema.cinemaId || cinema.id;
     if (!id) return;
 
-    if (
-      !window.confirm(
-        `Bạn chắc chắn muốn xóa rạp "${
-          cinema.name || cinema.cinemaName || ""
-        }"?`
-      )
-    )
-      return;
+    const confirmDelete = async () => {
+      try {
+        setDeletingId(id);
+        setError(null);
+        setSuccess(null);
 
-    try {
-      setDeletingId(id);
-      setError(null);
-      setSuccess(null);
+        await AdminCinemaService.deleteCinema(id);
 
-      await AdminCinemaService.deleteCinema(id);
+        setCinemas((prev) => prev.filter((c) => (c.cinemaId || c.id) !== id));
+        setSuccess("Xóa rạp thành công.");
+      } catch (err) {
+        console.error("Delete cinema error:", err);
+        setError(err?.message || "Xóa rạp thất bại.");
+      } finally {
+        setDeletingId(null);
+        closeWarning();
+      }
+    };
 
-      setCinemas((prev) => prev.filter((c) => (c.cinemaId || c.id) !== id));
-      setSuccess("Xóa rạp thành công.");
-    } catch (err) {
-      console.error("Delete cinema error:", err);
-      setError(err?.message || "Xóa rạp thất bại.");
-    } finally {
-      setDeletingId(null);
-    }
+    showWarning(
+      `Bạn chắc chắn muốn xóa rạp "${cinema.name || cinema.cinemaName || ""}"?`,
+      "Lưu ý!",
+      confirmDelete
+    );
   };
 
   // =============== DERIVED DATA ===============
@@ -227,6 +241,14 @@ export default function AdminCinemasPage() {
 
   return (
     <div className="space-y-8 lg:space-y-10">
+      {/* Shared warning modal */}
+      <WarningModal
+        open={warning.open}
+        title={warning.title}
+        message={warning.message}
+        onCancel={closeWarning}
+        onConfirm={warning.onConfirm}
+      />
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">

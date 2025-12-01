@@ -1,5 +1,6 @@
 // src/app/(admin)/users/page.jsx
 import { useEffect, useMemo, useState } from "react";
+import WarningModal from "@/components/shared/WarningModal";
 import { AdminUserService } from "@/api/adminservice";
 
 const ROLE_OPTIONS = ["ADMIN", "USER"];
@@ -17,6 +18,19 @@ export default function AdminUsersPage() {
 
   // local editable role state
   const [roleDraft, setRoleDraft] = useState({}); // { userId: "ADMIN" }
+
+  // Shared warning modal
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning({ open: false, title: "", message: "", onConfirm: null });
 
   // ======= API CALLS =======
 
@@ -89,23 +103,26 @@ export default function AdminUsersPage() {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa user này?")) return;
+    const confirmDelete = async () => {
+      try {
+        setDeletingId(userId);
+        setError(null);
+        setSuccess(null);
 
-    try {
-      setDeletingId(userId);
-      setError(null);
-      setSuccess(null);
+        await AdminUserService.deleteUser(userId);
 
-      await AdminUserService.deleteUser(userId);
+        setUsers((prev) => prev.filter((u) => u.userId !== userId));
+        setSuccess("Xóa user thành công.");
+      } catch (err) {
+        console.error("Delete user error:", err);
+        setError(err?.message || "Xóa user thất bại.");
+      } finally {
+        setDeletingId(null);
+        closeWarning();
+      }
+    };
 
-      setUsers((prev) => prev.filter((u) => u.userId !== userId));
-      setSuccess("Xóa user thành công.");
-    } catch (err) {
-      console.error("Delete user error:", err);
-      setError(err?.message || "Xóa user thất bại.");
-    } finally {
-      setDeletingId(null);
-    }
+    showWarning("Bạn chắc chắn muốn xóa user này?", "Lưu ý!", confirmDelete);
   };
 
   // ======= DERIVED DATA =======
@@ -149,6 +166,14 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-8 lg:space-y-10">
+      {/* Shared warning modal */}
+      <WarningModal
+        open={warning.open}
+        title={warning.title}
+        message={warning.message}
+        onCancel={closeWarning}
+        onConfirm={warning.onConfirm}
+      />
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">

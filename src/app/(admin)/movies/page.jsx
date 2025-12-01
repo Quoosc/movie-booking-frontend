@@ -1,5 +1,6 @@
 // src/app/(admin)/movies/page.jsx
 import { useEffect, useMemo, useState } from "react";
+import WarningModal from "@/components/shared/WarningModal";
 import { AdminMovieService } from "@/api/adminservice";
 
 const STATUS_OPTIONS = ["SHOWING", "UPCOMING"];
@@ -35,6 +36,19 @@ export default function AdminMoviesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+
+  // Warning modal state (Seats-style)
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning({ open: false, title: "", message: "", onConfirm: null });
 
   // ================= API =================
 
@@ -181,23 +195,26 @@ export default function AdminMoviesPage() {
   };
 
   const handleDeleteMovie = async (movieId) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa phim này?")) return;
+    const confirmDelete = async () => {
+      try {
+        setDeletingId(movieId);
+        setError(null);
+        setSuccess(null);
 
-    try {
-      setDeletingId(movieId);
-      setError(null);
-      setSuccess(null);
+        await AdminMovieService.deleteMovie?.(movieId);
 
-      await AdminMovieService.deleteMovie?.(movieId);
+        setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
+        setSuccess("Xóa phim thành công.");
+      } catch (err) {
+        console.error("Delete movie error:", err);
+        setError(err?.message || "Xóa phim thất bại.");
+      } finally {
+        setDeletingId(null);
+        closeWarning();
+      }
+    };
 
-      setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
-      setSuccess("Xóa phim thành công.");
-    } catch (err) {
-      console.error("Delete movie error:", err);
-      setError(err?.message || "Xóa phim thất bại.");
-    } finally {
-      setDeletingId(null);
-    }
+    showWarning("Bạn chắc chắn muốn xóa phim này?", "Lưu ý!", confirmDelete);
   };
 
   // ================= DERIVED DATA =================
@@ -239,6 +256,14 @@ export default function AdminMoviesPage() {
 
   return (
     <div className="space-y-8 lg:space-y-10">
+      {/* Shared warning modal */}
+      <WarningModal
+        open={warning.open}
+        title={warning.title}
+        message={warning.message}
+        onCancel={closeWarning}
+        onConfirm={warning.onConfirm}
+      />
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">

@@ -1,5 +1,6 @@
 // src/app/(admin)/membership/page.jsx
 import { useEffect, useMemo, useState } from "react";
+import WarningModal from "@/components/shared/WarningModal";
 import { AdminUserService } from "@/api/adminservice";
 const DISCOUNT_TYPE_OPTIONS = [
   { value: "PERCENT", label: "Phần trăm (%)" },
@@ -31,6 +32,19 @@ export default function AdminMembershipPage() {
     description: "",
     isActive: true,
   });
+
+  // Warning modal state (Seats-style)
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning({ open: false, title: "", message: "", onConfirm: null });
 
   // ====== API ======
 
@@ -190,31 +204,32 @@ export default function AdminMembershipPage() {
   };
 
   const handleDeleteTier = async (tier) => {
-    if (
-      !window.confirm(
-        `Bạn chắc chắn muốn xóa hạng "${tier.name}"? Hành động này có thể ảnh hưởng tới tính toán loyalty.`
-      )
-    )
-      return;
+    const confirmDelete = async () => {
+      try {
+        setDeletingId(tier.membershipTierId);
+        setError(null);
+        setSuccess(null);
 
-    try {
-      setDeletingId(tier.membershipTierId);
-      setError(null);
-      setSuccess(null);
+        await AdminUserService.deleteMembershipTier(tier.membershipTierId);
 
-      // ✅ deleteMembershipTier từ AdminUserService
-      await AdminUserService.deleteMembershipTier(tier.membershipTierId);
+        setTiers((prev) =>
+          prev.filter((t) => t.membershipTierId !== tier.membershipTierId)
+        );
+        setSuccess("Xóa hạng thành viên thành công.");
+      } catch (err) {
+        console.error("delete membership tier error:", err);
+        setError(err?.message || "Xóa hạng thành viên thất bại.");
+      } finally {
+        setDeletingId(null);
+        closeWarning();
+      }
+    };
 
-      setTiers((prev) =>
-        prev.filter((t) => t.membershipTierId !== tier.membershipTierId)
-      );
-      setSuccess("Xóa hạng thành viên thành công.");
-    } catch (err) {
-      console.error("delete membership tier error:", err);
-      setError(err?.message || "Xóa hạng thành viên thất bại.");
-    } finally {
-      setDeletingId(null);
-    }
+    showWarning(
+      `Bạn chắc chắn muốn xóa hạng "${tier.name}"? Hành động này có thể ảnh hưởng tới tính toán loyalty.`,
+      "Lưu ý!",
+      confirmDelete
+    );
   };
 
   // ====== DERIVED DATA ======
@@ -252,6 +267,14 @@ export default function AdminMembershipPage() {
 
   return (
     <div className="space-y-8 lg:space-y-10">
+      {/* Shared warning modal */}
+      <WarningModal
+        open={warning.open}
+        title={warning.title}
+        message={warning.message}
+        onCancel={closeWarning}
+        onConfirm={warning.onConfirm}
+      />
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">

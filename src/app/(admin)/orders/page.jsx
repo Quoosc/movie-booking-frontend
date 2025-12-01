@@ -1,5 +1,6 @@
 // src/app/(admin)/orders/page.jsx
 import { useEffect, useMemo, useState } from "react";
+import WarningModal from "@/components/shared/WarningModal";
 import { AdminOrderService } from "@/api/adminservice";
 
 const PAYMENT_STATUS_OPTIONS = [
@@ -34,6 +35,19 @@ export default function AdminOrdersPage() {
   const [refundReason, setRefundReason] = useState("");
   const [refundSubmitting, setRefundSubmitting] = useState(false);
 
+  // Shared warning modal for confirm steps
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning({ open: false, title: "", message: "", onConfirm: null });
+
   // booking detail modal
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -61,11 +75,17 @@ export default function AdminOrdersPage() {
 
       const filters = buildSearchParams();
       const data = await AdminOrderService.searchPayments(filters);
-      const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
       setPayments(list);
     } catch (err) {
       console.error("searchPayments error:", err);
-      setError(err?.message || "Không tải được danh sách đơn hàng / thanh toán.");
+      setError(
+        err?.message || "Không tải được danh sách đơn hàng / thanh toán."
+      );
     } finally {
       setLoading(false);
     }
@@ -143,29 +163,40 @@ export default function AdminOrdersPage() {
       return;
     }
 
-    try {
-      setRefundSubmitting(true);
-      setError(null);
-      setSuccess(null);
+    const confirmRefund = async () => {
+      try {
+        setRefundSubmitting(true);
+        setError(null);
+        setSuccess(null);
 
-      await AdminOrderService.requestRefund(refundPayment.paymentId, refundReason.trim());
+        await AdminOrderService.requestRefund(
+          refundPayment.paymentId,
+          refundReason.trim()
+        );
 
-      setSuccess("Đã gửi yêu cầu hoàn tiền (REFUND) cho giao dịch này.");
-      // update local status luôn cho UI mượt
-      setPayments((prev) =>
-        prev.map((p) =>
-          p.paymentId === refundPayment.paymentId
-            ? { ...p, status: "REFUND_PENDING" }
-            : p
-        )
-      );
-      closeRefundModal();
-    } catch (err) {
-      console.error("requestRefund error:", err);
-      setError(err?.message || "Gửi yêu cầu hoàn tiền thất bại.");
-    } finally {
-      setRefundSubmitting(false);
-    }
+        setSuccess("Đã gửi yêu cầu hoàn tiền (REFUND) cho giao dịch này.");
+        setPayments((prev) =>
+          prev.map((p) =>
+            p.paymentId === refundPayment.paymentId
+              ? { ...p, status: "REFUND_PENDING" }
+              : p
+          )
+        );
+        closeRefundModal();
+      } catch (err) {
+        console.error("requestRefund error:", err);
+        setError(err?.message || "Gửi yêu cầu hoàn tiền thất bại.");
+      } finally {
+        setRefundSubmitting(false);
+        closeWarning();
+      }
+    };
+
+    showWarning(
+      "Xác nhận gửi yêu cầu hoàn tiền cho giao dịch này?",
+      "Lưu ý!",
+      confirmRefund
+    );
   };
 
   // ================= DERIVED DATA =================
@@ -196,12 +227,7 @@ export default function AdminOrdersPage() {
   // ================= HELPERS =================
 
   const displayAmount = (p) => {
-    const raw =
-      p.amount ??
-      p.totalAmount ??
-      p.finalAmount ??
-      p.payAmount ??
-      0;
+    const raw = p.amount ?? p.totalAmount ?? p.finalAmount ?? p.payAmount ?? 0;
     return Number(raw).toLocaleString("vi-VN") + " đ";
   };
 
@@ -225,6 +251,14 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="space-y-8 lg:space-y-10">
+      {/* Shared warning modal */}
+      <WarningModal
+        open={warning.open}
+        title={warning.title}
+        message={warning.message}
+        onCancel={closeWarning}
+        onConfirm={warning.onConfirm}
+      />
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
@@ -850,8 +884,7 @@ function BookingDetailModal({
                   <h3 className="text-xs font-semibold tracking-[0.2em] uppercase text-white/70 mb-3">
                     Ghế
                   </h3>
-                  {Array.isArray(booking.seats) &&
-                  booking.seats.length > 0 ? (
+                  {Array.isArray(booking.seats) && booking.seats.length > 0 ? (
                     <ul className="flex flex-wrap gap-2 text-xs">
                       {booking.seats.map((s) => (
                         <li
@@ -908,17 +941,13 @@ function BookingDetailModal({
                   <div>
                     <div className="text-white/60">Tên</div>
                     <div className="font-semibold">
-                      {booking.customerName ||
-                        booking.user?.username ||
-                        "N/A"}
+                      {booking.customerName || booking.user?.username || "N/A"}
                     </div>
                   </div>
                   <div>
                     <div className="text-white/60">Email</div>
                     <div className="font-mono text-[11px]">
-                      {booking.customerEmail ||
-                        booking.user?.email ||
-                        "N/A"}
+                      {booking.customerEmail || booking.user?.email || "N/A"}
                     </div>
                   </div>
                   <div>

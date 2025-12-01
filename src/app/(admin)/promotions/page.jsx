@@ -1,5 +1,6 @@
 // src/app/(admin)/promotions/page.jsx
 import { useEffect, useMemo, useState } from "react";
+import WarningModal from "@/components/shared/WarningModal";
 import { AdminToolsService } from "@/api/adminservice";
 
 const DISCOUNT_TYPES = [
@@ -32,6 +33,19 @@ export default function AdminPromotionsPage() {
   const [form, setForm] = useState(getEmptyForm());
 
   const [processingId, setProcessingId] = useState(null); // deactivate / delete
+
+  // Shared warning modal
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning({ open: false, title: "", message: "", onConfirm: null });
 
   // ===== Helpers =====
   function getEmptyForm() {
@@ -303,50 +317,64 @@ export default function AdminPromotionsPage() {
   };
 
   const handleDeactivate = async (promo) => {
-    if (!window.confirm(`Tắt khuyến mãi "${promo.code}"?`)) return;
-    try {
-      setProcessingId(promo.promotionId);
-      setError(null);
-      setSuccess(null);
+    const confirmDeactivate = async () => {
+      try {
+        setProcessingId(promo.promotionId);
+        setError(null);
+        setSuccess(null);
 
-      await AdminToolsService.deactivatePromotion(promo.promotionId);
-      setSuccess("Đã tắt khuyến mãi.");
-      await fetchPromotions(filter);
-    } catch (err) {
-      console.error("Deactivate promotion error:", err);
-      setError(err?.message || "Tắt khuyến mãi thất bại.");
-    } finally {
-      setProcessingId(null);
-    }
+        await AdminToolsService.deactivatePromotion(promo.promotionId);
+        setSuccess("Đã tắt khuyến mãi.");
+        await fetchPromotions(filter);
+      } catch (err) {
+        console.error("Deactivate promotion error:", err);
+        setError(err?.message || "Tắt khuyến mãi thất bại.");
+      } finally {
+        setProcessingId(null);
+        closeWarning();
+      }
+    };
+
+    showWarning(`Tắt khuyến mãi "${promo.code}"?`, "Lưu ý!", confirmDeactivate);
   };
 
   const handleDelete = async (promo) => {
-    if (
-      !window.confirm(
-        `Bạn chắc chắn muốn xóa vĩnh viễn khuyến mãi "${promo.code}"?`
-      )
-    )
-      return;
+    const confirmDelete = async () => {
+      try {
+        setProcessingId(promo.promotionId);
+        setError(null);
+        setSuccess(null);
 
-    try {
-      setProcessingId(promo.promotionId);
-      setError(null);
-      setSuccess(null);
+        await AdminToolsService.deletePromotion(promo.promotionId);
+        setSuccess("Xóa khuyến mãi thành công.");
+        await fetchPromotions(filter);
+      } catch (err) {
+        console.error("Delete promotion error:", err);
+        setError(err?.message || "Xóa khuyến mãi thất bại.");
+      } finally {
+        setProcessingId(null);
+        closeWarning();
+      }
+    };
 
-      await AdminToolsService.deletePromotion(promo.promotionId);
-      setSuccess("Xóa khuyến mãi thành công.");
-      await fetchPromotions(filter);
-    } catch (err) {
-      console.error("Delete promotion error:", err);
-      setError(err?.message || "Xóa khuyến mãi thất bại.");
-    } finally {
-      setProcessingId(null);
-    }
+    showWarning(
+      `Bạn chắc chắn muốn xóa vĩnh viễn khuyến mãi "${promo.code}"?`,
+      "Lưu ý!",
+      confirmDelete
+    );
   };
 
   // ===== Render =====
   return (
     <div className="space-y-8 lg:space-y-10">
+      {/* Shared warning modal */}
+      <WarningModal
+        open={warning.open}
+        title={warning.title}
+        message={warning.message}
+        onCancel={closeWarning}
+        onConfirm={warning.onConfirm}
+      />
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">

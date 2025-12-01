@@ -1,5 +1,6 @@
 // src/app/(admin)/pricing/page.jsx
 import { useEffect, useMemo, useState } from "react";
+import WarningModal from "@/components/shared/WarningModal";
 import { AdminPricingService } from "@/api/adminservice";
 
 const CONDITION_TYPES = [
@@ -44,6 +45,19 @@ export default function AdminPricingPage() {
 
   const [savingSection, setSavingSection] = useState(null); // "base" | "modifier" | "ticket"
   const [deletingId, setDeletingId] = useState(null);
+
+  // Shared warning modal
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning({ open: false, title: "", message: "", onConfirm: null });
 
   useEffect(() => {
     loadAll();
@@ -210,43 +224,57 @@ export default function AdminPricingPage() {
   }
 
   async function handleDeleteModifier(id) {
-    if (!window.confirm("Xóa modifier này?")) return;
-    try {
-      setDeletingId(id);
-      setError(null);
-      setSuccess(null);
-      await AdminPricingService.deletePriceModifier(id);
-      setModifiers((prev) => prev.filter((m) => m.priceModifierId !== id));
-      setSuccess("Xóa modifier thành công.");
-    } catch (err) {
-      console.error("Delete modifier error:", err);
-      setError(err?.message || "Xóa modifier thất bại.");
-    } finally {
-      setDeletingId(null);
-    }
+    const confirmDelete = async () => {
+      try {
+        setDeletingId(id);
+        setError(null);
+        setSuccess(null);
+        await AdminPricingService.deletePriceModifier(id);
+        setModifiers((prev) => prev.filter((m) => m.priceModifierId !== id));
+        setSuccess("Xóa modifier thành công.");
+      } catch (err) {
+        console.error("Delete modifier error:", err);
+        setError(err?.message || "Xóa modifier thất bại.");
+      } finally {
+        setDeletingId(null);
+        closeWarning();
+      }
+    };
+    showWarning("Xóa modifier này?", "Lưu ý!", confirmDelete);
   }
 
   async function handleDeleteTicketType(id) {
-    if (!window.confirm("Xóa ticket type này?")) return;
-    try {
-      setDeletingId(id);
-      setError(null);
-      setSuccess(null);
-      await AdminPricingService.deleteTicketType(id);
-      setTicketTypes((prev) => prev.filter((t) => t.ticketTypeId !== id));
-      setSuccess("Xóa ticket type thành công.");
-    } catch (err) {
-      console.error("Delete ticket type error:", err);
-      setError(err?.message || "Xóa ticket type thất bại.");
-    } finally {
-      setDeletingId(null);
-    }
+    const confirmDelete = async () => {
+      try {
+        setDeletingId(id);
+        setError(null);
+        setSuccess(null);
+        await AdminPricingService.deleteTicketType(id);
+        setTicketTypes((prev) => prev.filter((t) => t.ticketTypeId !== id));
+        setSuccess("Xóa ticket type thành công.");
+      } catch (err) {
+        console.error("Delete ticket type error:", err);
+        setError(err?.message || "Xóa ticket type thất bại.");
+      } finally {
+        setDeletingId(null);
+        closeWarning();
+      }
+    };
+    showWarning("Xóa ticket type này?", "Lưu ý!", confirmDelete);
   }
 
   // ========== RENDER ==========
 
   return (
     <div className="space-y-8 lg:space-y-10">
+      {/* Shared warning modal */}
+      <WarningModal
+        open={warning.open}
+        title={warning.title}
+        message={warning.message}
+        onCancel={closeWarning}
+        onConfirm={warning.onConfirm}
+      />
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
