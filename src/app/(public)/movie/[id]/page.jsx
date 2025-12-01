@@ -111,26 +111,6 @@ export default function MovieDetailPage() {
     fetchMovie();
   }, [id]);
 
-  /* ===== LOAD TICKET TYPES (CHUNG CHO MỌI SHOWTIME) này dùng để sài mock ===== */
-  // useEffect(() => {
-  //   const fetchTicketTypes = async () => {
-  //     try {
-  //       const data = await getTicketTypes();
-  //       const list =
-  //         Array.isArray(data) && data.length > 0 ? data : DEFAULT_TICKET_TYPES;
-
-  //       // Gắn thêm quantity = 0 cho UI
-  //       setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
-  //     } catch (err) {
-  //       console.error("getTicketTypes error, dùng DEFAULT_TICKET_TYPES", err);
-  //       setTicketTypes(
-  //         DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
-  //       );
-  //     }
-  //   };
-
-  //   fetchTicketTypes();
-  // }, []);
 
   /* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ – DÙNG API MỚI) ===== */
   useEffect(() => {
@@ -182,87 +162,6 @@ export default function MovieDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, selectedDate]);
 
-  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC Đây là bản real api ===== */
-
-  // useEffect(() => {
-  //   if (!activeShowtime) {
-  //     setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-  //     return;
-  //   }
-
-  //   const ticketPayload = ticketTypes
-  //     .filter((t) => t.quantity > 0)
-  //     .map((t) => ({
-  //       id: t.id,
-  //       label: t.label,
-  //       price: t.price,
-  //       quantity: t.quantity,
-  //     }));
-
-  //   const snackPayload = Object.values(selectedSnacks).map((s) => ({
-  //     snack_id: s.snack_id,
-  //     name: s.name,
-  //     price: s.price,
-  //     quantity: s.quantity,
-  //   }));
-
-  //   if (ticketPayload.length === 0 && snackPayload.length === 0) {
-  //     setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
-  //     return;
-  //   }
-
-  //   let cancelled = false;
-
-  //   const fetchPrice = async () => {
-  //     try {
-  //       const seatIds = selectedSeats.map((s) => s.seat_id);
-
-  //       const res = await previewPrice({
-  //         showtimeId: activeShowtime.showtimeId,
-  //         seatIds,
-  //         ticketTypes: ticketPayload,
-  //         snacks: snackPayload,
-  //         promotionCode: null,
-  //         userId: null,
-  //       });
-
-  //       const data = res.data || res;
-
-  //       if (!cancelled) {
-  //         setPriceSummary({
-  //           subtotal: data.subtotal ?? 0,
-  //           discount: data.discount ?? 0,
-  //           total: data.total ?? 0,
-  //         });
-  //       }
-  //     } catch (error) {
-  //       console.error("previewPrice failed, fallback local calc", error);
-
-  //       // fallback: dùng logic cũ để không chết UI
-  //       const ticketTotal = ticketTypes.reduce(
-  //         (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
-  //         0
-  //       );
-  //       const snackTotal = Object.values(selectedSnacks).reduce(
-  //         (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
-  //         0
-  //       );
-  //       const subtotal = ticketTotal + snackTotal;
-  //       const discount = 0;
-  //       const total = subtotal - discount;
-
-  //       if (!cancelled) {
-  //         setPriceSummary({ subtotal, discount, total });
-  //       }
-  //     }
-  //   };    //             BẢN NÀY CÓ VẤN ĐỀ VỀ PRICE-PREVIEW
-
-  //   fetchPrice();
-
-  //   return () => {
-  //     cancelled = true;
-  //   };
-  // }, [activeShowtime, ticketTypes, selectedSnacks]);
 
   /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC này là sài dùng để mock ===== */
   useEffect(() => {

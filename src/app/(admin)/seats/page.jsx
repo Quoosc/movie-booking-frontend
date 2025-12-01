@@ -4,6 +4,13 @@ import { AdminCinemaService } from "@/api/adminservice";
 
 const SEAT_TYPES = ["NORMAL", "VIP", "COUPLE"];
 
+// Helper parse "A,B,C" → ["A","B","C"]
+const parseRowList = (str = "") =>
+  String(str)
+    .split(",")
+    .map((s) => s.trim().toUpperCase())
+    .filter(Boolean);
+
 export default function AdminSeatsPage() {
   const [cinemas, setCinemas] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -11,6 +18,7 @@ export default function AdminSeatsPage() {
 
   const [selectedCinemaId, setSelectedCinemaId] = useState("");
   const [selectedRoomId, setSelectedRoomId] = useState("");
+  const [selectedSeatIdForDetail, setSelectedSeatIdForDetail] = useState(null);
 
   const [loadingInit, setLoadingInit] = useState(true);
   const [loadingSeats, setLoadingSeats] = useState(false);
@@ -19,10 +27,28 @@ export default function AdminSeatsPage() {
   const [savingSeatId, setSavingSeatId] = useState(null);
   const [deletingSeatId, setDeletingSeatId] = useState(null);
 
+  const [previewingLayout, setPreviewingLayout] = useState(false);
+  const [previewLayout, setPreviewLayout] = useState([]); // sơ đồ ghế preview
+
+  const [focusedSeatId, setFocusedSeatId] = useState(null); // ghế đang chọn để edit
+
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
   const [search, setSearch] = useState("");
+
+  // Warning modal (custom confirm like movie detail)
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "Lưu ý!",
+    message: "",
+    onConfirm: null,
+  });
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({ open: true, title, message, onConfirm });
+  };
+  const closeWarning = () =>
+    setWarning((prev) => ({ ...prev, open: false, onConfirm: null }));
 
   // Draft cho edit từng ghế
   const [seatDrafts, setSeatDrafts] = useState({}); // { seatId: { rowLabel, seatNumber, seatType } }
@@ -84,16 +110,21 @@ export default function AdminSeatsPage() {
   // Khi chọn cinema → auto chọn phòng đầu tiên thuộc cinema đó
   useEffect(() => {
     if (!selectedCinemaId || rooms.length === 0) return;
-    const roomsForCinema = rooms.filter(
-      (r) => r.cinemaId === selectedCinemaId
-    );
+    const roomsForCinema = rooms.filter((r) => r.cinemaId === selectedCinemaId);
     if (roomsForCinema.length > 0) {
-      if (!selectedRoomId || !roomsForCinema.some((r) => r.roomId === selectedRoomId)) {
+      if (
+        !selectedRoomId ||
+        !roomsForCinema.some((r) => r.roomId === selectedRoomId)
+      ) {
         setSelectedRoomId(roomsForCinema[0].roomId);
       }
     } else {
       setSelectedRoomId("");
       setSeats([]);
+      setSeatDrafts({});
+      setPreviewLayout([]);
+      setRowLabelsPreview([]);
+      setFocusedSeatId(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCinemaId, rooms]);
@@ -104,6 +135,9 @@ export default function AdminSeatsPage() {
     if (!roomId) {
       setSeats([]);
       setSeatDrafts({});
+      setPreviewLayout([]);
+      setRowLabelsPreview([]);
+      setFocusedSeatId(null);
       return;
     }
 
@@ -126,11 +160,12 @@ export default function AdminSeatsPage() {
         };
       });
       setSeatDrafts(drafts);
+      setPreviewLayout([]);
+      setRowLabelsPreview([]);
+      setFocusedSeatId(null);
     } catch (err) {
       console.error("Load seats error:", err);
-      setError(
-        err?.message || "Không tải được danh sách ghế cho phòng này."
-      );
+      setError(err?.message || "Không tải được danh sách ghế cho phòng này.");
     } finally {
       setLoadingSeats(false);
     }
@@ -217,28 +252,92 @@ export default function AdminSeatsPage() {
     }
   };
 
-  // ---- Preview nhãn hàng ghế ----
-  const handlePreviewRowLabels = async () => {
+  // ---- Preview sơ đồ ghế (dùng rows + seatsPerRow + vipRows/coupleRows) ----
+  const handlePreviewSeatLayout = async () => {
     setError(null);
     setSuccess(null);
+
     const rowsNum = Number(generateForm.rows);
-    if (!rowsNum || rowsNum <= 0) {
-      setError("Số hàng ghế phải lớn hơn 0 để preview nhãn.");
+    const seatsPerRowNum = Number(generateForm.seatsPerRow);
+
+    if (!rowsNum || rowsNum <= 0 || !seatsPerRowNum || seatsPerRowNum <= 0) {
+      setError("Số hàng và số ghế mỗi hàng phải > 0 để preview sơ đồ ghế.");
       return;
     }
 
     try {
+      setPreviewingLayout(true);
+
       const res = await AdminCinemaService.getSeatRowLabels(rowsNum);
-      setRowLabelsPreview(res?.labels || []);
-    } catch (err) {
-      console.error("Get row labels error:", err);
-      setError(
-        err?.message || "Không preview được nhãn hàng ghế. Vui lòng thử lại."
+      console.log("Row labels response:", res);
+
+      let labels;
+
+      // 1) BE trả thẳng array: ["A","B",...]
+      if (Array.isArray(res)) {
+        labels = res;
+      }
+      // 2) BE trả { labels: [...] }
+      else if (Array.isArray(res.labels)) {
+        labels = res.labels;
+      }
+      // 3) Case hiện tại: { totalRows, rowLabels: [...] }
+      else if (Array.isArray(res.rowLabels)) {
+        labels = res.rowLabels;
+      }
+      // 4) Nếu sau này bạn bọc thêm { data: { ... } }
+      else if (res.data) {
+        if (Array.isArray(res.data.labels)) labels = res.data.labels;
+        else if (Array.isArray(res.data.rowLabels)) labels = res.data.rowLabels;
+      }
+
+      if (!Array.isArray(labels) || labels.length === 0) {
+        throw new Error("API không trả về nhãn hàng ghế hợp lệ.");
+      }
+
+      setRowLabelsPreview(labels);
+
+      const vipRows = parseRowList(generateForm.vipRows);
+      const coupleRows = parseRowList(generateForm.coupleRows);
+      const vipSet = new Set(vipRows);
+      const coupleSet = new Set(coupleRows);
+
+      const preview = [];
+
+      labels.forEach((rowLabel) => {
+        for (let i = 1; i <= seatsPerRowNum; i++) {
+          let type = "NORMAL";
+          if (coupleSet.has(rowLabel)) type = "COUPLE";
+          else if (vipSet.has(rowLabel)) type = "VIP";
+
+          preview.push({
+            seat_id: `preview-${rowLabel}-${i}`,
+            row: rowLabel,
+            number: i,
+            type,
+            status: "AVAILABLE",
+          });
+        }
+      });
+
+      setPreviewLayout(preview);
+      setFocusedSeatId(null);
+
+      setSuccess(
+        "Đã preview sơ đồ ghế. Hàng VIP / COUPLE sẽ áp dụng đúng khi bấm 'Sinh sơ đồ ghế'."
       );
+    } catch (err) {
+      console.error("Preview seat layout error:", err);
+      setError(
+        err?.message || "Không preview được sơ đồ ghế. Vui lòng thử lại."
+      );
+      setPreviewLayout([]);
+    } finally {
+      setPreviewingLayout(false);
     }
   };
 
-  // ---- Generate sơ đồ ghế ----
+  // ---- Generate sơ đồ ghế (ghi xuống DB) ----
   const handleGenerateSeats = async (e) => {
     e.preventDefault();
     setError(null);
@@ -256,12 +355,6 @@ export default function AdminSeatsPage() {
       setError("Số hàng và số ghế mỗi hàng phải > 0.");
       return;
     }
-
-    const parseRowList = (str) =>
-      str
-        .split(",")
-        .map((s) => s.trim().toUpperCase())
-        .filter(Boolean);
 
     const vipRows = parseRowList(generateForm.vipRows);
     const coupleRows = parseRowList(generateForm.coupleRows);
@@ -283,6 +376,10 @@ export default function AdminSeatsPage() {
       setSuccess(
         `Đã sinh sơ đồ ghế thành công. Tổng số ghế tạo: ${total || "N/A"}.`
       );
+
+      setPreviewLayout([]);
+      setRowLabelsPreview([]);
+      setFocusedSeatId(null);
 
       await loadSeatsByRoom(selectedRoomId);
     } catch (err) {
@@ -315,9 +412,7 @@ export default function AdminSeatsPage() {
       const payload = { rowLabel, seatNumber, seatType };
       const updated = await AdminCinemaService.updateSeat(seatId, payload);
 
-      setSeats((prev) =>
-        prev.map((s) => (s.seatId === seatId ? updated : s))
-      );
+      setSeats((prev) => prev.map((s) => (s.seatId === seatId ? updated : s)));
 
       setSeatDrafts((prev) => ({
         ...prev,
@@ -339,30 +434,44 @@ export default function AdminSeatsPage() {
 
   // ---- Xóa ghế ----
   const handleDeleteSeat = async (seatId) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa ghế này?")) return;
+    showWarning("Bạn chắc chắn muốn xóa ghế này?", "Xác nhận xoá", async () => {
+      try {
+        setDeletingSeatId(seatId);
+        setError(null);
+        setSuccess(null);
 
-    try {
-      setDeletingSeatId(seatId);
-      setError(null);
-      setSuccess(null);
+        await AdminCinemaService.deleteSeat(seatId);
 
-      await AdminCinemaService.deleteSeat(seatId);
+        // Nếu BE cho xóa được thì remove ở FE
+        setSeats((prev) => prev.filter((s) => s.seatId !== seatId));
+        setSuccess("Xóa ghế thành công.");
+      } catch (err) {
+        console.error("Delete seat error:", err);
+        const msg = err?.message || "";
 
-      setSeats((prev) => prev.filter((s) => s.seatId !== seatId));
+        if (
+          msg.includes("Cannot delete seat that is being used in showtimes")
+        ) {
+          setError(
+            "Không thể xoá ghế này vì đang được sử dụng trong các suất chiếu.\n" +
+              "Bạn phải xoá / chỉnh sửa các suất chiếu đang dùng ghế này trước (hoặc chỉ sửa thông tin ghế, không xoá)."
+          );
+        } else {
+          setError(msg || "Xóa ghế thất bại.");
+        }
+      } finally {
+        setDeletingSeatId(null);
+        closeWarning();
+      }
+    });
+  };
 
-      setSeatDrafts((prev) => {
-        const copy = { ...prev };
-        delete copy[seatId];
-        return copy;
-      });
+  // Khi click một ghế trên sơ đồ (chỉ cho layout thật, không phải preview)
+  const handleSelectSeatFromLayout = (seat) => {
+    if (!seat) return;
+    if (previewLayout.length > 0) return; // preview mode: chỉ xem, không edit
 
-      setSuccess("Xóa ghế thành công.");
-    } catch (err) {
-      console.error("Delete seat error:", err);
-      setError(err?.message || "Xóa ghế thất bại.");
-    } finally {
-      setDeletingSeatId(null);
-    }
+    setFocusedSeatId((prev) => (prev === seat.seat_id ? null : seat.seat_id));
   };
 
   // ================== DERIVED ==================
@@ -397,13 +506,131 @@ export default function AdminSeatsPage() {
     return { total, normal, vip, couple };
   }, [seats]);
 
+  const selectedSeat =
+    seats.find((s) => s.seatId === selectedSeatIdForDetail) || null;
+
+  const selectedSeatDraft = selectedSeat
+    ? seatDrafts[selectedSeat.seatId] || {
+        rowLabel: selectedSeat.rowLabel || "",
+        seatNumber: selectedSeat.seatNumber ?? "",
+        seatType: selectedSeat.seatType || "NORMAL",
+      }
+    : null;
+
   const currentCinema = cinemas.find((c) => c.cinemaId === selectedCinemaId);
   const currentRoom = rooms.find((r) => r.roomId === selectedRoomId);
+
+  // Sơ đồ hiển thị (ưu tiên previewLayout, nếu không thì layout thật từ DB)
+  const layoutByRow = useMemo(() => {
+    const sourceSeats =
+      previewLayout.length > 0
+        ? previewLayout
+        : seats.map((s) => ({
+            seat_id: s.seatId,
+            row: s.rowLabel,
+            number: s.seatNumber,
+            type: s.seatType || "NORMAL",
+            status: "AVAILABLE",
+          }));
+
+    if (!sourceSeats || sourceSeats.length === 0) return [];
+
+    const map = {};
+    sourceSeats.forEach((s) => {
+      if (!s.row) return;
+      if (!map[s.row]) map[s.row] = [];
+      map[s.row].push(s);
+    });
+    Object.values(map).forEach((rowSeats) =>
+      rowSeats.sort((a, b) => (a.number || 0) - (b.number || 0))
+    );
+    return Object.entries(map).sort(([a], [b]) => (a > b ? 1 : -1));
+  }, [previewLayout, seats]);
+
+  const handleClickSeatOnLayout = (seat) => {
+    const seatId = seat.seatId || seat.seat_id;
+    if (!seatId) return;
+
+    setSelectedSeatIdForDetail(seatId);
+
+    // đảm bảo seatDrafts có entry cho ghế này để chỉnh sửa
+    setSeatDrafts((prev) => {
+      if (prev[seatId]) return prev;
+      const original = seats.find((s) => s.seatId === seatId) || {};
+      return {
+        ...prev,
+        [seatId]: {
+          rowLabel: original.rowLabel || "",
+          seatNumber: original.seatNumber ?? "",
+          seatType: original.seatType || "NORMAL",
+        },
+      };
+    });
+  };
+
+  const handleSeatClickFromLayout = (seat) => {
+    if (!seat) return;
+    // Nếu đang ở chế độ preview layout thì không cho chỉnh
+    if (previewLayout.length > 0) return;
+
+    const seatId = seat.seatId || seat.seat_id;
+    if (!seatId) return;
+
+    // Cập nhật panel "Chi tiết ghế" phía trên
+    handleClickSeatOnLayout(seat);
+
+    // Đồng bộ với SeatInspector (panel bên phải) nếu vẫn dùng
+    setFocusedSeatId(seatId);
+  };
+
+  const matchedSeatIds = useMemo(
+    () => filteredSeats.map((s) => s.seatId),
+    [filteredSeats]
+  );
+
+  // Khi search chỉ còn đúng 1 ghế → auto focus nó
+  useEffect(() => {
+    if (!search.trim()) return;
+    if (previewLayout.length > 0) return;
+    if (filteredSeats.length === 1) {
+      setFocusedSeatId(filteredSeats[0].seatId);
+    }
+  }, [search, filteredSeats, previewLayout.length]);
 
   // ================== RENDER ==================
 
   return (
     <div className="space-y-8 lg:space-y-10">
+      {warning.open && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="w-[90%] max-w-md rounded-3xl bg-gradient-to-r from-[#4f46e5] via-[#7b5cff] to-[#ec4899] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.95)]">
+            <div className="rounded-3xl bg-[#050018]/95 px-6 py-6 text-center">
+              <h3 className="text-[13px] sm:text-[14px] font-extrabold tracking-[0.28em] text-white uppercase mb-2">
+                {warning.title}
+              </h3>
+              <p className="text-xs sm:text-[13px] text-white/80 mb-6 leading-relaxed">
+                {warning.message}
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={closeWarning}
+                  className="inline-flex items-center justify-center px-6 py-2.5 rounded-full text-[11px] sm:text-[12px] font-extrabold tracking-[0.2em] uppercase border border-white/20 text-white bg-white/5 hover:bg-white/10 transition-all"
+                >
+                  Hủy
+                </button>
+                {typeof warning.onConfirm === "function" && (
+                  <button
+                    onClick={warning.onConfirm}
+                    className="inline-flex items-center justify-center px-8 py-2.5 rounded-full text-[11px] sm:text-[12px] font-extrabold tracking-[0.2em] uppercase bg-gradient-to-r from-[#ffe700] to-[#facc15] text-black shadow-[0_0_18px_rgba(255,231,0,0.95)] hover:brightness-110 transition-all"
+                  >
+                    Xác nhận
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
@@ -425,7 +652,7 @@ export default function AdminSeatsPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400" />
 
-        <div className="relative p-4 md:p-6 space-y-4 md:space-y-0 md:flex md:items-end md:justify-between">
+        <div className="relative p-4 md:p-6 space-y-4 md:space-y-0 md:flex md:items-center md:justify-between">
           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Cinema select */}
             <div>
@@ -435,7 +662,11 @@ export default function AdminSeatsPage() {
               <select
                 value={selectedCinemaId}
                 onChange={handleChangeCinema}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
               >
                 {cinemas.length === 0 && (
                   <option value="">Chưa có rạp nào</option>
@@ -464,7 +695,11 @@ export default function AdminSeatsPage() {
               <select
                 value={selectedRoomId}
                 onChange={handleChangeRoom}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
               >
                 {roomsForCinema.length === 0 && (
                   <option value="">Chưa có phòng nào</option>
@@ -493,14 +728,14 @@ export default function AdminSeatsPage() {
               if (selectedRoomId) loadSeatsByRoom(selectedRoomId);
             }}
             disabled={loadingInit || loadingSeats || !selectedRoomId}
-            className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-xs font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            className="inline-flex ml-2.5 items-center justify-center rounded-2xl px-4 py-2.5 text-xs font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all md:self-center"
           >
             {loadingSeats ? "Đang tải ghế..." : "Làm mới ghế"}
           </button>
         </div>
       </section>
 
-      {/* Stats + search */}
+      {/* Stats */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           label="Tổng ghế"
@@ -552,8 +787,9 @@ export default function AdminSeatsPage() {
               Sinh sơ đồ ghế
             </h2>
             <p className="text-xs text-white/60">
-              Tự động tạo toàn bộ sơ đồ ghế cho phòng đã chọn. Có thể đánh dấu
-              hàng VIP hoặc COUPLE bằng nhãn chữ cái (A,B,C...).
+              Tự động tạo toàn bộ sơ đồ ghế cho phòng đã chọn. Chọn hàng VIP /
+              COUPLE theo nhãn chữ cái, preview bằng sơ đồ trực quan trước khi
+              lưu.
             </p>
 
             <form onSubmit={handleGenerateSeats} className="space-y-4">
@@ -596,7 +832,7 @@ export default function AdminSeatsPage() {
                     value={generateForm.vipRows}
                     onChange={handleGenerateFormChange("vipRows")}
                     className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                    placeholder="VD: A,B"
+                    placeholder="VD: D,E,F"
                   />
                   <p className="mt-1 text-[11px] text-white/45">
                     Nhập danh sách chữ cái, phân cách bằng dấu phẩy.
@@ -628,11 +864,11 @@ export default function AdminSeatsPage() {
               <div className="flex flex-wrap gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={handlePreviewRowLabels}
-                  disabled={generatingSeats}
+                  onClick={handlePreviewSeatLayout}
+                  disabled={previewingLayout}
                   className="rounded-2xl px-4 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase border border-white/25 bg-white/5 text-white hover:bg-white/10 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                 >
-                  Preview nhãn hàng
+                  {previewingLayout ? "Đang preview..." : "Preview sơ đồ ghế"}
                 </button>
                 <button
                   type="submit"
@@ -694,7 +930,11 @@ export default function AdminSeatsPage() {
                   <select
                     value={createForm.seatType}
                     onChange={handleCreateFormChange("seatType")}
-                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                    className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-3 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
                   >
                     {SEAT_TYPES.map((t) => (
                       <option key={t} value={t}>
@@ -733,40 +973,160 @@ export default function AdminSeatsPage() {
       </section>
 
       {/* Search */}
+      {/* Chi tiết ghế – thay thế cho phần tìm kiếm ghế */}
       <section className="relative rounded-3xl bg-gradient-to-br from-[#160033]/85 via-[#090019]/95 to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
 
-        <div className="relative p-4 md:p-6 flex flex-col md:flex-row gap-4 md:items-center justify-between">
-          <div className="flex-1">
-            <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
-              Tìm kiếm ghế
-            </label>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo hàng, số ghế, loại ghế..."
-              className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-            />
+        <div className="relative p-4 md:p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold text-white/60 mb-1 uppercase tracking-[0.18em]">
+                Chi tiết ghế
+              </p>
+              <p className="text-[11px] text-white/50 max-w-xl">
+                Chọn một ghế bất kỳ trong sơ đồ bên dưới để xem và chỉnh sửa.
+                Sau khi bấm{" "}
+                <span className="font-semibold text-emerald-300">LƯU</span>, dữ
+                liệu sẽ cập nhật cho phòng chiếu hiện tại.
+              </p>
+            </div>
+
+            {selectedSeat && (
+              <div className="hidden md:inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/15 text-[10px] text-white/75">
+                <span className="mr-1 opacity-70">ID:</span>
+                <span className="font-mono">
+                  {selectedSeat.seatId?.slice(0, 8)}…
+                </span>
+              </div>
+            )}
           </div>
-          <p className="text-[11px] text-white/50">
-            Hiển thị{" "}
-            <span className="font-semibold">{filteredSeats.length}</span> /{" "}
-            <span className="font-semibold">{seats.length}</span> ghế
-          </p>
+
+          {!selectedSeat ? (
+            <div className="rounded-2xl border border-dashed border-white/20 bg-black/30 px-4 py-3 text-[12px] text-white/60">
+              Chưa có ghế nào được chọn. Hãy click vào một ghế trong sơ đồ bên
+              dưới để chỉnh sửa.
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 md:grid-cols-5 gap-4 items-end">
+              {/* Hàng */}
+              <div>
+                <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                  Hàng
+                </label>
+                <input
+                  type="text"
+                  value={selectedSeatDraft.rowLabel}
+                  onChange={(e) =>
+                    handleSeatDraftChange(
+                      selectedSeat.seatId,
+                      "rowLabel",
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                />
+              </div>
+
+              {/* Số ghế */}
+              <div>
+                <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                  Số ghế
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={selectedSeatDraft.seatNumber}
+                  onChange={(e) =>
+                    handleSeatDraftChange(
+                      selectedSeat.seatId,
+                      "seatNumber",
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                />
+              </div>
+
+              {/* Loại ghế */}
+              <div>
+                <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                  Loại ghế
+                </label>
+                <select
+                  value={selectedSeatDraft.seatType}
+                  onChange={(e) =>
+                    handleSeatDraftChange(
+                      selectedSeat.seatId,
+                      "seatType",
+                      e.target.value
+                    )
+                  }
+                  className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-3 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
+                >
+                  {SEAT_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Info nhỏ (ID + Room) */}
+              <div className="col-span-3 md:col-span-1 text-[11px] text-white/60 space-y-1">
+                <div>
+                  <span className="opacity-70 mr-1">ID:</span>
+                  <span className="font-mono text-[10px]">
+                    {selectedSeat.seatId?.slice(0, 12)}…
+                  </span>
+                </div>
+                <div>
+                  <span className="opacity-70 mr-1">Room:</span>
+                  <span className="font-mono text-[10px]">
+                    {selectedSeat.roomId?.slice(0, 12)}…
+                  </span>
+                </div>
+              </div>
+
+              {/* Nút hành động */}
+              <div className="col-span-3 md:col-span-1 flex gap-2 justify-end md:justify-start">
+                <button
+                  type="button"
+                  onClick={() => handleSaveSeat(selectedSeat.seatId)}
+                  disabled={savingSeatId === selectedSeat.seatId}
+                  className="flex-1 rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 text-black shadow-md shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                >
+                  {savingSeatId === selectedSeat.seatId ? "Đang lưu..." : "Lưu"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteSeat(selectedSeat.seatId)}
+                  disabled={deletingSeatId === selectedSeat.seatId}
+                  className="flex-1 rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase border border-red-500/60 bg-red-500/10 text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                >
+                  {deletingSeatId === selectedSeat.seatId
+                    ? "Đang xóa..."
+                    : "Xóa"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Seats table */}
+      {/* Seat layout + inspector */}
       <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a0033]/90 via-[#0b001f] to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-600/15 via-transparent to-cyan-500/15 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
 
-        <div className="relative p-4 md:p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="relative p-4 md:p-6 space-y-4">
+          <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm md:text-base font-extrabold tracking-[0.2em] uppercase text-white/80">
-              Danh sách ghế
+              Sơ đồ ghế
             </h2>
             <span className="text-[11px] text-white/45">
               {currentRoom
@@ -777,162 +1137,23 @@ export default function AdminSeatsPage() {
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="py-3 px-3 text-left">Hàng</th>
-                  <th className="py-3 px-3 text-left">Số ghế</th>
-                  <th className="py-3 px-3 text-left">Loại ghế</th>
-                  <th className="py-3 px-3 text-left hidden md:table-cell">
-                    Thông tin
-                  </th>
-                  <th className="py-3 px-3 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingSeats || loadingInit ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
-                      Đang tải dữ liệu ghế...
-                    </td>
-                  </tr>
-                ) : filteredSeats.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
-                      Không có ghế nào khớp với bộ lọc.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSeats
-                    .slice()
-                    .sort((a, b) => {
-                      // sort theo rowLabel rồi seatNumber
-                      const rA = (a.rowLabel || "").localeCompare(
-                        b.rowLabel || ""
-                      );
-                      if (rA !== 0) return rA;
-                      return (a.seatNumber ?? 0) - (b.seatNumber ?? 0);
-                    })
-                    .map((s) => {
-                      const draft = seatDrafts[s.seatId] || {
-                        rowLabel: s.rowLabel || "",
-                        seatNumber: s.seatNumber ?? "",
-                        seatType: s.seatType || "NORMAL",
-                      };
+          <div className="mt-2 flex flex-col items-center">
+            <AdminSeatLayout
+              layoutByRow={layoutByRow}
+              previewMode={previewLayout.length > 0}
+              activeSeatId={selectedSeatIdForDetail}
+              matchedSeatIds={matchedSeatIds}
+              onSelectSeat={handleSeatClickFromLayout}
+            />
 
-                      return (
-                        <tr
-                          key={s.seatId}
-                          className="border-b border-white/5 hover:bg-white/5/10"
-                        >
-                          {/* Row label */}
-                          <td className="py-3 px-3 align-middle">
-                            <input
-                              type="text"
-                              value={draft.rowLabel}
-                              onChange={(e) =>
-                                handleSeatDraftChange(
-                                  s.seatId,
-                                  "rowLabel",
-                                  e.target.value
-                                )
-                              }
-                              className="w-16 rounded-2xl bg-white/5 border border-white/15 px-3 py-1.5 text-xs text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                            />
-                          </td>
-
-                          {/* Seat number */}
-                          <td className="py-3 px-3 align-middle">
-                            <input
-                              type="number"
-                              min={1}
-                              value={draft.seatNumber}
-                              onChange={(e) =>
-                                handleSeatDraftChange(
-                                  s.seatId,
-                                  "seatNumber",
-                                  e.target.value
-                                )
-                              }
-                              className="w-20 rounded-2xl bg-white/5 border border-white/15 px-3 py-1.5 text-xs text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                            />
-                          </td>
-
-                          {/* Seat type */}
-                          <td className="py-3 px-3 align-middle">
-                            <select
-                              value={draft.seatType}
-                              onChange={(e) =>
-                                handleSeatDraftChange(
-                                  s.seatId,
-                                  "seatType",
-                                  e.target.value
-                                )
-                              }
-                              className="rounded-2xl bg-white/5 border border-white/15 px-3 py-1.5 text-xs text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                            >
-                              {SEAT_TYPES.map((t) => (
-                                <option key={t} value={t}>
-                                  {t}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-
-                          {/* Info */}
-                          <td className="py-3 px-3 align-middle hidden md:table-cell">
-                            <div className="text-[11px] text-white/70">
-                              ID:{" "}
-                              <span className="font-mono text-[10px]">
-                                {s.seatId?.slice(0, 8)}…
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-white/45">
-                              Room:{" "}
-                              <span className="font-mono text-[10px]">
-                                {s.roomId?.slice(0, 8)}…
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="py-3 px-3 align-middle">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleSaveSeat(s.seatId)}
-                                disabled={savingSeatId === s.seatId}
-                                className="rounded-2xl px-3 py-1.5 text-[11px] font-semibold tracking-[0.14em] uppercase bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 text-black shadow-md shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-                              >
-                                {savingSeatId === s.seatId
-                                  ? "Đang lưu..."
-                                  : "Lưu"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteSeat(s.seatId)}
-                                disabled={deletingSeatId === s.seatId}
-                                className="rounded-2xl px-3 py-1.5 text-[11px] font-semibold tracking-[0.14em] uppercase border border-red-500/60 bg-red-500/10 text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-                              >
-                                {deletingSeatId === s.seatId
-                                  ? "Đang xóa..."
-                                  : "Xóa"}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                )}
-              </tbody>
-            </table>
+            {previewLayout.length > 0 && (
+              <p className="mt-3 text-[11px] text-amber-200/80 text-center max-w-md">
+                Đây là <span className="font-semibold">sơ đồ preview</span>{" "}
+                (chưa lưu DB). Hãy điều chỉnh Hàng VIP / COUPLE nếu cần, sau đó
+                bấm <span className="font-semibold">"Sinh sơ đồ ghế"</span> để
+                tạo thật trong phòng chiếu.
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -955,6 +1176,288 @@ function StatCard({ label, value, gradient }) {
           {value}
         </p>
       </div>
+    </div>
+  );
+}
+
+function AdminSeatLayout({
+  layoutByRow,
+  previewMode,
+  activeSeatId,
+  matchedSeatIds = [],
+  onSelectSeat,
+}) {
+  const hasSeats = layoutByRow && layoutByRow.length > 0;
+  const matchedSet = new Set(matchedSeatIds);
+
+  if (!hasSeats) {
+    return (
+      <div className="w-full max-w-[960px] mx-auto py-10 text-center text-sm text-white/60">
+        Chưa có sơ đồ ghế cho phòng này.
+      </div>
+    );
+  }
+
+  const handleSeatClick = (seat) => {
+    if (previewMode) return; // preview chỉ xem, không cho chọn
+    if (!onSelectSeat) return;
+    onSelectSeat(seat);
+  };
+
+  return (
+    <div className="w-full max-w-[960px] mx-auto">
+      {/* Màn hình */}
+      <div className="text-center mb-6">
+        <div className="mx-auto flex justify-center w-full">
+          <div className="relative w-full max-w-[960px]">
+            <img
+              src="https://cinestar.com.vn/assets/images/img-screen.png"
+              alt="Screen"
+              className="w-full mx-auto pointer-events-none select-none"
+            />
+          </div>
+        </div>
+        <p className="mt-4 text-[11px] md:text-xs text-white/70 tracking-[0.25em] uppercase">
+          Màn hình
+        </p>
+      </div>
+
+      {/* Các hàng ghế */}
+      <div className="flex flex-col items-center gap-2 text-[9px] sm:text-[10px]">
+        {layoutByRow.map(([rowName, seats]) => {
+          if (!seats || seats.length === 0) return null;
+
+          const isCoupleRow = seats.length > 0 && seats[0].type === "COUPLE";
+
+          // ===== HÀNG GHẾ ĐÔI (COUPLE) =====
+          if (isCoupleRow) {
+            const pairs = [];
+            for (let i = 0; i < seats.length; i += 2) {
+              const s1 = seats[i];
+              const s2 = seats[i + 1];
+              if (!s1 || !s2) continue;
+              pairs.push([s1, s2]);
+            }
+
+            return (
+              <div key={rowName} className="flex items-center gap-2">
+                <span className="w-4 text-right text-white/60">{rowName}</span>
+                <div className="flex gap-1.5">
+                  {pairs.map(([s1, s2]) => {
+                    const s1Id = s1.seatId || s1.seat_id;
+                    const s2Id = s2.seatId || s2.seat_id;
+
+                    const isActivePair =
+                      activeSeatId &&
+                      (activeSeatId === s1Id || activeSeatId === s2Id);
+
+                    const isMatchedPair =
+                      matchedSet.has(s1Id) || matchedSet.has(s2Id);
+
+                    const stateClass = previewMode
+                      ? "bg-white border-white/60 text-black opacity-75"
+                      : isActivePair
+                      ? "bg-[#facc15] border-[#facc15] text-black font-bold shadow-[0_0_10px_rgba(250,204,21,0.9)]"
+                      : isMatchedPair
+                      ? "bg-white border-cyan-300 text-black shadow-[0_0_8px_rgba(34,211,238,0.7)]"
+                      : "bg-white border-white/80 text-black hover:bg-slate-100";
+
+                    return (
+                      <button
+                        key={s1Id}
+                        onClick={() => handleSeatClick(s1)}
+                        className={`
+                          h-7 sm:h-8 px-4 sm:px-5
+                          rounded-[6px]
+                          text-[9px] sm:text-[10px]
+                          flex items-center justify-center
+                          border transition-all
+                          ${stateClass}
+                        `}
+                      >
+                        {rowName}
+                        {s1.number}-{s2.number}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
+          // ===== HÀNG GHẾ THƯỜNG / VIP =====
+          return (
+            <div key={rowName} className="flex items-center gap-2">
+              <span className="w-4 text-right text-white/60">{rowName}</span>
+
+              <div className="flex gap-1.5">
+                {seats.map((seat) => {
+                  const seatId = seat.seatId || seat.seat_id;
+
+                  const isActive = activeSeatId && activeSeatId === seatId;
+
+                  const isMatched = matchedSet.has(seatId);
+
+                  const stateClass = previewMode
+                    ? "bg-white border-white/60 text-black opacity-75"
+                    : isActive
+                    ? "bg-[#facc15] border-[#facc15] text-black font-bold shadow-[0_0_10px_rgba(250,204,21,0.9)]"
+                    : isMatched
+                    ? "bg-white border-cyan-300 text-black shadow-[0_0_8px_rgba(34,211,238,0.7)]"
+                    : "bg-white border-white/80 text-black hover:bg-slate-100";
+
+                  return (
+                    <button
+                      key={seatId}
+                      onClick={() => handleSeatClick(seat)}
+                      className={`
+                        w-7 h-7 sm:w-8 sm:h-8
+                        rounded-[4px]
+                        text-[9px] sm:text-[10px]
+                        flex items-center justify-center
+                        border transition-all
+                        ${stateClass}
+                      `}
+                    >
+                      {seat.number}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="mt-5 flex flex-wrap justify-center gap-6 text-[9px] sm:text-[10px] text-white/75">
+        <SeatLegend
+          colorClass="bg-white border border-white/80"
+          label="Ghế thường / trống"
+        />
+        <SeatLegend
+          colorClass="bg-[#facc15] border border-[#facc15]"
+          label="Ghế đang chọn"
+        />
+        <SeatLegend
+          colorClass="bg-white border border-cyan-300"
+          label="Ghế khớp tìm kiếm"
+        />
+        <SeatLegend
+          colorClass="bg-white border border-white/80"
+          label="Hàng COUPLE hiển thị theo cặp"
+        />
+      </div>
+    </div>
+  );
+}
+
+function SeatLegend({ colorClass, label }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`inline-block w-4 h-4 rounded-[4px] ${colorClass}`} />
+      <span className="text-white/80">{label}</span>
+    </div>
+  );
+}
+
+function SeatInspector({
+  disabled,
+  seat,
+  draft,
+  onChangeField,
+  onSave,
+  onDelete,
+  saving,
+  deleting,
+}) {
+  const isSaving = saving && seat && saving === seat.seatId;
+  const isDeleting = deleting && seat && deleting === seat.seatId;
+
+  return (
+    <div className="relative rounded-3xl bg-gradient-to-br from-black/70 via-[#050018] to-[#050018] border border-white/10 p-4 md:p-5 space-y-4">
+      <h3 className="text-xs md:text-sm font-extrabold tracking-[0.22em] uppercase text-white/75">
+        Chi tiết ghế
+      </h3>
+
+      {disabled ? (
+        <p className="text-[11px] text-white/55">
+          {!seat
+            ? "Chọn một ghế từ sơ đồ hoặc tìm kiếm để chỉnh sửa."
+            : "Hiện tại đang ở chế độ preview hoặc chưa có sơ đồ ghế thật. Hãy sinh sơ đồ ghế trước khi chỉnh sửa."}
+        </p>
+      ) : !seat ? (
+        <p className="text-[11px] text-white/55">
+          Chọn một ghế từ sơ đồ hoặc dùng ô tìm kiếm để focus ghế cần chỉnh.
+        </p>
+      ) : (
+        <>
+          <div className="space-y-3 text-[11px]">
+            <div>
+              <label className="block text-[10px] font-semibold text-white/60 mb-1 uppercase tracking-[0.18em]">
+                Hàng
+              </label>
+              <input
+                type="text"
+                value={draft?.rowLabel || ""}
+                onChange={(e) => onChangeField("rowLabel", e.target.value)}
+                className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2 text-xs text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold text-white/60 mb-1 uppercase tracking-[0.18em]">
+                Số ghế
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={draft?.seatNumber ?? ""}
+                onChange={(e) => onChangeField("seatNumber", e.target.value)}
+                className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2 text-xs text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold text-white/60 mb-1 uppercase tracking-[0.18em]">
+                Loại ghế
+              </label>
+              <select
+                value={draft?.seatType || "NORMAL"}
+                onChange={(e) => onChangeField("seatType", e.target.value)}
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-3 py-2 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
+              >
+                {SEAT_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={isSaving}
+              className="flex-1 rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 text-black shadow-md shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            >
+              {isSaving ? "Đang lưu..." : "Lưu"}
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={isDeleting}
+              className="flex-1 rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase border border-red-500/60 bg-red-500/10 text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            >
+              {isDeleting ? "Đang xóa..." : "Xóa ghế"}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
