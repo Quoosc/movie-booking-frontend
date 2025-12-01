@@ -267,7 +267,7 @@ export default function AdminCinemasPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400" />
 
-        <div className="relative p-4 md:p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="relative p-4 md:p-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex-1 flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
@@ -302,7 +302,7 @@ export default function AdminCinemasPage() {
             </div>
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-2 justify-end md:self-end">
             <button
               type="button"
               onClick={fetchCinemas}

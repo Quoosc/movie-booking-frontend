@@ -206,9 +206,7 @@ export default function AdminSnacksPage() {
   const stats = useMemo(() => {
     const total = snacks.length;
     const cinemaSet = new Set(
-      snacks
-        .map((s) => s.cinemaId)
-        .filter((id) => id && typeof id === "string")
+      snacks.map((s) => s.cinemaId).filter((id) => id && typeof id === "string")
     );
     const cinemaCount = cinemaSet.size;
 
@@ -235,8 +233,8 @@ export default function AdminSnacksPage() {
           </span>
         </h1>
         <p className="text-xs md:text-sm text-white/60 max-w-2xl">
-          Tạo, chỉnh sửa và gán bắp nước / combo cho từng rạp để dùng trong
-          flow đặt vé.
+          Tạo, chỉnh sửa và gán bắp nước / combo cho từng rạp để dùng trong flow
+          đặt vé.
         </p>
       </header>
 
@@ -264,7 +262,7 @@ export default function AdminSnacksPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400" />
 
-        <div className="relative p-4 md:p-6 flex flex-col md:flex-row gap-4 md:items-center justify-between">
+        <div className="relative p-4 md:p-6 flex flex-col md:flex-row gap-4 md:items-end justify-between">
           <div className="flex-1 flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
@@ -302,7 +300,7 @@ export default function AdminSnacksPage() {
             type="button"
             onClick={loadData}
             disabled={loading}
-            className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-xs font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-xs font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all md:self-end"
           >
             {loading ? "Đang tải..." : "Làm mới"}
           </button>
@@ -334,7 +332,9 @@ export default function AdminSnacksPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-sm md:text-base font-extrabold tracking-[0.2em] uppercase text-white/80">
-                {editingId ? "Chỉnh sửa bắp nước / combo" : "Thêm bắp nước / combo mới"}
+                {editingId
+                  ? "Chỉnh sửa bắp nước / combo"
+                  : "Thêm bắp nước / combo mới"}
               </h2>
               <p className="text-[11px] md:text-xs text-white/50 mt-1">
                 Nhập thông tin bắp nước, chọn rạp áp dụng và giá bán.
@@ -407,7 +407,9 @@ export default function AdminSnacksPage() {
                   onChange={handleChangeForm("cinemaId")}
                   className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                 >
-                  <option value="">— Áp dụng cho menu chung / chưa gán rạp —</option>
+                  <option value="">
+                    — Áp dụng cho menu chung / chưa gán rạp —
+                  </option>
                   {cinemas.map((c) => (
                     <option key={c.cinemaId || c.id} value={c.cinemaId || c.id}>
                       {c.name || c.cinemaName || "Rạp không tên"}
@@ -415,8 +417,8 @@ export default function AdminSnacksPage() {
                   ))}
                 </select>
                 <p className="mt-2 text-[11px] text-white/45">
-                  Mỗi bản ghi vẫn có cinemaId để thống kê doanh thu theo rạp, nhưng
-                  FE vẫn có thể hiển thị như menu chung.
+                  Mỗi bản ghi vẫn có cinemaId để thống kê doanh thu theo rạp,
+                  nhưng FE vẫn có thể hiển thị như menu chung.
                 </p>
               </div>
             </div>
@@ -491,10 +493,8 @@ export default function AdminSnacksPage() {
             </h2>
             <p className="text-[11px] text-white/40">
               Hiển thị{" "}
-              <span className="font-semibold">
-                {filteredSnacks.length}
-              </span>{" "}
-              / <span className="font-semibold">{snacks.length}</span> items
+              <span className="font-semibold">{filteredSnacks.length}</span> /{" "}
+              <span className="font-semibold">{snacks.length}</span> items
             </p>
           </div>
 
@@ -536,9 +536,7 @@ export default function AdminSnacksPage() {
                   filteredSnacks.map((s) => {
                     const id = s.snackId || s.id;
                     const cinema =
-                      cinemaMap[s.cinemaId] ||
-                      cinemaMap[s.cinema_id] ||
-                      null;
+                      cinemaMap[s.cinemaId] || cinemaMap[s.cinema_id] || null;
 
                     return (
                       <tr
@@ -551,9 +549,7 @@ export default function AdminSnacksPage() {
                             <div className="relative">
                               <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-[1px]">
                                 <div className="h-full w-full rounded-2xl bg-[#050012] flex items-center justify-center text-xs font-bold">
-                                  {(s.name || "S")
-                                    .charAt(0)
-                                    .toUpperCase()}
+                                  {(s.name || "S").charAt(0).toUpperCase()}
                                 </div>
                               </div>
                             </div>

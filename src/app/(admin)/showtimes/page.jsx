@@ -384,7 +384,7 @@ export default function AdminShowtimesPage() {
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400" />
 
         <div className="relative p-4 md:p-6 space-y-4">
-          <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
+          <div className="flex flex-col lg:flex-row gap-4 lg:items-end lg:justify-between">
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3">
               {/* movie filter */}
               <div>
@@ -431,7 +431,7 @@ export default function AdminShowtimesPage() {
             </div>
 
             {/* buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 lg:self-end">
               <button
                 type="button"
                 onClick={loadData}

@@ -97,7 +97,8 @@ export default function AdminBookingsPage() {
     if (!booking) return null;
     const subtotal = booking.subtotal ?? booking.totalAmount ?? 0;
     const discount = booking.discount ?? booking.totalDiscount ?? 0;
-    const finalTotal = booking.total ?? booking.finalAmount ?? subtotal - discount;
+    const finalTotal =
+      booking.total ?? booking.finalAmount ?? subtotal - discount;
     return { subtotal, discount, finalTotal };
   }, [booking]);
 
@@ -156,7 +157,7 @@ export default function AdminBookingsPage() {
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400" />
         <form
           onSubmit={handleSearch}
-          className="relative p-4 md:p-6 flex flex-col md:flex-row gap-4 md:items-center justify-between"
+          className="relative p-4 md:p-6 flex flex-col md:flex-row gap-4 md:items-end justify-between"
         >
           <div className="flex-1">
             <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
@@ -174,7 +175,7 @@ export default function AdminBookingsPage() {
           <button
             type="submit"
             disabled={loading || !searchId.trim()}
-            className="inline-flex items-center justify-center rounded-2xl px-5 py-2.5 text-xs font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            className="inline-flex items-center justify-center rounded-2xl px-5 py-2.5 text-xs font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all md:self-end"
           >
             {loading ? "Đang tìm..." : "Tìm booking"}
           </button>
@@ -216,7 +217,9 @@ export default function AdminBookingsPage() {
             />
             <SummaryCard
               label="Trạng thái thanh toán"
-              value={booking.paymentStatus || primaryPayment?.status || "UNKNOWN"}
+              value={
+                booking.paymentStatus || primaryPayment?.status || "UNKNOWN"
+              }
               badgeClass={paymentBadgeClass}
             />
             <SummaryCard
@@ -434,10 +437,7 @@ export default function AdminBookingsPage() {
                         const name = sn.name || sn.snack?.name || "Không rõ";
                         const qty = sn.quantity ?? sn.qty ?? 1;
                         const unitPrice =
-                          sn.price ??
-                          sn.unitPrice ??
-                          sn.snack?.price ??
-                          0;
+                          sn.price ?? sn.unitPrice ?? sn.snack?.price ?? 0;
                         const total = unitPrice * qty;
                         return (
                           <tr
@@ -470,9 +470,7 @@ export default function AdminBookingsPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-xs text-white/80">
                   <div className="space-y-2">
                     <InfoRow label="Payment ID">
-                      {primaryPayment.paymentId ||
-                        primaryPayment.id ||
-                        "—"}
+                      {primaryPayment.paymentId || primaryPayment.id || "—"}
                     </InfoRow>
                     <InfoRow label="Gateway transaction">
                       {primaryPayment.transactionId ||
@@ -511,9 +509,9 @@ export default function AdminBookingsPage() {
                     </InfoRow>
                     {primaryPayment.paidAt && (
                       <InfoRow label="Thời gian thanh toán">
-                        {new Date(
-                          primaryPayment.paidAt
-                        ).toLocaleString("vi-VN")}
+                        {new Date(primaryPayment.paidAt).toLocaleString(
+                          "vi-VN"
+                        )}
                       </InfoRow>
                     )}
                   </div>
@@ -540,9 +538,7 @@ function SummaryCard({ label, value, sub, badgeClass }) {
         {value}
       </span>
     ) : (
-      <span className="text-xl md:text-2xl font-black text-white">
-        {value}
-      </span>
+      <span className="text-xl md:text-2xl font-black text-white">{value}</span>
     );
 
   return (
@@ -554,9 +550,7 @@ function SummaryCard({ label, value, sub, badgeClass }) {
           {label}
         </p>
         {content}
-        {sub && (
-          <p className="text-[11px] text-white/55 leading-snug">{sub}</p>
-        )}
+        {sub && <p className="text-[11px] text-white/55 leading-snug">{sub}</p>}
       </div>
     </div>
   );
@@ -589,11 +583,7 @@ function InfoRow({ label, children }) {
 }
 
 function EmptyText({ text = "Không có dữ liệu." }) {
-  return (
-    <p className="text-xs text-white/50 italic mt-1">
-      {text}
-    </p>
-  );
+  return <p className="text-xs text-white/50 italic mt-1">{text}</p>;
 }
 
 function formatCurrency(value) {
