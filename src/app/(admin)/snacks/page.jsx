@@ -12,6 +12,12 @@ export default function AdminSnacksPage() {
 
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [warning, setWarning] = useState({
+    open: false,
+    title: "Lưu ý!",
+    message: "",
+    onConfirm: null,
+  });
 
   // filter
   const [search, setSearch] = useState("");
@@ -26,6 +32,7 @@ export default function AdminSnacksPage() {
     cinemaId: "",
     description: "",
     imageUrl: "",
+    imageCloudinaryId: "",
   });
 
   const resetForm = () => {
@@ -37,12 +44,25 @@ export default function AdminSnacksPage() {
       cinemaId: "",
       description: "",
       imageUrl: "",
+      imageCloudinaryId: "",
     });
   };
 
   const handleChangeForm = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
+
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+    setWarning({
+      open: true,
+      title: title || "Lưu ý!",
+      message: message || "Bạn chắc chắn muốn thực hiện thao tác này?",
+      onConfirm,
+    });
+  };
+
+  const closeWarning = () =>
+    setWarning((prev) => ({ ...prev, open: false, onConfirm: null }));
 
   // ====== LOAD DATA ======
   const loadData = async () => {
@@ -89,9 +109,10 @@ export default function AdminSnacksPage() {
 
     const name = form.name.trim();
     const priceNumber = Number(form.price);
-    const category = form.category.trim();
+    const category = form.category.trim(); // ← vẫn giữ tên category ở form
     const description = form.description.trim();
     const imageUrl = form.imageUrl.trim();
+    const imageCloudinaryId = (form.imageCloudinaryId || "").trim();
     const cinemaId = form.cinemaId || null;
 
     if (!name) {
@@ -102,14 +123,21 @@ export default function AdminSnacksPage() {
       setError("Giá phải là số lớn hơn 0.");
       return;
     }
+    if (!category) {
+      setError(
+        "Vui lòng nhập loại / category (ví dụ: COMBO, POPCORN, DRINK...)."
+      );
+      return;
+    }
 
     const payload = {
       name,
       price: priceNumber,
       cinemaId,
-      category: category || null,
+      type: category || null, //  BE cần field `type`
       description: description || null,
       imageUrl: imageUrl || null,
+      imageCloudinaryId: imageCloudinaryId || null,
     };
 
     try {
@@ -140,10 +168,11 @@ export default function AdminSnacksPage() {
     setForm({
       name: snack.name || "",
       price: snack.price != null ? String(snack.price) : "",
-      category: snack.category || "",
+      category: snack.category || snack.type || "", // lấy từ type nếu BE trả về
       cinemaId: snack.cinemaId || "",
       description: snack.description || "",
       imageUrl: snack.imageUrl || "",
+      imageCloudinaryId: snack.imageCloudinaryId || "",
     });
 
     setError(null);
@@ -154,25 +183,27 @@ export default function AdminSnacksPage() {
   const handleDeleteSnack = async (snack) => {
     const id = snack.snackId || snack.id;
     if (!id) return;
+    showWarning(
+      "Bạn chắc chắn muốn xóa bắp nước / combo này?",
+      "Lưu ý!",
+      async () => {
+        try {
+          setDeletingId(id);
+          setError(null);
+          setSuccess(null);
 
-    if (!window.confirm("Bạn chắc chắn muốn xóa bắp nước / combo này?")) {
-      return;
-    }
-
-    try {
-      setDeletingId(id);
-      setError(null);
-      setSuccess(null);
-
-      await AdminCinemaService.deleteSnack(id);
-      setSnacks((prev) => prev.filter((s) => (s.snackId || s.id) !== id));
-      setSuccess("Xóa bắp nước thành công.");
-    } catch (err) {
-      console.error("Delete snack error:", err);
-      setError(err?.message || "Xóa bắp nước thất bại.");
-    } finally {
-      setDeletingId(null);
-    }
+          await AdminCinemaService.deleteSnack(id);
+          setSnacks((prev) => prev.filter((s) => (s.snackId || s.id) !== id));
+          setSuccess("Xóa bắp nước thành công.");
+        } catch (err) {
+          console.error("Delete snack error:", err);
+          setError(err?.message || "Xóa bắp nước thất bại.");
+        } finally {
+          setDeletingId(null);
+          closeWarning();
+        }
+      }
+    );
   };
 
   // ====== FILTERED DATA ======
@@ -188,7 +219,7 @@ export default function AdminSnacksPage() {
     return snacks.filter((s) => {
       const q = search.trim().toLowerCase();
       if (q) {
-        const haystack = `${s.name || ""} ${s.category || ""} ${
+        const haystack = `${s.name || ""} ${s.category || ""} ${s.type || ""} ${
           s.description || ""
         }`.toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -284,7 +315,7 @@ export default function AdminSnacksPage() {
               <select
                 value={cinemaFilter}
                 onChange={(e) => setCinemaFilter(e.target.value)}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="w-full rounded-full bg-gradient-to-r from-[#0b001f] via-[#0e0127] to-[#120033] border border-cyan-400/30 px-4 py-2.5 text-sm text-white shadow-[0_0_0_1px_rgba(0,0,0,0.4)] hover:border-cyan-300/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:border-cyan-300 transition-all"
               >
                 <option value="ALL">Tất cả rạp</option>
                 {cinemas.map((c) => (
@@ -405,11 +436,9 @@ export default function AdminSnacksPage() {
                 <select
                   value={form.cinemaId}
                   onChange={handleChangeForm("cinemaId")}
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  className="w-full rounded-full bg-gradient-to-r from-[#0b001f] via-[#0e0127] to-[#120033] border border-cyan-400/30 px-4 py-2.5 text-sm text-white shadow-[0_0_0_1px_rgba(0,0,0,0.4)] hover:border-cyan-300/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:border-cyan-300 transition-all"
                 >
-                  <option value="">
-                    — Áp dụng cho menu chung / chưa gán rạp —
-                  </option>
+                  <option value="">— Chọn chi nhánh —</option>
                   {cinemas.map((c) => (
                     <option key={c.cinemaId || c.id} value={c.cinemaId || c.id}>
                       {c.name || c.cinemaName || "Rạp không tên"}
@@ -450,6 +479,23 @@ export default function AdminSnacksPage() {
                 />
                 <p className="mt-2 text-[11px] text-white/45">
                   Dùng để hiển thị hình ảnh đẹp hơn trên trang đặt vé.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  ID Cloudinary (public_id)
+                </label>
+                <input
+                  type="text"
+                  value={form.imageCloudinaryId}
+                  onChange={handleChangeForm("imageCloudinaryId")}
+                  placeholder="folder/ten_anh_hoac_public_id"
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                />
+                <p className="mt-2 text-[11px] text-white/45">
+                  Tuỳ chọn: nếu dùng Cloudinary, nhập public_id để gửi kèm khi
+                  tạo/cập nhật.
                 </p>
               </div>
 
@@ -541,7 +587,7 @@ export default function AdminSnacksPage() {
                     return (
                       <tr
                         key={id}
-                        className="border-b border-white/5 hover:bg-white/5/10"
+                        className="border-b border-white/5 hover:bg-white/10"
                       >
                         {/* Name + desc */}
                         <td className="py-3 pr-4 align-top">
@@ -595,7 +641,7 @@ export default function AdminSnacksPage() {
                         {/* Category */}
                         <td className="py-3 px-4 align-top hidden lg:table-cell">
                           <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/80">
-                            {s.category || "KHÁC"}
+                            {s.category || s.type || "KHÁC"}
                           </span>
                         </td>
 
@@ -635,6 +681,37 @@ export default function AdminSnacksPage() {
           </div>
         </div>
       </section>
+
+      {warning.open && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="w-[90%] max-w-md rounded-3xl bg-gradient-to-r from-[#4f46e5] via-[#7b5cff] to-[#ec4899] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.95)]">
+            <div className="rounded-3xl bg-[#050018]/95 px-6 py-6 text-center">
+              <h3 className="text-[13px] sm:text-[14px] font-extrabold tracking-[0.28em] text-white uppercase mb-2">
+                {warning.title}
+              </h3>
+              <p className="text-xs sm:text-[13px] text-white/80 mb-6 leading-relaxed">
+                {warning.message}
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={closeWarning}
+                  className="inline-flex items-center justify-center px-6 py-2.5 rounded-full text-[11px] sm:text-[12px] font-extrabold tracking-[0.2em] uppercase border border-white/20 text-white bg-white/5 hover:bg-white/10 transition-all"
+                >
+                  Hủy
+                </button>
+                {typeof warning.onConfirm === "function" && (
+                  <button
+                    onClick={warning.onConfirm}
+                    className="inline-flex items-center justify-center px-8 py-2.5 rounded-full text-[11px] sm:text-[12px] font-extrabold tracking-[0.2em] uppercase bg-gradient-to-r from-[#ffe700] to-[#facc15] text-black shadow-[0_0_18px_rgba(255,231,0,0.95)] hover:brightness-110 transition-all"
+                  >
+                    Xác nhận
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
