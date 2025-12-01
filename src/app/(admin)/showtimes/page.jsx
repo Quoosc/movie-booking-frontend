@@ -18,7 +18,6 @@ export default function AdminShowtimesPage() {
   const [success, setSuccess] = useState(null);
 
   // filters
-  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [movieFilter, setMovieFilter] = useState("ALL");
   const [cinemaFilter, setCinemaFilter] = useState("ALL");
@@ -125,9 +124,10 @@ export default function AdminShowtimesPage() {
 
   const fromDateTimeInputToIso = (value) => {
     if (!value) return null;
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return null;
-    return d.toISOString();
+    if (value.length === 16) {
+      return `${value}:00`; // "2025-12-01T20:00:00"
+    }
+    return value;
   };
 
   const isUpcoming = (isoString) => {
@@ -145,13 +145,6 @@ export default function AdminShowtimesPage() {
       const movie = st.movie || movieMap[st.movieId];
       const room = st.room || roomMap[st.roomId];
       const cinema = cinemaMap[room?.cinemaId];
-
-      // Search by movie title
-      const q = search.trim().toLowerCase();
-      if (q) {
-        const haystack = `${movie?.title || ""} ${movie?.genre || ""}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
 
       // Filter by movie
       if (movieFilter !== "ALL") {
@@ -194,7 +187,6 @@ export default function AdminShowtimesPage() {
     });
   }, [
     showtimes,
-    search,
     movieFilter,
     cinemaFilter,
     roomFilter,
@@ -300,7 +292,10 @@ export default function AdminShowtimesPage() {
       setSaving(true);
 
       if (editingShowtime) {
-        await AdminMovieService.updateShowtime(editingShowtime.showtimeId, payload);
+        await AdminMovieService.updateShowtime(
+          editingShowtime.showtimeId,
+          payload
+        );
         setSuccess("Cập nhật suất chiếu thành công.");
       } else {
         await AdminMovieService.createShowtime(payload);
@@ -390,21 +385,7 @@ export default function AdminShowtimesPage() {
 
         <div className="relative p-4 md:p-6 space-y-4">
           <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {/* search */}
-              <div>
-                <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
-                  Tìm theo phim
-                </label>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Nhập tên phim, thể loại..."
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                />
-              </div>
-
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3">
               {/* movie filter */}
               <div>
                 <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
@@ -413,7 +394,11 @@ export default function AdminShowtimesPage() {
                 <select
                   value={movieFilter}
                   onChange={(e) => setMovieFilter(e.target.value)}
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+        border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+        shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+        focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+        transition-all"
                 >
                   <option value="ALL">Tất cả phim</option>
                   {movies.map((m) => (
@@ -432,7 +417,11 @@ export default function AdminShowtimesPage() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+        border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+        shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+        focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+        transition-all"
                 >
                   <option value="ALL">Tất cả</option>
                   <option value="UPCOMING">Upcoming</option>
@@ -462,8 +451,8 @@ export default function AdminShowtimesPage() {
           </div>
 
           {/* cinema / room / date range */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-white/10">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 pt-2 border-t border-white/10">
+            <div className="md:col-span-3 lg:col-span-3">
               <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
                 Rạp chiếu
               </label>
@@ -473,7 +462,11 @@ export default function AdminShowtimesPage() {
                   setCinemaFilter(e.target.value);
                   setRoomFilter("ALL");
                 }}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
               >
                 <option value="ALL">Tất cả rạp</option>
                 {cinemas.map((c) => (
@@ -484,14 +477,19 @@ export default function AdminShowtimesPage() {
               </select>
             </div>
 
-            <div>
+            {/* Phòng chiếu */}
+            <div className="md:col-span-4 lg:col-span-4">
               <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
                 Phòng chiếu
               </label>
               <select
                 value={roomFilter}
                 onChange={(e) => setRoomFilter(e.target.value)}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
               >
                 <option value="ALL">Tất cả phòng</option>
                 {rooms
@@ -502,15 +500,17 @@ export default function AdminShowtimesPage() {
                     const cinema = cinemaMap[r.cinemaId];
                     return (
                       <option key={r.roomId} value={r.roomId}>
-                        {cinema?.name ? `${cinema.name} • Phòng ${r.roomNumber}` : `Room ${r.roomNumber}`}
+                        {cinema?.name
+                          ? `${cinema.name} • Phòng ${r.roomNumber}`
+                          : `Room ${r.roomNumber}`}
                       </option>
                     );
                   })}
               </select>
             </div>
 
-            <div className="flex gap-3">
-              <div className="flex-1">
+            <div className="md:col-span-5 lg:col-span-5 min-w-0 flex gap-2">
+              <div className="flex-1 min-w-0">
                 <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
                   Từ ngày
                 </label>
@@ -521,7 +521,7 @@ export default function AdminShowtimesPage() {
                   className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                 />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
                   Đến ngày
                 </label>
@@ -565,8 +565,9 @@ export default function AdminShowtimesPage() {
             </h2>
             <p className="text-[11px] text-white/40">
               Hiển thị{" "}
-              <span className="font-semibold">{filteredShowtimes.length}</span> /{" "}
-              <span className="font-semibold">{showtimes.length}</span> suất chiếu
+              <span className="font-semibold">{filteredShowtimes.length}</span>{" "}
+              / <span className="font-semibold">{showtimes.length}</span> suất
+              chiếu
             </p>
           </div>
 
@@ -575,9 +576,13 @@ export default function AdminShowtimesPage() {
               <thead>
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
                   <th className="py-3 pr-4 text-left">Phim</th>
-                  <th className="py-3 px-4 text-left hidden md:table-cell">Rạp / Phòng</th>
+                  <th className="py-3 px-4 text-left hidden md:table-cell">
+                    Rạp / Phòng
+                  </th>
                   <th className="py-3 px-4 text-left">Thời gian</th>
-                  <th className="py-3 px-4 text-left hidden lg:table-cell">Format</th>
+                  <th className="py-3 px-4 text-left hidden lg:table-cell">
+                    Format
+                  </th>
                   <th className="py-3 pl-4 pr-2 text-right">Thao tác</th>
                 </tr>
               </thead>
@@ -661,7 +666,9 @@ export default function AdminShowtimesPage() {
                           </div>
                           <div className="text-[11px] text-white/60 mt-0.5">
                             {room
-                              ? `Phòng ${room.roomNumber} • ${room.roomType || "Standard"}`
+                              ? `Phòng ${room.roomNumber} • ${
+                                  room.roomType || "Standard"
+                                }`
                               : "—"}
                           </div>
                         </td>
@@ -701,14 +708,18 @@ export default function AdminShowtimesPage() {
                             >
                               Sửa
                             </button>
-                            <button
+                            {/* <button
                               type="button"
-                              onClick={() => handleDeleteShowtime(st.showtimeId)}
+                              onClick={() =>
+                                handleDeleteShowtime(st.showtimeId)
+                              }
                               disabled={deletingId === st.showtimeId}
                               className="rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase border border-red-500/60 bg-red-500/10 text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                             >
-                              {deletingId === st.showtimeId ? "Đang xóa..." : "Xóa"}
-                            </button>
+                              {deletingId === st.showtimeId
+                                ? "Đang xóa..."
+                                : "Xóa"}
+                            </button> */}
                           </div>
                         </td>
                       </tr>
@@ -732,7 +743,9 @@ export default function AdminShowtimesPage() {
               <div className="flex items-start justify-between mb-5">
                 <div>
                   <h3 className="text-base md:text-lg font-black tracking-[0.18em] uppercase bg-gradient-to-r from-cyan-300 to-pink-300 bg-clip-text text-transparent">
-                    {editingShowtime ? "Chỉnh sửa suất chiếu" : "Thêm suất chiếu mới"}
+                    {editingShowtime
+                      ? "Chỉnh sửa suất chiếu"
+                      : "Thêm suất chiếu mới"}
                   </h3>
                   <p className="mt-2 text-xs text-white/60 max-w-md">
                     Chọn phim, rạp, phòng và thời gian bắt đầu cho suất chiếu.
@@ -754,7 +767,7 @@ export default function AdminShowtimesPage() {
               )}
 
               <form onSubmit={handleSubmitForm} className="space-y-4">
-                {/* movie */}
+                {/* movie select trong modal */}
                 <div>
                   <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
                     Phim
@@ -762,7 +775,11 @@ export default function AdminShowtimesPage() {
                   <select
                     value={form.movieId}
                     onChange={handleFormChange("movieId")}
-                    className="w-full rounded-2xl bg-white/5 border border-white/20 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                    className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
                   >
                     <option value="">Chọn phim...</option>
                     {movies.map((m) => (
@@ -782,7 +799,11 @@ export default function AdminShowtimesPage() {
                     <select
                       value={form.cinemaId}
                       onChange={handleFormChange("cinemaId")}
-                      className="w-full rounded-2xl bg-white/5 border border-white/20 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                      className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
                     >
                       <option value="">Chọn rạp...</option>
                       {cinemas.map((c) => (
@@ -792,7 +813,6 @@ export default function AdminShowtimesPage() {
                       ))}
                     </select>
                   </div>
-
                   <div>
                     <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
                       Phòng chiếu
@@ -800,14 +820,20 @@ export default function AdminShowtimesPage() {
                     <select
                       value={form.roomId}
                       onChange={handleFormChange("roomId")}
-                      className="w-full rounded-2xl bg-white/5 border border-white/20 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                      className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
                     >
                       <option value="">Chọn phòng...</option>
                       {filteredRoomsForCinema.map((r) => {
                         const cinema = cinemaMap[r.cinemaId];
                         return (
                           <option key={r.roomId} value={r.roomId}>
-                            {cinema?.name ? `${cinema.name} • Phòng ${r.roomNumber}` : `Room ${r.roomNumber}`}
+                            {cinema?.name
+                              ? `${cinema.name} • Phòng ${r.roomNumber}`
+                              : `Room ${r.roomNumber}`}
                           </option>
                         );
                       })}
@@ -899,11 +925,7 @@ function StatCard({ label, value, gradient }) {
 function ModalWrapper({ children, onClose }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-md">
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
       <div className="relative z-[81] max-h-[90vh] w-full px-4 md:px-0 flex items-center justify-center">
         <div className="max-h-[90vh] overflow-y-auto">{children}</div>
       </div>

@@ -15,12 +15,12 @@ const buildQuery = (params = {}) => {
 
 export async function getCinemas() {
   const res = await apiFetch("/cinemas");
-  return res; // List<CinemaDataResponse>
+  return  res.data || res; // List<CinemaDataResponse>
 }
 
 export async function getCinemaById(cinemaId) {
   const res = await apiFetch(`/cinemas/${cinemaId}`);
-  return res; // CinemaDataResponse
+  return res.data || res ; // CinemaDataResponse
 }
 
 export async function createCinema(payload) {
