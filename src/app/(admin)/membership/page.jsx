@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminUserService } from "@/api/adminservice";
 const DISCOUNT_TYPE_OPTIONS = [
-  { value: "PERCENT", label: "Phần trăm (%)" },
+  { value: "PERCENTAGE", label: "Phần trăm (%)" },
   { value: "FIXED_AMOUNT", label: "Số tiền (VND)" },
 ];
 
@@ -26,9 +26,9 @@ export default function AdminMembershipPage() {
 
   const [form, setForm] = useState({
     name: "",
-    minPoints: 0,
-    discountType: "PERCENT",
-    discountValue: 0,
+    minPoints: "",
+    discountType: "PERCENTAGE",
+    discountValue: "",
     description: "",
     isActive: true,
   });
@@ -80,9 +80,9 @@ export default function AdminMembershipPage() {
   const resetForm = () => {
     setForm({
       name: "",
-      minPoints: 0,
-      discountType: "PERCENT",
-      discountValue: 0,
+      minPoints: "",
+      discountType: "PERCENTAGE",
+      discountValue: "",
       description: "",
       isActive: true,
     });
@@ -99,7 +99,7 @@ export default function AdminMembershipPage() {
     setForm({
       name: tier.name || "",
       minPoints: tier.minPoints ?? 0,
-      discountType: tier.discountType || "PERCENT",
+      discountType: tier.discountType || "PERCENTAGE",
       discountValue: tier.discountValue ?? 0,
       description: tier.description || "",
       isActive: !!tier.isActive,
@@ -136,10 +136,10 @@ export default function AdminMembershipPage() {
     if (form.discountValue < 0) {
       return "Giá trị giảm không được âm.";
     }
-    if (!["PERCENT", "FIXED_AMOUNT"].includes(form.discountType)) {
+    if (!["PERCENTAGE", "FIXED_AMOUNT"].includes(form.discountType)) {
       return "Loại giảm giá không hợp lệ.";
     }
-    if (form.discountType === "PERCENT" && form.discountValue > 100) {
+    if (form.discountType === "PERCENTAGE" && form.discountValue > 100) {
       return "Giảm giá theo phần trăm không nên vượt quá 100%.";
     }
     return null;
@@ -339,7 +339,11 @@ export default function AdminMembershipPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+               border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+               shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+               focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+               transition-all"
               >
                 <option value="ALL">Tất cả</option>
                 <option value="ACTIVE">Đang active</option>
@@ -586,11 +590,12 @@ export default function AdminMembershipPage() {
                     Điểm tối thiểu
                   </label>
                   <input
-                    type="number"
-                    min={0}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Nhập số điểm tối thiểu..."
                     value={form.minPoints}
                     onChange={handleFormChange("minPoints")}
-                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all appearance-none"
                   />
                   <p className="mt-1 text-[11px] text-white/50">
                     Khi tổng điểm loyalty của user ≥ mốc này, user sẽ được xếp
@@ -607,7 +612,11 @@ export default function AdminMembershipPage() {
                     <select
                       value={form.discountType}
                       onChange={handleFormChange("discountType")}
-                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2.5 text-xs text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                      className="w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+                      border border-cyan-400/60 px-3 py-2.5 text-xs font-semibold text-white
+                      shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+                      focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+                      transition-all"
                     >
                       {DISCOUNT_TYPE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -621,14 +630,15 @@ export default function AdminMembershipPage() {
                       Giá trị ưu đãi
                     </label>
                     <input
-                      type="number"
-                      min={0}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Nhập giá trị ưu đãi..."
                       value={form.discountValue}
                       onChange={handleFormChange("discountValue")}
-                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all appearance-none"
                     />
                     <p className="mt-1 text-[11px] text-white/50">
-                      {form.discountType === "PERCENT"
+                      {form.discountType === "PERCENTAGE"
                         ? "Ví dụ: 5 = giảm 5% trên tổng vé/snack (theo rule BE)."
                         : "Ví dụ: 20000 = giảm 20.000đ trên tổng vé/snack (theo rule BE)."}
                     </p>
@@ -702,7 +712,7 @@ function StatCard({ label, value, gradient }) {
 
 function renderDiscountValue(type, value) {
   if (value == null) return "—";
-  if (type === "PERCENT") return `Giảm ${value}%`;
+  if (type === "PERCENTAGE") return `Giảm ${value}%`;
   if (type === "FIXED_AMOUNT")
     return `Giảm ${Number(value).toLocaleString("vi-VN")}đ`;
   return `${value}`;

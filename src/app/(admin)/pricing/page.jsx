@@ -11,7 +11,7 @@ const CONDITION_TYPES = [
   "CINEMA",
 ];
 
-const MODIFIER_TYPES = ["PERCENT", "FIXED_AMOUNT"];
+const MODIFIER_TYPES = ["PERCENTAGE", "FIXED_AMOUNT"];
 
 export default function AdminPricingPage() {
   const [priceBases, setPriceBases] = useState([]);
@@ -462,7 +462,7 @@ export default function AdminPricingPage() {
                       className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2.5 text-xs text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                     >
                       <option value="FIXED_AMOUNT">FIXED_AMOUNT</option>
-                      <option value="PERCENT">PERCENT</option>
+                      <option value="PERCENTAGE">PERCENTAGE</option>
                     </select>
                   </div>
                   <div>

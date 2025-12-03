@@ -255,7 +255,11 @@ export default function AdminMoviesPage() {
   // ================= RENDER =================
 
   return (
-    <div className="space-y-8 lg:space-y-10">
+    <div
+      className={`space-y-8 lg:space-y-10 ${
+        isModalOpen ? "h-screen overflow-hidden" : ""
+      }`}
+    >
       {/* Shared warning modal */}
       <WarningModal
         open={warning.open}
@@ -604,20 +608,19 @@ function MovieModal({
     <div
       className="
         fixed inset-0 z-[60]
-        flex items-start justify-center
+        flex items-center justify-center
         px-4 py-8
         bg-black/70 backdrop-blur-xl
-        overflow-y-auto
       "
     >
       <div
         className="
           relative w-full max-w-2xl
-          max-h-[85vh] overflow-y-auto
           rounded-3xl overflow-hidden
           bg-gradient-to-br from-[#160033]/95 via-[#080017] to-black
           border border-white/15
           shadow-[0_0_60px_rgba(123,66,255,0.6)]
+          max-h-screen
         "
       >
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-transparent to-cyan-500/20 pointer-events-none" />

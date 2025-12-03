@@ -1458,7 +1458,7 @@ function PromoModal({
                         {promo.code}
                       </span>
                       <span className="text-[11px] text-[#a5b4fc]">
-                        {promo.discountType === "PERCENT"
+                        {promo.discountType === "PERCENTAGE"
                           ? `-${promo.discountValue}%`
                           : `-${
                               promo.discountValue?.toLocaleString?.() ||

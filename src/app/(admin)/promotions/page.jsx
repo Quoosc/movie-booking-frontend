@@ -4,7 +4,7 @@ import WarningModal from "@/components/shared/WarningModal";
 import { AdminToolsService } from "@/api/adminservice";
 
 const DISCOUNT_TYPES = [
-  { value: "PERCENT", label: "Phần trăm (%)" },
+  { value: "PERCENTAGE", label: "Phần trăm (%)" },
   { value: "FIXED_AMOUNT", label: "Số tiền cố định" },
 ];
 
@@ -53,7 +53,7 @@ export default function AdminPromotionsPage() {
       code: "",
       name: "",
       description: "",
-      discountType: "PERCENT",
+      discountType: "PERCENTAGE",
       discountValue: "",
       startDate: "",
       endDate: "",
@@ -211,7 +211,7 @@ export default function AdminPromotionsPage() {
       code: promo.code || "",
       name: promo.name || "",
       description: promo.description || "",
-      discountType: promo.discountType || "PERCENT",
+      discountType: promo.discountType || "PERCENTAGE",
       discountValue:
         promo.discountValue !== undefined && promo.discountValue !== null
           ? String(promo.discountValue)
@@ -550,7 +550,7 @@ export default function AdminPromotionsPage() {
                     const isProcessing = processingId === p.promotionId;
 
                     const discountLabel =
-                      p.discountType === "PERCENT"
+                      p.discountType === "PERCENTAGE"
                         ? `${p.discountValue ?? 0}%`
                         : `${(p.discountValue ?? 0).toLocaleString("vi-VN")} đ`;
 
@@ -617,7 +617,7 @@ export default function AdminPromotionsPage() {
                             {discountLabel}
                           </div>
                           <div className="text-[11px] text-white/60 mt-1">
-                            {p.discountType === "PERCENT"
+                            {p.discountType === "PERCENTAGE"
                               ? "Giảm theo phần trăm"
                               : "Giảm theo số tiền"}
                           </div>
