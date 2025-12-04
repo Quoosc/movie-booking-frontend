@@ -123,7 +123,7 @@ export default function HomePage() {
           <PromoHighlight />
         </div>
 
-        {/* MEMBERSHIP – chỉ còn highlight, click card để sang /membership */}
+        {/* MEMBERSHIP  */}
         <div className="mt-16">
           <MembershipHighlight
             onSelect={(id) => {

@@ -5,21 +5,43 @@ import * as authApi from "@/api/authService";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => authApi.getStoredUser());
+  const [user, setUser] = useState(() => {
+    try {
+      return authApi.getStoredUser?.() ?? null;
+    } catch (e) {
+      console.error("getStoredUser error:", e);
+      return null;
+    }
+  });
+
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
-  // Lấy profile khi load app (dựa trên cookie accessToken)
   useEffect(() => {
     let mounted = true;
 
     async function fetchProfile() {
       try {
-        const u = await authApi.me();
-        if (mounted) setUser(u);
+        const profile = await authApi.me();
+        if (!mounted) return;
+
+        setUser(profile);
+
+        try {
+          authApi.setStoredUser?.(profile);
+        } catch (e) {
+          console.error("setStoredUser error:", e);
+        }
       } catch (err) {
         console.error("Fetch profile error:", err);
-        if (mounted) setUser(null);
+        if (!mounted) return;
+
+        setUser(null);
+        try {
+          authApi.clearStoredUser?.();
+        } catch (e) {
+          console.error("clearStoredUser on fetchProfile error:", e);
+        }
       } finally {
         if (mounted) setInitializing(false);
       }
@@ -34,11 +56,16 @@ export function AuthProvider({ children }) {
   async function handleLogin({ email, password }, rememberMe = false) {
     setLoading(true);
     try {
-      await authApi.login({ email, password }); // set cookie
-      const profile = await authApi.me(); // lấy profile từ /users/profile
+      await authApi.login({ email, password });
+      const profile = await authApi.me();
       setUser(profile);
 
-      // 👇 TRẢ PROFILE RA ĐỂ LOGIN PAGE BIẾT ROLE
+      try {
+        authApi.setStoredUser?.(profile);
+      } catch (e) {
+        console.error("setStoredUser on login error:", e);
+      }
+
       return profile;
     } finally {
       setLoading(false);
@@ -57,7 +84,22 @@ export function AuthProvider({ children }) {
   async function handleLogout() {
     try {
       await authApi.logout();
+    } catch (err) {
+      console.error("Logout API error:", err);
     } finally {
+      try {
+        authApi.clearStoredUser?.();
+
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          sessionStorage.removeItem("auth");
+        }
+      } catch (e) {
+        console.error("Clear storage on logout error:", e);
+      }
+
       setUser(null);
     }
   }

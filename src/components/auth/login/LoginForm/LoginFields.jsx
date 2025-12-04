@@ -69,7 +69,6 @@ export default function LoginFields() {
     }
 
     try {
-      // 🔥 login trả về profile (đã sửa trong AuthContext)
       const profile = await login(
         {
           email: formData.email.trim(),

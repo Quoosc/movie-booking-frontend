@@ -7,6 +7,7 @@ import { LuCalendarClock } from "react-icons/lu";
 import { PiCalendarCheckBold, PiPopcornBold } from "react-icons/pi";
 import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
 import CinemaDropdown from "@/components/cinema/CinemaDropdown";
+import { toast } from "react-toastify";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -29,10 +30,16 @@ export default function Navbar() {
     user?.fullName || user?.name || user?.email || "Tài khoản";
 
   const handleLogoutClick = async () => {
-    await logout();
-    setOpenUserMenu(false);
-    setOpen(false);
-    nav("/", { replace: true });
+    try {
+      await logout();
+      setOpenUserMenu(false);
+      setOpen(false);
+      toast.success("Đăng xuất thành công!");
+      nav("/auth/login", { replace: true });
+    } catch (err) {
+      console.error("Logout error:", err);
+      toast.error("Đăng xuất thất bại, vui lòng thử lại.");
+    }
   };
 
   const handleSearch = () => {

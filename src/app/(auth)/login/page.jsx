@@ -69,8 +69,8 @@ export default function LoginPage() {
 
             <p className="mt-3 text-[13px] text-[#cbd5ff]/85 max-w-md">
               Trở thành 1 phần của{" "}
-              <span className="text-[#ffe700] font-semibold">CinesVerse</span> –
-              khiến đam mê bùng cháy
+              <span className="text-[#ffe700] font-semibold">CinesVerse</span>{" "}
+              – khiến đam mê bùng cháy
             </p>
 
             {/* Decorative divider */}
