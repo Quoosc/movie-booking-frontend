@@ -1,4 +1,3 @@
-// src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as authApi from "@/api/authService";
 
@@ -17,6 +16,48 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
+  // ✅ helper: lưu user vào storage
+  const persistUser = (profile) => {
+    try {
+      authApi.setStoredUser?.(profile);
+    } catch (e) {
+      console.error("setStoredUser error:", e);
+    }
+  };
+
+  // ✅ helper: merge 1 phần user (dùng sau khi update profile, đổi avatar...)
+  const updateUser = (partial) => {
+    setUser((prev) => {
+      if (!prev) {
+        const next = partial ?? null;
+        if (next) persistUser(next);
+        return next;
+      }
+      const next = { ...prev, ...(partial || {}) };
+      persistUser(next);
+      return next;
+    });
+  };
+
+  // ✅ helper: gọi lại /auth/me để sync từ BE (nếu cần)
+  const refreshProfile = async () => {
+    try {
+      const profile = await authApi.me();
+      setUser(profile);
+      persistUser(profile);
+      return profile;
+    } catch (err) {
+      console.error("refreshProfile error:", err);
+      setUser(null);
+      try {
+        authApi.clearStoredUser?.();
+      } catch (e) {
+        console.error("clearStoredUser on refreshProfile error:", e);
+      }
+      throw err;
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -26,12 +67,7 @@ export function AuthProvider({ children }) {
         if (!mounted) return;
 
         setUser(profile);
-
-        try {
-          authApi.setStoredUser?.(profile);
-        } catch (e) {
-          console.error("setStoredUser error:", e);
-        }
+        persistUser(profile);
       } catch (err) {
         console.error("Fetch profile error:", err);
         if (!mounted) return;
@@ -59,13 +95,7 @@ export function AuthProvider({ children }) {
       await authApi.login({ email, password });
       const profile = await authApi.me();
       setUser(profile);
-
-      try {
-        authApi.setStoredUser?.(profile);
-      } catch (e) {
-        console.error("setStoredUser on login error:", e);
-      }
-
+      persistUser(profile);
       return profile;
     } finally {
       setLoading(false);
@@ -126,7 +156,11 @@ export function AuthProvider({ children }) {
       login: handleLogin,
       register: handleRegister,
       logout: handleLogout,
+
       setUser,
+
+      updateUser,
+      refreshProfile,
     };
   }, [user, loading, initializing]);
 

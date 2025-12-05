@@ -10,6 +10,7 @@ export default function AccountProfilePage() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { updateUser } = useAuth();
 
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({
@@ -54,18 +55,38 @@ export default function AccountProfilePage() {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
+  // nhớ ở trên component có:
+  // const { updateUser } = useAuth();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(null);
+
     try {
       setSaving(true);
+
       const payload = {
         username: form.username,
         phoneNumber: form.phoneNumber,
         avatarUrl: form.avatarUrl || null,
       };
+
       const updated = await updateUserProfile(payload);
-      setProfile(updated);
+      const newProfile = updated?.data || updated || {};
+
+      // cập nhật state cục bộ của trang
+      setProfile((prev) => ({
+        ...prev,
+        ...newProfile,
+      }));
+
+      // cập nhật luôn AuthContext để navbar / member / trang khác re-render
+      updateUser({
+        username: newProfile.username,
+        phoneNumber: newProfile.phoneNumber,
+        avatarUrl: newProfile.avatarUrl,
+      });
+
       setMessage({
         type: "success",
         text: "Cập nhật hồ sơ thành công.",
@@ -169,8 +190,8 @@ export default function AccountProfilePage() {
               <div className="relative p-6 pb-8">
                 <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/10">
                   <div className="relative">
-                    <div className="h-32 w-32 rounded-3xl bg-gradient-to-br from-pink-400 via-purple-400 to-cyan-400 p-[4px] shadow-2xl shadow-purple-500/60">
-                      <div className="h-full w-full rounded-3xl bg-gray-900/95 backdrop-blur-sm flex items-center justify-center text-5xl font-black text-white overflow-hidden">
+                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-400 via-fuchsia-500 to-emerald-400 p-[2px] shadow-lg shadow-purple-500/30">
+                      <div className="h-full w-full rounded-2xl bg-[#0b001f] flex items-center justify-center overflow-hidden">
                         {avatarSrc ? (
                           <img
                             src={avatarSrc}
@@ -178,7 +199,9 @@ export default function AccountProfilePage() {
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          displayName.charAt(0).toUpperCase()
+                          <span className="text-2xl font-bold">
+                            {displayName.charAt(0).toUpperCase()}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -186,6 +209,7 @@ export default function AccountProfilePage() {
                       {tierName[0]}
                     </div>
                   </div>
+
                   <div className="flex-1">
                     <h3 className="text-sm font-extrabold text-white tracking-wider line-clamp-1">
                       {displayName}

@@ -19,6 +19,7 @@ export default function AccountMemberPage() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const avatarUrl = currentUser?.avatarUrl || currentUser?.avatarURL;
 
   // sidebar items
   const sidebarItems = [
@@ -169,8 +170,18 @@ export default function AccountMemberPage() {
                 <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/10">
                   <div className="relative">
                     <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-400 via-fuchsia-500 to-emerald-400 p-[2px] shadow-lg shadow-purple-500/30">
-                      <div className="h-full w-full rounded-2xl bg-[#0b001f] flex items-center justify-center text-2xl font-bold">
-                        {displayName.charAt(0).toUpperCase()}
+                      <div className="h-full w-full rounded-2xl bg-[#0b001f] flex items-center justify-center overflow-hidden">
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={displayName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-2xl font-bold">
+                            {displayName.charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#0b001f] flex items-center justify-center text-[10px] font-bold">
