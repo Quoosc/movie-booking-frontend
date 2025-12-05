@@ -366,7 +366,11 @@ export default function AdminPromotionsPage() {
 
   // ===== Render =====
   return (
-    <div className="space-y-8 lg:space-y-10">
+    <div
+      className={`space-y-8 lg:space-y-10 ${
+        showForm ? "h-screen overflow-hidden" : ""
+      }`}
+    >
       {/* Shared warning modal */}
       <WarningModal
         open={warning.open}
@@ -442,7 +446,11 @@ export default function AdminPromotionsPage() {
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+                border border-cyan-400/60 px-4 py-2.5 text-sm font-semibold text-white
+                shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+                focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+                transition-all"
               >
                 {FILTER_OPTIONS.map((f) => (
                   <option key={f.value} value={f.value}>
@@ -643,17 +651,6 @@ export default function AdminPromotionsPage() {
                               Sửa
                             </button>
 
-                            {p.isActive && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeactivate(p)}
-                                disabled={isProcessing}
-                                className="rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase border border-amber-500/60 bg-amber-500/10 text-amber-100 hover:bg-amber-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-                              >
-                                {isProcessing ? "Đang xử lý..." : "Tắt"}
-                              </button>
-                            )}
-
                             <button
                               type="button"
                               onClick={() => handleDelete(p)}
@@ -676,12 +673,11 @@ export default function AdminPromotionsPage() {
 
       {/* Modal create / edit */}
       {showForm && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-10">
           <div className="relative w-full max-w-2xl mx-4 rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/98 border border-white/10 shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
             <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
-
-            <div className="relative p-6 md:p-8 max-h-[80vh] overflow-y-auto">
+            <div className="relative p-6 md:p-8">
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <h2 className="text-lg md:text-xl font-black tracking-[0.2em] uppercase bg-gradient-to-r from-cyan-300 to-pink-300 bg-clip-text text-transparent">
@@ -759,7 +755,11 @@ export default function AdminPromotionsPage() {
                       <select
                         value={form.discountType}
                         onChange={handleChange("discountType")}
-                        className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                        className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+                        border border-cyan-400/60 px-4 py-3 text-sm font-semibold text-white
+                        shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+                        focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+                        transition-all"
                       >
                         {DISCOUNT_TYPES.map((t) => (
                           <option key={t.value} value={t.value}>

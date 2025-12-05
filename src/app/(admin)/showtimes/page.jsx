@@ -924,10 +924,25 @@ function StatCard({ label, value, gradient }) {
 
 function ModalWrapper({ children, onClose }) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-md">
+    <div
+      className="
+        fixed inset-0 z-[80]
+        flex items-start justify-center      
+        bg-black/60 backdrop-blur-md
+        overflow-y-auto                     
+      "
+    >
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
-      <div className="relative z-[81] max-h-[90vh] w-full px-4 md:px-0 flex items-center justify-center">
-        <div className="max-h-[90vh] overflow-y-auto">{children}</div>
+
+      <div
+        className="
+          relative z-[81]
+          w-full px-4 md:px-0
+          flex justify-center              
+          pt-24 pb-8                        
+        "
+      >
+        <div className="w-full max-w-xl">{children}</div>
       </div>
     </div>
   );

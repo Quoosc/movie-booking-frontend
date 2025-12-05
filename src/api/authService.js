@@ -103,15 +103,3 @@ export async function refreshToken() {
   // cookie đã được set lại → FE chỉ cần biết là thành công
   return true;
 }
-
-/**
- * ĐĂNG KÝ GUEST
- * POST /auth/guest/register
- */
-// export async function registerGuest({ email, username, phoneNumber }) {
-//   const res = await apiFetch("/auth/guest/register", {
-//     method: "POST",
-//     body: JSON.stringify({ email, username, phoneNumber }),
-//   });
-//   return res.data || res; // { userId }
-// }

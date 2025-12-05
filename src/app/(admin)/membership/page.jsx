@@ -266,7 +266,11 @@ export default function AdminMembershipPage() {
   // ====== RENDER ======
 
   return (
-    <div className="space-y-8 lg:space-y-10">
+    <div
+      className={`space-y-8 lg:space-y-10 ${
+        isFormOpen ? "h-screen overflow-hidden" : ""
+      }`}
+    >
       {/* Shared warning modal */}
       <WarningModal
         open={warning.open}
@@ -529,8 +533,28 @@ export default function AdminMembershipPage() {
 
       {/* Modal / Drawer form */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-40 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-auto rounded-t-3xl md:rounded-3xl bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/95 border border-white/10 shadow-2xl">
+        <div
+          className="
+      fixed inset-0 z-40
+      flex items-start justify-center
+      px-4
+      bg-black/70 backdrop-blur-sm
+      overflow-y-auto
+    "
+        >
+          {/* overlay click để đóng */}
+          <div className="absolute inset-0" onClick={closeForm} />
+
+          <div
+            className="
+        relative z-50
+        w-full md:max-w-lg lg:max-w-xl
+        mt-24 mb-10        /* cách top / bottom một đoạn */
+        rounded-3xl
+        bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/95
+        border border-white/10 shadow-2xl
+      "
+          >
             <div className="relative p-5 md:p-6">
               <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
               <div className="flex items-start justify-between gap-4 mb-4">

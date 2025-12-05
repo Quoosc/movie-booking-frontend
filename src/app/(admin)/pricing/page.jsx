@@ -508,9 +508,9 @@ export default function AdminPricingPage() {
       )}
 
       {/* 2 cột chính, luôn cao ~80vh */}
-      <section className="grid lg:grid-cols-[1.2fr,1.4fr] xl:grid-cols-[1.2fr,1.8fr] gap-6 lg:gap-8 items-stretch min-h-[80vh]">
+      <section className="grid lg:grid-cols-[1.2fr,1.4fr] xl:grid-cols-[1.2fr,1.8fr] gap-6 lg:gap-8 items-start min-h-[70vh]">
         {/* Left: base price + ticket types */}
-        <div className="flex flex-col gap-6 h-[90vh]">
+        <div className="flex flex-col gap-6">
           {/* Base price card */}
           <div className="relative flex-[1.1] rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a0033]/90 via-[#0c001f] to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-transparent to-emerald-500/20 pointer-events-none" />
@@ -880,7 +880,7 @@ export default function AdminPricingPage() {
         </div>
 
         {/* Right: modifiers list + form */}
-        <div className="relative h-[90vh] rounded-3xl overflow-hidden bg-gradient-to-br from-[#1b0035]/90 via-[#08001a] to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1b0035]/90 via-[#08001a] to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col">
           <div className="absolute inset-0 bg-gradient-to-br from-amber-400/20 via-transparent to-rose-500/20 pointer-events-none" />
           <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500" />
           <div className="relative p-4 md:p-6 space-y-4 h-full flex flex-col">

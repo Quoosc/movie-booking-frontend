@@ -240,7 +240,11 @@ export default function AdminCinemasPage() {
   // =============== RENDER ===============
 
   return (
-    <div className="space-y-8 lg:space-y-10">
+    <div
+      className={`space-y-8 lg:space-y-10 ${
+        modalOpen ? "h-screen overflow-hidden" : ""
+      }`}
+    >
       {/* Shared warning modal */}
       <WarningModal
         open={warning.open}
@@ -556,14 +560,27 @@ function StatCard({ label, value, gradient }) {
 
 function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center px-4">
+    <div
+      className="
+        fixed inset-0 z-40
+        flex items-start justify-center        /* canh TRÊN */
+        px-4
+        bg-black/70 backdrop-blur-sm
+        overflow-y-auto                        /* scroll toàn màn hình */
+      "
+    >
       {/* overlay */}
-      <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0" onClick={onClose} />
       {/* content */}
-      <div className="relative z-50 w-full max-w-xl rounded-3xl bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/95 border border-white/15 shadow-2xl overflow-hidden">
+      <div
+        className="
+          relative z-50
+          w-full max-w-xl
+          mt-24 mb-10                           /* cách top/bottom một đoạn */
+          rounded-3xl bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/95
+          border border-white/15 shadow-2xl overflow-hidden
+        "
+      >
         <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400" />
 
