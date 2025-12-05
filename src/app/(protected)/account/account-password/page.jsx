@@ -25,49 +25,54 @@ export default function AccountPasswordPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(null);
+  e.preventDefault();
+  setMessage(null);
 
-    if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
-      setMessage({ type: "error", text: "Vui lòng nhập đầy đủ các trường." });
-      return;
-    }
-    if (form.newPassword.length < 6) {
-      setMessage({
-        type: "error",
-        text: "Mật khẩu mới phải có ít nhất 6 ký tự.",
-      });
-      return;
-    }
-    if (form.newPassword !== form.confirmPassword) {
-      setMessage({ type: "error", text: "Xác nhận mật khẩu mới không khớp." });
-      return;
-    }
+  if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
+    setMessage({ type: "error", text: "Vui lòng nhập đầy đủ các trường." });
+    return;
+  }
+  if (form.newPassword.length < 6) {
+    setMessage({
+      type: "error",
+      text: "Mật khẩu mới phải có ít nhất 6 ký tự.",
+    });
+    return;
+  }
+  if (form.newPassword !== form.confirmPassword) {
+    setMessage({ type: "error", text: "Xác nhận mật khẩu mới không khớp." });
+    return;
+  }
 
-    try {
-      setSubmitting(true);
-      const payload = {
-        currentPassword: form.currentPassword,
-        newPassword: form.newPassword,
-      };
-      const resMessage = await changePassword(payload);
-      setMessage({
-        type: "success",
-        text: resMessage || "Đổi mật khẩu thành công.",
-      });
-      setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (err) {
-      console.error("changePassword error:", err);
-      setMessage({
-        type: "error",
-        text:
-          err?.message ||
-          "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  try {
+    setSubmitting(true);
+
+    const payload = {
+      currentPassword: form.currentPassword,
+      newPassword: form.newPassword,
+      confirmPassword: form.confirmPassword, // BẮT BUỘC GỬI LÊN
+    };
+
+    const resMessage = await changePassword(payload);
+
+    setMessage({
+      type: "success",
+      text: resMessage || "Đổi mật khẩu thành công.",
+    });
+    setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  } catch (err) {
+    console.error("changePassword error:", err);
+    setMessage({
+      type: "error",
+      text:
+        err?.message ||
+        "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.",
+    });
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   const handleNavigate = (path) => {
     if (location.pathname === path) return;
