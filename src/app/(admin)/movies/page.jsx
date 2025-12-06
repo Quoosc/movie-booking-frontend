@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminMovieService } from "@/api/adminservice";
+import { uploadPoster } from "@/api/cloudinaryService";
 
 const STATUS_OPTIONS = ["SHOWING", "UPCOMING"];
 
@@ -25,6 +26,7 @@ export default function AdminMoviesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [uploadingPoster, setUploadingPoster] = useState(false);
 
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -151,8 +153,8 @@ export default function AdminMoviesPage() {
       minimumAge: form.minimumAge ? Number(form.minimumAge) : 0,
       director: form.director.trim() || null,
       actors: form.actors.trim() || null,
-      posterUrl: form.posterUrl.trim() || null,
-      posterCloudinaryId: form.posterCloudinaryId.trim() || null,
+      posterUrl: form.posterUrl || null,
+      posterCloudinaryId: form.posterCloudinaryId || null,
       trailerUrl: form.trailerUrl.trim() || null,
       status: form.status || "UPCOMING",
       language: form.language.trim() || null,
@@ -251,7 +253,27 @@ export default function AdminMoviesPage() {
 
     return { total, showing, upcoming };
   }, [movies]);
+  // ================= CLOUDINARY =================
+  const handlePosterFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
+    try {
+      setUploadingPoster(true);
+      const { posterUrl, posterCloudinaryId } = await uploadPoster(file);
+
+      setForm((prev) => ({
+        ...prev,
+        posterUrl,
+        posterCloudinaryId,
+      }));
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Upload poster thất bại");
+    } finally {
+      setUploadingPoster(false);
+    }
+  };
   // ================= RENDER =================
 
   return (
