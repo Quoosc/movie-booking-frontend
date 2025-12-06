@@ -136,28 +136,45 @@ export default function AdminMoviesPage() {
     setError(null);
     setSuccess(null);
 
-    if (!form.title.trim()) {
-      setError("Vui lòng nhập tên phim.");
+    if (!form.genre.trim()) {
+      setError("Vui lòng nhập thể loại phim.");
       return;
     }
-    if (!form.duration || Number(form.duration) <= 0) {
-      setError("Thời lượng phim phải > 0 phút.");
+    if (!form.description.trim()) {
+      setError("Vui lòng nhập mô tả phim.");
+      return;
+    }
+    if (!form.director.trim()) {
+      setError("Vui lòng nhập tên đạo diễn.");
+      return;
+    }
+    if (!form.actors.trim()) {
+      setError("Vui lòng nhập danh sách diễn viên.");
+      return;
+    }
+    if (!form.trailerUrl.trim()) {
+      setError("Vui lòng nhập Trailer URL.");
+      return;
+    }
+    if (!form.language.trim()) {
+      setError("Vui lòng nhập ngôn ngữ.");
       return;
     }
 
+    // 2) Payload KHÔNG để null các field bắt buộc
     const payload = {
       title: form.title.trim(),
-      genre: form.genre.trim() || null,
-      description: form.description.trim() || null,
+      genre: form.genre.trim(),
+      description: form.description.trim(),
       duration: Number(form.duration),
-      minimumAge: form.minimumAge ? Number(form.minimumAge) : 0,
-      director: form.director.trim() || null,
-      actors: form.actors.trim() || null,
-      posterUrl: form.posterUrl || null,
-      posterCloudinaryId: form.posterCloudinaryId || null,
-      trailerUrl: form.trailerUrl.trim() || null,
+      minimumAge: form.minimumAge ? Number(form.minimumAge) : 0, // ok vì min 0
+      director: form.director.trim(),
+      actors: form.actors.trim(),
+      posterUrl: form.posterUrl || null, // field này optional, để null được
+      posterCloudinaryId: form.posterCloudinaryId || null, // optional
+      trailerUrl: form.trailerUrl.trim(),
       status: form.status || "UPCOMING",
-      language: form.language.trim() || null,
+      language: form.language.trim(),
     };
 
     try {
@@ -561,6 +578,8 @@ export default function AdminMoviesPage() {
           onSubmit={handleSubmit}
           saving={saving}
           editingMovie={editingMovie}
+          onPosterFileChange={handlePosterFileChange}
+          uploadingPoster={uploadingPoster}
         />
       )}
     </div>
@@ -617,6 +636,8 @@ function MovieModal({
   onSubmit,
   saving,
   editingMovie,
+  onPosterFileChange,
+  uploadingPoster,
 }) {
   if (!isOpen) return null;
 
@@ -804,29 +825,49 @@ function MovieModal({
               </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
-                Poster URL
-              </label>
-              <input
-                type="text"
-                value={form.posterUrl}
-                onChange={handleChange("posterUrl")}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                placeholder="https://cdn.example.com/posters/..."
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
-                Poster Cloudinary Id
-              </label>
-              <input
-                type="text"
-                value={form.posterCloudinaryId}
-                onChange={handleChange("posterCloudinaryId")}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                placeholder="cloudinary_public_id..."
-              />
+            {/* Chọn file poster (Cloudinary) */}
+            <div className="grid md:grid-cols-[2fr,1fr] gap-4">
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Poster phim
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onPosterFileChange}
+                  disabled={uploadingPoster || saving}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white
+                 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0
+                 file:bg-violet-500/80 file:text-black file:font-semibold
+                 hover:file:bg-violet-400
+                 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                />
+                {uploadingPoster && (
+                  <p className="mt-2 text-xs text-cyan-300">
+                    Đang upload poster lên Cloudinary...
+                  </p>
+                )}
+                {form.posterUrl && (
+                  <p className="mt-2 text-xs text-white/60 break-all">
+                    URL: <span className="text-cyan-300">{form.posterUrl}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Preview nhỏ cho vui */}
+              <div className="flex items-end justify-center">
+                <div className="h-32 w-24 rounded-2xl bg-white/5 border border-white/15 overflow-hidden flex items-center justify-center text-[10px] text-white/50">
+                  {form.posterUrl ? (
+                    <img
+                      src={form.posterUrl}
+                      alt={form.title || "Poster preview"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    "Chưa có poster"
+                  )}
+                </div>
+              </div>
             </div>
 
             <div>
