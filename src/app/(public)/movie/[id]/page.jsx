@@ -518,6 +518,7 @@ export default function MovieDetailPage() {
         activeShowtime.cinema?.name ||
         "",
       address:
+        activeShowtime.address || // thêm dòng này
         activeShowtime.cinemaAddress ||
         activeShowtime.cinema_address ||
         activeShowtime.cinema?.address ||

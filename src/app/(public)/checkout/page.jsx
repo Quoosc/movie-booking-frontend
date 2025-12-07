@@ -1,6 +1,6 @@
 // src/app/(public)/checkout/page.jsx
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getValidPromotions, validatePromotion } from "@/api/promotionService";
 import Navbar from "@/components/common/Navbar";
@@ -11,6 +11,7 @@ import {
   previewPrice,
   createBooking,
   createPaymentOrder,
+  releaseSeatLocksByShowtime,
 } from "@/api/bookingService";
 
 // Map từ mã UI sang enum PaymentMethod của BE (PAYPAL / MOMO)
@@ -69,6 +70,62 @@ function validateCustomer(data) {
   return errors;
 }
 
+// Chuẩn hóa thông báo lỗi khóa ghế
+function getSeatLockErrorMessage(err) {
+  const raw =
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    "";
+
+  const lower = String(raw).toLowerCase();
+
+  // Case 1: ghế đã bị người khác giữ / tranh chấp
+  if (raw.includes("Unable to lock seats due to concurrent booking attempt")) {
+    return (
+      "Ghế bạn chọn vừa được người khác giữ chỗ hoặc đặt trước.\n" +
+      "Vui lòng quay lại và chọn ghế khác."
+    );
+  }
+
+  // Case 2: bạn đã có lock/đơn đang đặt cho suất chiếu này rồi (seat-lock)
+  if (
+    lower.includes("existing active lock") ||
+    lower.includes("already have an active lock") ||
+    lower.includes("active seat lock")
+  ) {
+    return (
+      "Bạn đang có một lần giữ ghế/đơn đặt vé khác cho suất chiếu này.\n" +
+      "Vui lòng hoàn tất hoặc hủy lần đặt trước rồi thử lại."
+    );
+  }
+
+  // Case 3: BE rule - đã có booking đang xử lý/chờ thanh toán cho suất này
+  if (lower.includes("active booking in progress for this showtime")) {
+    return (
+      "Bạn đang có một đơn đặt vé chưa hoàn tất cho suất chiếu này.\n" +
+      "Vui lòng hoàn tất thanh toán hoặc chờ đơn cũ hết hiệu lực trước khi đặt lần mới."
+    );
+  }
+
+  // Default: không rõ -> trả raw hoặc câu chung
+  if (raw) {
+    return raw;
+  }
+
+  return "Có lỗi xảy ra khi khóa ghế. Vui lòng thử lại hoặc chọn suất chiếu khác.";
+}
+
+function getUserDisplayName(user) {
+  return (
+    user?.fullName || // nếu BE có fullName
+    user?.full_name || // case snake_case
+    user?.name || // nếu trả về name
+    user?.username ||
+    "" // fallback cuối cùng
+  );
+}
+
 export default function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -78,6 +135,7 @@ export default function CheckoutPage() {
   const isMemberUser = currentUser?.role === "USER"; // kiểm tra có phải member không
   const state = location.state || {};
   const normalizedUserId = currentUser?.userId || currentUser?.id || null;
+  const hasRequestedLockRef = useRef(false);
 
   const {
     showtimeId,
@@ -127,7 +185,11 @@ export default function CheckoutPage() {
       title,
       message,
       buttonText: options.buttonText || "OK",
-      onConfirm: options.onConfirm || null,
+      // nếu caller truyền onConfirm thì dùng, còn không thì mặc định quay lại trang trước
+      onConfirm:
+        typeof options.onConfirm === "function"
+          ? options.onConfirm
+          : () => navigate(-1),
     });
   };
 
@@ -137,6 +199,15 @@ export default function CheckoutPage() {
     }
     setWarning((prev) => ({ ...prev, open: false, onConfirm: null }));
   };
+
+  function getApiErrorMessage(err, fallback) {
+    return (
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      fallback
+    );
+  }
 
   /* ===== TOAST NHỎ RIÊNG CHO PROMO (góc trên phải) ===== */
   const [promoToast, setPromoToast] = useState({
@@ -150,9 +221,9 @@ export default function CheckoutPage() {
 
   /* ===== CUSTOMER INFO (STEP 1) ===== */
   const [customer, setCustomer] = useState(() => ({
-    fullName: currentUser?.fullName || "",
+    fullName: getUserDisplayName(currentUser),
     email: currentUser?.email || "",
-    phone: currentUser?.phoneNumber || "",
+    phone: currentUser?.phoneNumber || currentUser?.phone || "",
   }));
   const [customerErrors, setCustomerErrors] = useState({});
 
@@ -173,9 +244,9 @@ export default function CheckoutPage() {
 
     setCustomer((prev) => ({
       ...prev,
-      fullName: currentUser.fullName || prev.fullName,
+      fullName: getUserDisplayName(currentUser) || prev.fullName,
       email: currentUser.email || prev.email,
-      phone: currentUser.phoneNumber || prev.phone,
+      phone: currentUser.phoneNumber || currentUser.phone || prev.phone,
     }));
   }, [currentUser]);
 
@@ -230,7 +301,7 @@ export default function CheckoutPage() {
 
       if (!res?.valid) {
         setAppliedPromotion(null);
-        setIsPromotionModalOpen(false); // đóng popup
+        setIsPromotionModalOpen(false);
         showPromoToast(res?.message || "Mã khuyến mãi không tồn tại.");
         return;
       }
@@ -239,62 +310,54 @@ export default function CheckoutPage() {
       setAppliedPromotion(promo);
       setIsPromotionModalOpen(false);
 
-      // Cập nhật lại giá hiển thị bằng previewPrice
-      if (showtimeId && seats?.length) {
-        const seatIds = seats.map((s) => s.seat_id || s.seatId);
-        const snacksArray = Object.values(snacks || {});
+      // ✅ Cập nhật lại giá hiển thị bằng previewPrice dùng lockId
+      if (!lockInfo?.lockId) {
+        // chưa có lock, báo 1 toast nhẹ thôi, không back
+        showPromoToast("Không tìm thấy thông tin giữ ghế. Vui lòng thử lại.");
+        return;
+      }
 
-        const ticketTypesPayload = ticketTypes
-          .filter((t) => t.quantity > 0)
-          .map((t) => ({
-            ticketTypeId: t.ticketTypeId || t.id,
-            quantity: t.quantity,
+      const snacksArray = Object.values(snacks || {});
+      const snacksPayload = snacksArray
+        .filter((s) => s.quantity > 0)
+        .map((s) => ({
+          snackId: s.snackId || s.snack_id,
+          quantity: s.quantity,
+        }));
+
+      try {
+        const previewRes = await previewPrice({
+          lockId: lockInfo.lockId,
+          promotionCode: code,
+          snacks: snacksPayload,
+        });
+
+        const previewWrapper = previewRes || {};
+        const previewData = previewWrapper.data || previewWrapper;
+
+        if (!previewWrapper.code || previewWrapper.code === 200) {
+          setComputedPriceSummary((prev) => ({
+            subtotal:
+              typeof previewData.subtotal === "number"
+                ? previewData.subtotal
+                : prev.subtotal ?? priceSummary.subtotal ?? 0,
+            discount:
+              typeof previewData.discount === "number"
+                ? previewData.discount
+                : typeof previewData.discountValue === "number"
+                ? previewData.discountValue
+                : prev.discount ?? 0,
+            total:
+              typeof previewData.total === "number"
+                ? previewData.total
+                : typeof previewData.finalPrice === "number"
+                ? previewData.finalPrice
+                : prev.total ?? priceSummary.total ?? 0,
           }));
-
-        const snacksPayload = snacksArray
-          .filter((s) => s.quantity > 0)
-          .map((s) => ({
-            snackId: s.snackId || s.snack_id,
-            quantity: s.quantity,
-          }));
-
-        try {
-          const previewRes = await previewPrice({
-            showtimeId,
-            seatIds,
-            ticketTypes: ticketTypesPayload,
-            snacks: snacksPayload,
-            promotionCode: code,
-            userId: normalizedUserId,
-          });
-
-          const previewWrapper = previewRes || {};
-          const previewData = previewWrapper.data || previewWrapper;
-
-          if (!previewWrapper.code || previewWrapper.code === 200) {
-            setComputedPriceSummary((prev) => ({
-              subtotal:
-                typeof previewData.subtotal === "number"
-                  ? previewData.subtotal
-                  : prev.subtotal ?? priceSummary.subtotal ?? 0,
-              discount:
-                typeof previewData.discount === "number"
-                  ? previewData.discount
-                  : typeof previewData.discountValue === "number"
-                  ? previewData.discountValue
-                  : prev.discount ?? 0,
-              total:
-                typeof previewData.total === "number"
-                  ? previewData.total
-                  : typeof previewData.finalPrice === "number"
-                  ? previewData.finalPrice
-                  : prev.total ?? priceSummary.total ?? 0,
-            }));
-          }
-        } catch (err) {
-          console.error("previewPrice with promotion failed", err);
-          // Nếu fail thì vẫn giữ appliedPromotion, chỉ không update số tiền UI
         }
+      } catch (err) {
+        console.error("previewPrice with promotion failed", err);
+        // Nếu fail thì vẫn giữ appliedPromotion, chỉ không update số tiền UI
       }
     } catch (err) {
       console.error("handleApplyPromotion error", err);
@@ -310,10 +373,14 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!showtimeId || !seats || seats.length === 0) return;
 
+    // 🔒 Chỉ cho phép gọi lockSeats đúng 1 lần trong 1 lifecycle
+    if (hasRequestedLockRef.current) return;
+    hasRequestedLockRef.current = true;
+
     // 1️⃣ build danh sách ticketTypeId theo quantity
     const flatTicketTypeIds = [];
     (ticketTypes || []).forEach((t) => {
-      const id = t.ticketTypeId || t.id;
+      const id = t.ticketTypeId; // KHỚP spec: dùng ticketTypeId từ BE
       const qty = t.quantity || 0;
       if (!id || qty <= 0) return;
       for (let i = 0; i < qty; i++) {
@@ -341,8 +408,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    let cancelled = false;
-
     const doLock = async () => {
       try {
         setLoadingLock(true);
@@ -351,61 +416,104 @@ export default function CheckoutPage() {
           showtimeId,
           seats: seats.map((s, index) => ({
             showtimeSeatId: s.showtimeSeatId || s.seat_id || s.seatId || s.id,
-            ticketTypeId: flatTicketTypeIds[index], // 👈 GIỜ KHÔNG CÒN NULL
+            ticketTypeId: flatTicketTypeIds[index],
           })),
         });
 
         const data = res.data || res;
 
-        if (!cancelled) {
-          const seconds =
-            data.remainingSeconds ??
-            (typeof data.lockDurationMinutes === "number"
-              ? data.lockDurationMinutes * 60
-              : 600);
-
-          setLockInfo({
-            lockId: data.lockId,
-            expiresAt: data.expiresAt,
-          });
-          setRemainSeconds(seconds);
+        // ✅ ƯU TIÊN remainingSeconds, nếu không có thì dùng lockDurationMinutes, cuối cùng fallback 600s
+        let seconds = 0;
+        if (
+          typeof data.remainingSeconds === "number" &&
+          data.remainingSeconds > 0
+        ) {
+          seconds = data.remainingSeconds;
+        } else if (
+          typeof data.lockDurationMinutes === "number" &&
+          data.lockDurationMinutes > 0
+        ) {
+          seconds = data.lockDurationMinutes * 60;
+        } else {
+          seconds = 600; // fallback 10 phút cho chắc
         }
+
+        // Không dùng expiresAt cho timer để tránh lệch timezone
+        setLockInfo({
+          lockId: data.lockId,
+          expiresAt: null,
+        });
+
+        setRemainSeconds(seconds);
       } catch (err) {
         console.error("lockSeats error", err);
-        if (!cancelled) {
-          showWarning(
-            "Có lỗi xảy ra khi khóa ghế. Vui lòng thử lại hoặc chọn suất khác.",
-            "Lỗi khóa ghế"
+
+        const raw =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "";
+
+        const isExistingLock =
+          /existing active lock|already have an active lock|active seat lock/i.test(
+            String(raw)
           );
+
+        const isActiveBookingError =
+          /active booking in progress for this showtime/i.test(String(raw));
+
+        // Nếu đang có seat-lock tồn tại → thử dọn bằng DELETE /seat-locks/showtime/{showtimeId}
+        if (isExistingLock && showtimeId) {
+          try {
+            await releaseSeatLocksByShowtime(showtimeId);
+            console.warn(
+              "Released existing seat locks for showtime",
+              showtimeId
+            );
+          } catch (e) {
+            console.error("releaseSeatLocksByShowtime error", e);
+          }
+        }
+
+        const msg = getSeatLockErrorMessage(err);
+
+        // Nếu là member và BE báo đang có booking active → điều hướng tới lịch sử đặt vé
+        if (isActiveBookingError && currentUser) {
+          showWarning(msg, "Lỗi khóa ghế", {
+            buttonText: "Xem lịch sử đặt vé",
+            onConfirm: () => navigate("/account/history"),
+          });
+        } else {
+          showWarning(msg, "Lỗi khóa ghế", {
+            buttonText: "Quay lại chọn ghế",
+            onConfirm: () => navigate(-1),
+          });
         }
       } finally {
-        if (!cancelled) {
-          setLoadingLock(false);
-        }
+        setLoadingLock(false);
       }
     };
 
     doLock();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [showtimeId, seats, ticketTypes, navigate]);
+  }, [showtimeId, seats, ticketTypes, navigate, currentUser]);
 
   /* ===== COUNTDOWN TIMER ===== */
   useEffect(() => {
-    if (!lockInfo?.expiresAt) return;
+    // Chưa có lockId thì khỏi chạy timer
+    if (!lockInfo?.lockId) return;
 
-    const timer = setInterval(() => {
-      const diff = Math.max(
-        0,
-        Math.floor((new Date(lockInfo.expiresAt).getTime() - Date.now()) / 1000)
-      );
-      setRemainSeconds(diff);
+    const timerId = setInterval(() => {
+      setRemainSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerId);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [lockInfo?.expiresAt]);
+    return () => clearInterval(timerId);
+  }, [lockInfo?.lockId]);
 
   // Nếu hết thời gian giữ ghế → cảnh báo + nút quay lại movieDetail
   useEffect(() => {
@@ -450,20 +558,26 @@ export default function CheckoutPage() {
   );
 
   /* ===== HANDLERS STEP 1 ===== */
-  // const handleBackToMovie = () => {
-  //   navigate(-1);
-  // };
 
   const handleNextStep = () => {
     const errors = validateCustomer(customer);
     if (Object.keys(errors).length > 0) {
       setCustomerErrors(errors);
-      showWarning("Vui lòng kiểm tra lại thông tin khách hàng.");
+      showWarning("Vui lòng kiểm tra lại thông tin khách hàng.", "Lưu ý!", {
+        onConfirm: () => {},
+      });
       return;
     }
 
     if (remainSeconds <= 0) {
-      showWarning("Đã hết thời gian giữ ghế. Vui lòng quay lại chọn ghế.");
+      showWarning(
+        "Đã hết thời gian giữ ghế. Vui lòng quay lại chọn ghế.",
+        "Hết thời gian giữ vé",
+        {
+          buttonText: "Quay lại chọn ghế",
+          onConfirm: () => navigate(-1),
+        }
+      );
       return;
     }
 
@@ -476,12 +590,21 @@ export default function CheckoutPage() {
       (promotionCode || appliedPromotion?.code || "").trim() || null;
 
     if (!paymentMethod) {
-      showWarning("Vui lòng chọn phương thức thanh toán.");
+      showWarning("Vui lòng chọn phương thức thanh toán.", "Lưu ý!", {
+        onConfirm: () => {},
+      });
       return;
     }
 
     if (remainSeconds <= 0) {
-      showWarning("Hết thời gian giữ ghế. Vui lòng quay lại chọn ghế.");
+      showWarning(
+        "Hết thời gian giữ ghế. Vui lòng quay lại chọn ghế.",
+        "Hết thời gian giữ vé",
+        {
+          buttonText: "Quay lại chọn ghế",
+          onConfirm: () => navigate(-1),
+        }
+      );
       return;
     }
 
@@ -500,7 +623,9 @@ export default function CheckoutPage() {
     if (Object.keys(errors).length > 0) {
       setCustomerErrors(errors);
       showWarning(
-        "Thiếu thông tin khách hàng. Vui lòng kiểm tra lại Họ tên, Email và Số điện thoại."
+        "Thiếu thông tin khách hàng. Vui lòng kiểm tra lại Họ tên, Email và Số điện thoại.",
+        "Lưu ý!",
+        { onConfirm: () => {} }
       );
       setStep(1);
       return;
@@ -509,7 +634,6 @@ export default function CheckoutPage() {
     setSubmitting(true);
 
     try {
-      const seatIds = seats.map((s) => s.seat_id || s.seatId);
       const snacksArray = Object.values(snacks || {});
       const gatewayMethod = mapPaymentMethodForApi(paymentMethod);
 
@@ -529,12 +653,9 @@ export default function CheckoutPage() {
 
       // 1️⃣ Tính tiền với /bookings/price-preview
       const previewRes = await previewPrice({
-        showtimeId,
-        seatIds,
-        ticketTypes: ticketTypesPayload,
+        lockId: lockInfo.lockId,
+        promotionCode: promoCodeToUse,
         snacks: snacksPayload,
-        promotionCode: code,
-        userId: normalizedUserId,
       });
 
       const previewWrapper = previewRes || {};
@@ -614,7 +735,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Tạo lệnh thanh toán: /payments/order
+      // 3️⃣ Tạo lệnh thanh toán: /payments/order
       const paymentRes = await createPaymentOrder({
         bookingId,
         paymentMethod: gatewayMethod, // "PAYPAL" | "MOMO"
@@ -648,7 +769,11 @@ export default function CheckoutPage() {
       window.location.href = paymentUrl;
     } catch (err) {
       console.error("handleSubmitPayment (real) error", err);
-      showWarning("Có lỗi xảy ra trong quá trình thanh toán.", "Lỗi");
+      const msg = getApiErrorMessage(
+        err,
+        "Có lỗi xảy ra trong quá trình thanh toán."
+      );
+      showWarning(msg, "Lỗi");
     } finally {
       setSubmitting(false);
     }
@@ -660,6 +785,21 @@ export default function CheckoutPage() {
     remainSeconds > 0 &&
     !!paymentMethod &&
     seats?.length > 0;
+
+  const handleBackToSeatSelection = async () => {
+    try {
+      // Thử release lock theo showtime hiện tại (best-effort)
+      if (showtimeId) {
+        await releaseSeatLocksByShowtime(showtimeId);
+      }
+    } catch (err) {
+      console.error("releaseSeatLocksByShowtime error", err);
+      // Không cần show lỗi, BE sẽ tự hết hạn sau một thời gian
+    } finally {
+      // Quay lại trang trước (MovieDetailPage với layout ghế)
+      navigate(-1);
+    }
+  };
 
   /* ===== RENDER ===== */
 
@@ -677,7 +817,16 @@ export default function CheckoutPage() {
       <main className="relative z-10 max-w-6xl mx-auto px-4 pb-12 pt-4">
         {/* back to movie (giữ chỗ, có thể thêm lại nút sau) */}
         <div className="flex items-center justify-between mb-4">
-          {/* <button ...>Quay lại chọn ghế</button> */}
+          <button
+            type="button"
+            onClick={handleBackToSeatSelection}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl
+                       text-[11px] md:text-[12px] font-extrabold uppercase tracking-[0.18em]
+                       bg-white/5 border border-white/15 text-white/80
+                       hover:bg-white/10 hover:text-white transition-all"
+          >
+            ← Quay lại chọn ghế
+          </button>
         </div>
 
         {/* Heading + Step indicator */}
@@ -747,7 +896,6 @@ export default function CheckoutPage() {
             remainSeconds={remainSeconds}
             loadingLock={loadingLock}
             seatLabel={seatLabel}
-            promotionCode={promotionCode}
             appliedPromotion={appliedPromotion}
           />
         </section>
@@ -1254,7 +1402,7 @@ function PromoModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 text-sm"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg.white/10 text-sm"
             >
               ✕
             </button>
@@ -1307,7 +1455,7 @@ function PromoModal({
                     onClick={() => {
                       onSelectCode(promo.code);
                     }}
-                    className="w-full text-left rounded-2xl px-3 py-2.5 bg-black/25 border border-white/10 hover:border-[#ffe700aa] hover:bg-white/5 transition-all"
+                    className="w-full text-left rounded-2xl px-3 py-2.5 bg-black/25 border border-white/10 hover:border-[#ffe700aa] hover:bg.white/5 transition-all"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-semibold text-[#ffe700] tracking-[0.18em] uppercase">

@@ -529,8 +529,13 @@ export async function getSnacksByCinema(cinemaId) {
  * FE đang gọi:
  *   holdSeats(showtimeId, seatIds, HOLD_SECONDS)
  */
-export async function holdSeats(showtimeId, seatIds, holdSeconds = 300) {
-  return lockSeats({ showtimeId, seatIds, holdSeconds });
+export async function holdSeats(showtimeId, seatIds = [], holdSeconds = 300) {
+  const seats = (seatIds || []).map((id) => ({
+    showtimeSeatId: id,
+    ticketTypeId: null,
+  }));
+
+  return lockSeats({ showtimeId, seats, holdSeconds });
 }
 
 /**
@@ -546,8 +551,12 @@ export async function releaseSeats(showtimeId) {
   if (!showtimeId) {
     throw new Error("releaseSeats: thiếu showtimeId");
   }
+
+  const sessionId = getOrCreateGuestSessionId();
+
   await apiFetch(`/seat-locks/showtime/${showtimeId}`, {
     method: "DELETE",
+    headers: sessionId ? { "X-Session-Id": sessionId } : undefined,
   });
 
   return { message: "Seats released" };
@@ -576,26 +585,17 @@ export async function releaseSeats(showtimeId) {
  */
 
 export async function previewPrice({
-  showtimeId,
-  seatIds = [],
-  ticketTypes = [],
+  lockId,
   snacks = [],
   promotionCode = null,
-  userId = null,
 }) {
   if (USE_MOCK) {
-    // MOCK: tính theo price trong payload (MovieDetailPage)
-    const ticketTotal = ticketTypes.reduce(
-      (sum, t) => sum + (t.price || 0) * (t.quantity || 0),
-      0
-    );
-
     const snackTotal = (snacks || []).reduce(
       (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
       0
     );
 
-    const subtotal = ticketTotal + snackTotal;
+    const subtotal = snackTotal;
     const discount = 0;
     const total = subtotal - discount;
 
@@ -606,28 +606,24 @@ export async function previewPrice({
         discount,
         total,
         breakdown: {
-          tickets: ticketTotal,
           snacks: snackTotal,
         },
       },
     };
   }
 
+  const sessionId = getOrCreateGuestSessionId();
+
   return apiFetch("/bookings/price-preview", {
     method: "POST",
+    headers: sessionId ? { "X-Session-Id": sessionId } : undefined,
     body: JSON.stringify({
-      showtimeId,
-      seatIds,
-      ticketTypes: ticketTypes.map((t) => ({
-        ticketTypeId: t.ticketTypeId || t.id,
-        quantity: t.quantity,
-      })),
-      snacks: snacks.map((s) => ({
+      lockId,
+      promotionCode,
+      snacks: (snacks || []).map((s) => ({
         snackId: s.snackId || s.snack_id,
         quantity: s.quantity,
       })),
-      promotionCode,
-      userId,
     }),
   });
 }
@@ -696,6 +692,13 @@ export async function lockSeats({
   return res;
 }
 
+export async function releaseSeatLocksByShowtime(showtimeId) {
+  if (!showtimeId) return;
+  return apiFetch(`/seat-locks/showtime/${showtimeId}`, {
+    method: "DELETE",
+  });
+}
+
 /* ======================================================
  *  TẠO BOOKING (Flow mới: từ lockId)
  *  - Dùng ở Checkout Step 2 trước khi tạo lệnh thanh toán
@@ -729,7 +732,6 @@ export async function createBooking(payload = {}) {
     snacks = [],
   } = payload;
 
-  // Vẫn cho phép mock legacy: showtimeId + seatIds
   if (!lockId && (!showtimeId || seatIds.length === 0)) {
     throw new Error(
       "createBooking: cần lockId (flow mới) hoặc showtimeId + seatIds (legacy mock)"
@@ -737,34 +739,12 @@ export async function createBooking(payload = {}) {
   }
 
   if (USE_MOCK) {
-    const now = Date.now();
-    const bookingId = `mock-booking-${now}`;
-
-    const legacySnacks = (
-      snackCombos && snackCombos.length > 0 ? snackCombos : snacks
-    ).map((s) => ({
-      snack_id: s.snack_id || s.snackId,
-      quantity: s.quantity,
-    }));
-
+    // ... giữ nguyên mock
     return {
-      code: 201,
-      message: "Booking created (mock)",
-      data: {
-        booking_id: bookingId,
-        lock_id: lockId,
-        showtime_id: showtimeId,
-        seat_ids: seatIds,
-        snacks: legacySnacks,
-        promotion_code: promotionCode,
-        status: "PENDING_PAYMENT",
-        finalPrice: null,
-        created_at: new Date().toISOString(),
-      },
+      // ...
     };
   }
 
-  // Chuẩn hóa snackCombos cho BE
   const finalSnackCombos =
     Array.isArray(snackCombos) && snackCombos.length > 0
       ? snackCombos
@@ -792,8 +772,12 @@ export async function createBooking(payload = {}) {
     };
   }
 
+  // THÊM SESSION ID CHO GUEST
+  const sessionId = getOrCreateGuestSessionId();
+
   return apiFetch("/bookings/confirm", {
     method: "POST",
+    headers: sessionId ? { "X-Session-Id": sessionId } : undefined,
     body: JSON.stringify(body),
   });
 }
@@ -820,15 +804,13 @@ export async function createPaymentSession({
     method: "POST",
     body: JSON.stringify({
       bookingId,
-      method: normalizedMethod,
+      paymentMethod: normalizedMethod,
       amount,
-      // nếu InitiatePaymentRequest bên BE có thêm returnUrl/cancelUrl thì gửi kèm:
       returnUrl,
       cancelUrl,
     }),
   });
 
-  // res chính là InitiatePaymentResponse
   return res;
 }
 
@@ -947,77 +929,3 @@ export async function getMyBookings() {
   const list = raw.data || raw;
   return Array.isArray(list) ? list : [];
 }
-
-const MOCK_BOOKING_DETAIL = {
-  bookingId: "mock-booking-1",
-  bookingCode: "CV123456",
-  status: "CONFIRMED",
-  bookingStatus: "CONFIRMED",
-  createdAt: "2025-11-24T14:00:00Z",
-
-  // Thông tin suất chiếu
-  movieTitle: "INTERSTELLAR 2: CinesVerse Edition",
-  cinemaName: "CNS CinesVerse Quận 1",
-  roomName: "Phòng 3 – IMAX",
-  showtimeStartTime: "2025-11-30T13:30:00Z",
-  showtimeEndTime: "2025-11-30T15:45:00Z",
-
-  // Ghế
-  seats: [
-    {
-      seatId: "seat-e7",
-      rowLabel: "E",
-      seatNumber: 7,
-      seatType: "COUPLE",
-      ticketTypeName: "NGƯỜI LỚN",
-      ticketPrice: 95000,
-    },
-    {
-      seatId: "seat-e8",
-      rowLabel: "E",
-      seatNumber: 8,
-      seatType: "COUPLE",
-      ticketTypeName: "NGƯỜI LỚN",
-      ticketPrice: 95000,
-    },
-  ],
-
-  // Bắp nước
-  snacks: [
-    {
-      snackId: "snack-popcorn-big",
-      snackName: "Bắp phô mai lớn",
-      quantity: 1,
-      price: 55000,
-      totalPrice: 55000,
-    },
-    {
-      snackId: "snack-pepsi-500",
-      snackName: "Pepsi 500ml",
-      quantity: 2,
-      price: 25000,
-      totalPrice: 50000,
-    },
-  ],
-
-  // Giá tiền
-  totalTicketPrice: 190000,
-  totalSnackPrice: 105000,
-  discountValue: 30000,
-  finalPrice: 265000,
-
-  // Payment
-  paymentStatus: "SUCCESS",
-  paymentMethod: "MOMO",
-  paymentId: "MOCK-PAY-1",
-  paymentGatewayTransactionId: "MOCK-TX-123",
-};
-
-// export async function getBookingDetail(bookingId) {
-//   if (!bookingId) {
-//     throw new Error("bookingId is required");
-//   }
-//   const res = await apiFetch(`/bookings/${bookingId}`);
-//   const raw = res.data || res;
-//   return raw.data || raw;
-// }

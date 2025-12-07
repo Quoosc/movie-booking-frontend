@@ -1,43 +1,6 @@
 // src/api/ticketTypeService.js
 import { apiFetch } from "./fetchConfig";
 
-const FALLBACK_TICKET_TYPES = [
-  {
-    id: "adult",
-    ticketTypeId: "adult",
-    code: "adult",
-    label: "NGƯỜI LỚN",
-    price: 69000,
-  },
-  {
-    id: "student",
-    ticketTypeId: "student",
-    code: "student",
-    label: "HSSV/U22-GV",
-    price: 49000,
-  },
-  {
-    id: "senior",
-    ticketTypeId: "senior",
-    code: "senior",
-    label: "NGƯỜI CAO TUỔI",
-    price: 55000,
-  },
-  {
-    id: "member",
-    ticketTypeId: "member",
-    code: "member",
-    label: "GIÁ VÉ THÀNH VIÊN",
-    price: 45000,
-  },
-  {
-    id: "double",
-    ticketTypeId: "double",
-    code: "double",
-    label: "GHẾ ĐÔI (2 NGƯỜI)",
-    price: 128000,
-  },
-];
 
 function mapTicketTypeFromApi(t) {
   if (!t) return null;
@@ -57,7 +20,6 @@ function mapTicketTypeFromApi(t) {
   };
 }
 
-// ⚠️ Dùng đúng spec mới: GET /ticket-types?showtimeId=&userId=
 export async function getTicketTypes({ showtimeId, userId } = {}) {
   const params = new URLSearchParams();
   if (showtimeId) params.append("showtimeId", showtimeId);
@@ -69,15 +31,17 @@ export async function getTicketTypes({ showtimeId, userId } = {}) {
   const wrapper = res || {};
   const list = wrapper.data || wrapper;
 
-  let mapped =
+  const mapped =
     Array.isArray(list) && list.length > 0
       ? list.map(mapTicketTypeFromApi).filter(Boolean)
       : [];
 
   if (!mapped.length) {
-    console.warn("ticket-types empty, dùng FALLBACK_TICKET_TYPES");
-    mapped = FALLBACK_TICKET_TYPES;
+    console.error(
+      "Không lấy được ticket type từ hệ thống."
+    );
   }
 
   return mapped;
 }
+
