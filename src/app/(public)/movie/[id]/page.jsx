@@ -14,7 +14,7 @@ import { getSeatLayout, getSnacksByCinema } from "@/api/bookingService";
 
 const DAYS = 7;
 
-// Danh sách loại vé gốc (load từ API ticket-types)
+// mock
 const DEFAULT_TICKET_TYPES = [
   {
     id: "adult",
@@ -111,29 +111,24 @@ export default function MovieDetailPage() {
     fetchMovie();
   }, [id]);
 
-
   /* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ – DÙNG API MỚI) ===== */
   useEffect(() => {
     // Chưa chọn suất chiếu thì reset về default
     if (!activeShowtime?.showtimeId) {
-      setTicketTypes(
-        DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
-      );
+      setTicketTypes(DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 })));
       return;
     }
 
     const fetchTicketTypesPerShowtime = async () => {
       try {
         const data = await getTicketTypes({
-          showtimeId: activeShowtime.showtimeId, // bắt buộc cho pricing theo suất
-          userId: user?.id || null,              // member thì gửi, guest thì null
+          showtimeId: activeShowtime.showtimeId,
+          userId: user?.userId || null,
         });
 
         // data đã được mapTicketType() trong ticketTypeService rồi
         const list =
-          Array.isArray(data) && data.length > 0
-            ? data
-            : DEFAULT_TICKET_TYPES;
+          Array.isArray(data) && data.length > 0 ? data : DEFAULT_TICKET_TYPES;
 
         setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
       } catch (err) {
@@ -161,7 +156,6 @@ export default function MovieDetailPage() {
     fetchShowtimes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, selectedDate]);
-
 
   /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC này là sài dùng để mock ===== */
   useEffect(() => {
@@ -206,7 +200,7 @@ export default function MovieDetailPage() {
   // - GHẾ ĐÔI (double): 2 chỗ
   const totalTickets = useMemo(() => {
     return ticketTypes.reduce((sum, t) => {
-      const factor = t.id === "double" ? 2 : 1; // ghế đôi = 2 chỗ
+      const factor = isCoupleTicketType(t) ? 2 : 1;
       return sum + (t.quantity || 0) * factor;
     }, 0);
   }, [ticketTypes]);
@@ -214,13 +208,13 @@ export default function MovieDetailPage() {
   // Số CHỖ ĐƠN (NORMAL/VIP) được phép chọn
   const singleSeatCapacity = useMemo(() => {
     return ticketTypes
-      .filter((t) => t.id !== "double")
+      .filter((t) => !isCoupleTicketType(t))
       .reduce((sum, t) => sum + (t.quantity || 0), 0);
   }, [ticketTypes]);
 
   // Số CẶP GHẾ ĐÔI được phép chọn (1 vé double = 1 cặp)
   const couplePairCapacity = useMemo(() => {
-    const doubleTicket = ticketTypes.find((t) => t.id === "double");
+    const doubleTicket = ticketTypes.find((t) => isCoupleTicketType(t));
     return doubleTicket?.quantity || 0;
   }, [ticketTypes]);
 
@@ -270,8 +264,6 @@ export default function MovieDetailPage() {
       showWarning(
         "Giá vé thành viên chỉ dành cho khách đã đăng nhập. Vui lòng đăng nhập hoặc đăng ký để sử dụng."
       );
-      // Nếu muốn đẩy sang trang login luôn thì có thể:
-      // navigate("/auth/login");
       return;
     }
 
@@ -451,7 +443,6 @@ export default function MovieDetailPage() {
       const newSelected = selectedSeats.filter(
         (s) => s.seat_id !== seat.seat_id
       );
-
 
       setSelectedSeats(newSelected);
     } else {
@@ -955,8 +946,8 @@ function BookingPanel({
 "
         >
           {ticketTypes.map((t) => {
-            const isMemberTicket = t.id === "member";
-            const isDisabledMember = isMemberTicket && !isAuthenticated; // guest thường
+            const isMemberTicket = isMemberTicketType(t);
+            const isDisabledMember = isMemberTicket && !isAuthenticated;
 
             return (
               <div
@@ -1460,6 +1451,22 @@ function getDateByOffset(offset) {
     label: offset === 0 ? "HÔM NAY" : weekday.toUpperCase(),
     display: `${day}/${month}`,
   };
+}
+
+function isCoupleTicketType(t) {
+  const code = t.code?.toLowerCase?.() || "";
+  const id = t.id?.toLowerCase?.() || "";
+  const label = t.label || "";
+
+  return code === "double" || id === "double" || /ghế đôi|couple/i.test(label);
+}
+
+function isMemberTicketType(t) {
+  const code = t.code?.toLowerCase?.() || "";
+  const id = t.id?.toLowerCase?.() || "";
+  const label = t.label || "";
+
+  return code === "member" || id === "member" || /thành viên/i.test(label);
 }
 
 function formatTime(sec) {

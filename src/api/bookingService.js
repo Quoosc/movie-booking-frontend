@@ -91,8 +91,20 @@ function genMockSeats(showtimeId) {
 
 function mapSeatFromApi(seat) {
   if (!seat) return null;
+
+  const showtimeSeatId =
+    seat.showtimeSeatId ||
+    seat.showtime_seat_id ||
+    seat.showtimeSeatID ||
+    seat.id; // fallback
+
   return {
-    seat_id: seat.seatId || seat.seat_id || seat.id,
+    // ID FE dùng để gửi lên API lock/preview
+    seat_id: showtimeSeatId || seat.seatId || seat.seat_id || seat.id,
+
+    // Lưu thêm cho rõ nghĩa
+    showtimeSeatId,
+
     row: seat.row || seat.rowLabel,
     number:
       typeof seat.number === "number" ? seat.number : seat.seatNumber ?? 0,
@@ -126,6 +138,30 @@ export async function getSeatLayout(showtimeId) {
   const res = await apiFetch(`/seats/layout?showtime_id=${showtimeId}`);
   const data = res.data || res;
   return (Array.isArray(data) ? data : []).map(mapSeatFromApi).filter(Boolean);
+}
+
+function getOrCreateGuestSessionId() {
+  const KEY = "cv_guest_session_id";
+  try {
+    let id = localStorage.getItem(KEY);
+    if (!id) {
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        id = crypto.randomUUID();
+      } else {
+        // fallback UUID v4
+        id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+          const r = (Math.random() * 16) | 0;
+          const v = c === "x" ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        });
+      }
+      localStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch (e) {
+    console.warn("Cannot access localStorage for guest session id", e);
+    return null;
+  }
 }
 
 /* ======================================================
@@ -609,14 +645,18 @@ export async function previewPrice({
  *     userId: currentUser?.userId || null,
  *   });
  */
+// Dùng cho flow checkout v2: gửi kèm ticketTypeId cho từng ghế
 export async function lockSeats({
   showtimeId,
-  seatIds = [],
-  holdSeconds = 600, // mặc định 10 phút
+  seats = [],
+  holdSeconds = 600, // mock dùng, BE thật không quan tâm
 }) {
-  if (!showtimeId || !Array.isArray(seatIds) || seatIds.length === 0) {
-    throw new Error("lockSeats: thiếu showtimeId hoặc seatIds");
+  if (!showtimeId || !Array.isArray(seats) || seats.length === 0) {
+    throw new Error("lockSeats: thiếu showtimeId hoặc seats");
   }
+
+  // 👇 tạo / lấy session id cho guest (member có JWT thì BE sẽ bỏ qua header này)
+  const sessionId = getOrCreateGuestSessionId();
 
   if (USE_MOCK) {
     const now = Date.now();
@@ -626,18 +666,30 @@ export async function lockSeats({
       lockId: `mock-lock-${now}`,
       status: "LOCKED",
       showtimeId,
-      seats: seatIds.map((id) => ({ seatId: id })),
+      seats: seats.map((s) => ({
+        showtimeSeatId: s.showtimeSeatId || s.seat_id || s.seatId,
+        ticketTypeId: s.ticketTypeId || null,
+      })),
       expiresAt,
       remainingSeconds: holdSeconds,
     };
   }
 
+  const seatsPayload = seats.map((s) => ({
+    showtimeSeatId: s.showtimeSeatId || s.seat_id || s.seatId || s.id,
+    ticketTypeId: s.ticketTypeId, // đã map ở CheckoutPage
+  }));
+
   const res = await apiFetch("/seat-locks", {
     method: "POST",
+    headers: sessionId
+      ? {
+          "X-Session-Id": sessionId, // 👈 quan trọng
+        }
+      : undefined,
     body: JSON.stringify({
       showtimeId,
-      seatIds,
-      holdSeconds,
+      seats: seatsPayload,
     }),
   });
 
@@ -688,9 +740,8 @@ export async function createBooking(payload = {}) {
     const now = Date.now();
     const bookingId = `mock-booking-${now}`;
 
-    const legacySnacks = (snackCombos && snackCombos.length > 0
-      ? snackCombos
-      : snacks
+    const legacySnacks = (
+      snackCombos && snackCombos.length > 0 ? snackCombos : snacks
     ).map((s) => ({
       snack_id: s.snack_id || s.snackId,
       quantity: s.quantity,
@@ -747,7 +798,6 @@ export async function createBooking(payload = {}) {
   });
 }
 
-
 /* ======================================================
  *  TẠO PHIÊN THANH TOÁN (OPTIONAL)
  *  - Bạn có thể dùng createPaymentOrder là đủ
@@ -756,7 +806,7 @@ export async function createBooking(payload = {}) {
 export async function createPaymentSession({
   bookingId,
   amount,
-  method,   // "PAYPAL" | "MOMO"
+  method, // "PAYPAL" | "MOMO"
   returnUrl,
   cancelUrl,
 }) {
@@ -781,7 +831,6 @@ export async function createPaymentSession({
   // res chính là InitiatePaymentResponse
   return res;
 }
-
 
 /* ======================================================
  *  TẠO LỆNH THANH TOÁN (PAYMENT ORDER)
@@ -832,8 +881,6 @@ export async function createPaymentOrder({
 
   return res;
 }
-
-
 
 export async function getBookingById(bookingId) {
   if (!bookingId) {
@@ -966,30 +1013,6 @@ const MOCK_BOOKING_DETAIL = {
   paymentGatewayTransactionId: "MOCK-TX-123",
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // export async function getBookingDetail(bookingId) {
 //   if (!bookingId) {
 //     throw new Error("bookingId is required");
@@ -998,15 +1021,3 @@ const MOCK_BOOKING_DETAIL = {
 //   const raw = res.data || res;
 //   return raw.data || raw;
 // }
-
-
-
-
-
-
-
-
-
-
-
-

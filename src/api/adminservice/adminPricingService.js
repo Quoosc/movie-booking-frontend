@@ -141,45 +141,44 @@ return true;
 
 export async function getShowtimeTicketTypes(showtimeId) {
   const res = await apiFetch(`/showtimes/${showtimeId}/ticket-types`);
-return res.data || res; // { showtimeId, assignedTicketTypeIds: [...] }
+  return res?.data ?? res; // { showtimeId, assignedTicketTypeIds: [...] }
 }
 
 /** Thay thế toàn bộ danh sách ticketTypeIds của showtime */
 export async function replaceShowtimeTicketTypes(showtimeId, ticketTypeIds) {
-  const res = await apiFetch(`/showtimes/${showtimeId}/ticket-types`, {
+  await apiFetch(`/showtimes/${showtimeId}/ticket-types`, {
     method: "PUT",
     body: JSON.stringify({ ticketTypeIds }),
   });
-return res.data || res;
+  return true;
 }
 
 /** Gán thêm nhiều ticketTypeIds cho showtime */
 export async function addShowtimeTicketTypes(showtimeId, ticketTypeIds) {
-  const res = await apiFetch(`/showtimes/${showtimeId}/ticket-types`, {
+  await apiFetch(`/showtimes/${showtimeId}/ticket-types`, {
     method: "POST",
     body: JSON.stringify({ ticketTypeIds }),
   });
-return res.data || res;
+  return true;
 }
 
 /** Gán 1 ticket type (dùng path param) */
 export async function addShowtimeTicketType(showtimeId, ticketTypeId) {
-  const res = await apiFetch(
+  await apiFetch(
     `/showtimes/${showtimeId}/ticket-types/${ticketTypeId}`,
     { method: "POST" }
   );
-return res.data || res;
+  return true;
 }
 
 /** Bỏ gán 1 ticket type khỏi showtime */
 export async function removeShowtimeTicketType(showtimeId, ticketTypeId) {
-  const res = await apiFetch(
+  await apiFetch(
     `/showtimes/${showtimeId}/ticket-types/${ticketTypeId}`,
     { method: "DELETE" }
   );
-return res.data || res;
+  return true;
 }
-
 /* ===================== SHOWTIME SEATS (GIÁ + TRẠNG THÁI) ===================== */
 
 export async function getShowtimeSeatById(id) {

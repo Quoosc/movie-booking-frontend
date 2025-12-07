@@ -1,6 +1,10 @@
 // src/app/(admin)/showtimes/page.jsx
 import { useEffect, useMemo, useState } from "react";
-import { AdminMovieService, AdminCinemaService } from "@/api/adminservice";
+import {
+  AdminMovieService,
+  AdminCinemaService,
+  AdminPricingService, // ⬅️ THÊM
+} from "@/api/adminservice";
 
 const STATUS_FILTERS = ["ALL", "UPCOMING", "PAST"];
 
@@ -9,6 +13,10 @@ export default function AdminShowtimesPage() {
   const [movies, setMovies] = useState([]);
   const [cinemas, setCinemas] = useState([]);
   const [rooms, setRooms] = useState([]);
+
+  // ⬅️ THÊM: ticket types cho admin
+  const [adminTicketTypes, setAdminTicketTypes] = useState([]);
+  const [selectedTicketTypeIds, setSelectedTicketTypeIds] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,17 +52,26 @@ export default function AdminShowtimesPage() {
       setError(null);
       setSuccess(null);
 
-      const [stRes, moviesRes, cinemasRes, roomsRes] = await Promise.all([
-        AdminMovieService.getAllShowtimes(),
-        AdminMovieService.getMovies({}),
-        AdminCinemaService.getCinemas(),
-        AdminCinemaService.getRooms(),
-      ]);
+      const [stRes, moviesRes, cinemasRes, roomsRes, ticketTypesRes] =
+        await Promise.all([
+          AdminMovieService.getAllShowtimes(),
+          AdminMovieService.getMovies({}),
+          AdminCinemaService.getCinemas(),
+          AdminCinemaService.getRooms(),
+          AdminPricingService.getAdminTicketTypes(), // ⬅️ THÊM
+        ]);
 
       setShowtimes(Array.isArray(stRes) ? stRes : []);
       setMovies(Array.isArray(moviesRes) ? moviesRes : []);
       setCinemas(Array.isArray(cinemasRes) ? cinemasRes : []);
       setRooms(Array.isArray(roomsRes) ? roomsRes : []);
+
+      const tt = Array.isArray(ticketTypesRes?.data)
+        ? ticketTypesRes.data
+        : Array.isArray(ticketTypesRes)
+        ? ticketTypesRes
+        : [];
+      setAdminTicketTypes(tt);
     } catch (err) {
       console.error("Load showtimes error:", err);
       setError(err?.message || "Không tải được danh sách suất chiếu.");
@@ -92,6 +109,12 @@ export default function AdminShowtimesPage() {
     });
     return map;
   }, [movies]);
+
+  // ⬅️ THÊM: chỉ lấy ticket type đang active để chọn cho showtime
+  const activeTicketTypes = useMemo(
+    () => adminTicketTypes.filter((t) => t.active !== false),
+    [adminTicketTypes]
+  );
 
   const formatDateTimeLabel = (isoString) => {
     if (!isoString) return "—";
@@ -222,12 +245,17 @@ export default function AdminShowtimesPage() {
       format: "",
       startDateTime: "",
     });
+
+    // ⬅️ MẶC ĐỊNH: chọn tất cả ticket type đang active cho suất mới
+    setSelectedTicketTypeIds(activeTicketTypes.map((t) => t.ticketTypeId));
+
     setError(null);
     setSuccess(null);
     setModalOpen(true);
   };
 
-  const openEditModal = (st) => {
+  // ⬅️ async để load ticket types đã gán cho showtime
+  const openEditModal = async (st) => {
     const movieId = st.movie?.movieId || st.movieId || "";
     const roomId = st.room?.roomId || st.roomId || "";
     const room = st.room || roomMap[roomId];
@@ -244,6 +272,19 @@ export default function AdminShowtimesPage() {
     setError(null);
     setSuccess(null);
     setModalOpen(true);
+
+    try {
+      const res = await AdminPricingService.getShowtimeTicketTypes(
+        st.showtimeId
+      );
+      const raw = res?.data || res;
+      const ids = raw?.assignedTicketTypeIds || [];
+      setSelectedTicketTypeIds(Array.isArray(ids) ? ids : []);
+    } catch (err) {
+      console.error("Load showtime ticket types error:", err);
+      // nếu lỗi thì cho empty (admin tự chọn lại)
+      setSelectedTicketTypeIds([]);
+    }
   };
 
   const closeModal = () => {
@@ -263,6 +304,15 @@ export default function AdminShowtimesPage() {
     }));
   };
 
+  // ⬅️ toggle checkbox ticket type
+  const handleToggleTicketType = (ticketTypeId) => {
+    setSelectedTicketTypeIds((prev) =>
+      prev.includes(ticketTypeId)
+        ? prev.filter((id) => id !== ticketTypeId)
+        : [...prev, ticketTypeId]
+    );
+  };
+
   const handleSubmitForm = async (e) => {
     e.preventDefault();
     setError(null);
@@ -272,6 +322,11 @@ export default function AdminShowtimesPage() {
 
     if (!movieId || !roomId || !format || !startDateTime) {
       setError("Vui lòng nhập đầy đủ Movie, Cinema/Room, Format và Thời gian.");
+      return;
+    }
+
+    if (!selectedTicketTypeIds.length) {
+      setError("Vui lòng chọn ít nhất một loại vé cho suất chiếu.");
       return;
     }
 
@@ -291,15 +346,28 @@ export default function AdminShowtimesPage() {
     try {
       setSaving(true);
 
+      let targetShowtimeId = null;
+
       if (editingShowtime) {
         await AdminMovieService.updateShowtime(
           editingShowtime.showtimeId,
           payload
         );
+        targetShowtimeId = editingShowtime.showtimeId;
         setSuccess("Cập nhật suất chiếu thành công.");
       } else {
-        await AdminMovieService.createShowtime(payload);
+        const created = await AdminMovieService.createShowtime(payload);
+        const raw = created?.data || created;
+        targetShowtimeId = raw?.showtimeId;
         setSuccess("Tạo suất chiếu mới thành công.");
+      }
+
+      // ⬅️ Sau khi có showtimeId thì gán ticket types
+      if (targetShowtimeId) {
+        await AdminPricingService.replaceShowtimeTicketTypes(
+          targetShowtimeId,
+          selectedTicketTypeIds
+        );
       }
 
       await loadData();
@@ -732,7 +800,6 @@ export default function AdminShowtimesPage() {
         </div>
       </section>
 
-      {/* Modal create / edit */}
       {modalOpen && (
         <ModalWrapper onClose={closeModal}>
           <div className="w-full max-w-xl rounded-3xl bg-gradient-to-br from-[#1a0033]/95 via-[#060013] to-black border border-white/15 shadow-2xl relative overflow-hidden">
@@ -868,6 +935,49 @@ export default function AdminShowtimesPage() {
                     />
                   </div>
                 </div>
+
+                {/* ================== BLOCK MỚI: CHỌN LOẠI VÉ ================== */}
+                <div className="pt-1">
+                  <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                    Loại vé áp dụng cho suất chiếu
+                  </label>
+                  <p className="text-[11px] text-white/50 mb-2">
+                    Chỉ những loại vé được tick mới được phép sử dụng ở bước đặt
+                    vé & khóa ghế.
+                  </p>
+
+                  {activeTicketTypes.length === 0 ? (
+                    <p className="text-[11px] text-white/60">
+                      Chưa có ticket type nào. Vui lòng tạo trong mục{" "}
+                      <span className="font-semibold">Giá &amp; ticket</span>.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto rounded-2xl bg-white/5 border border-white/15 px-3 py-2">
+                      {activeTicketTypes.map((tt) => (
+                        <label
+                          key={tt.ticketTypeId}
+                          className="flex items-center gap-2 text-[11px] text-white/80"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedTicketTypeIds.includes(
+                              tt.ticketTypeId
+                            )}
+                            onChange={() =>
+                              handleToggleTicketType(tt.ticketTypeId)
+                            }
+                            className="rounded border-white/30 bg-transparent text-cyan-400 focus:ring-cyan-400/60"
+                          />
+                          <span className="truncate">
+                            <span className="font-semibold">{tt.label}</span>{" "}
+                            <span className="text-white/50">({tt.code})</span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {/* ================== HẾT BLOCK MỚI ================== */}
 
                 <div className="flex justify-end gap-3 pt-4">
                   <button

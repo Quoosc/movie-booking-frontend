@@ -844,7 +844,7 @@ function MovieModal({
                 />
                 {uploadingPoster && (
                   <p className="mt-2 text-xs text-cyan-300">
-                    Đang upload poster lên Cloudinary...
+                    Đang upload poster 
                   </p>
                 )}
                 {form.posterUrl && (
