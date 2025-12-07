@@ -57,7 +57,6 @@ export default function MovieDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // const { user, isMember, isAuthenticated } = useAuth();
   const { user } = useAuth();
   const isAuthenticated = !!user; // true nếu đã đăng nhập, false nếu guest thường
 
@@ -157,7 +156,7 @@ export default function MovieDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, selectedDate]);
 
-  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC này là sài dùng để mock ===== */
+  /* ===== TÍNH TIỀN DỰA TRÊN LOẠI VÉ + BẮP NƯỚC (MOCK) ===== */
   useEffect(() => {
     if (!activeShowtime) {
       setPriceSummary({ subtotal: 0, discount: 0, total: 0 });
@@ -195,7 +194,7 @@ export default function MovieDetailPage() {
   }, [seatLayout]);
 
   /* ===== TICKET / SEAT LOGIC ===== */
-  // Tổng SỐ CHỖ (seat) được phép chọn từ loại vé
+  // Tổng SỐ CHỖ (seat slot) được phép chọn từ loại vé
   // - Vé thường: 1 chỗ
   // - GHẾ ĐÔI (double): 2 chỗ
   const totalTickets = useMemo(() => {
@@ -212,8 +211,8 @@ export default function MovieDetailPage() {
       .reduce((sum, t) => sum + (t.quantity || 0), 0);
   }, [ticketTypes]);
 
-  // Số CẶP GHẾ ĐÔI được phép chọn (1 vé double = 1 cặp)
-  const couplePairCapacity = useMemo(() => {
+  // Số GHẾ ĐÔI được phép chọn (1 vé double = 1 ghế COUPLE = 2 slot)
+  const coupleSeatCapacity = useMemo(() => {
     const doubleTicket = ticketTypes.find((t) => isCoupleTicketType(t));
     return doubleTicket?.quantity || 0;
   }, [ticketTypes]);
@@ -259,7 +258,7 @@ export default function MovieDetailPage() {
   };
 
   const handleChangeTicket = (ticketId, delta) => {
-    //Guest thường không được dùng GIÁ VÉ THÀNH VIÊN
+    // Guest thường không được dùng GIÁ VÉ THÀNH VIÊN
     if (ticketId === "member" && !isAuthenticated && delta > 0) {
       showWarning(
         "Giá vé thành viên chỉ dành cho khách đã đăng nhập. Vui lòng đăng nhập hoặc đăng ký để sử dụng."
@@ -268,35 +267,36 @@ export default function MovieDetailPage() {
     }
 
     setTicketTypes((prev) => {
-      // Tính state mới nếu user bấm +/-
+      // Tính state mới nếu user bấm +/- cho 1 loại vé
       const next = prev.map((t) =>
         t.id === ticketId
           ? { ...t, quantity: Math.max(0, t.quantity + delta) }
           : t
       );
 
-      // Sức chứa mới
+      // Sức chứa mới (tính theo "slot")
       const newTotalSeats = next.reduce((sum, t) => {
-        const factor = t.id === "double" ? 2 : 1;
+        const factor = isCoupleTicketType(t) ? 2 : 1;
         return sum + (t.quantity || 0) * factor;
       }, 0);
 
       const newSingleCapacity = next
-        .filter((t) => t.id !== "double")
+        .filter((t) => !isCoupleTicketType(t))
         .reduce((sum, t) => sum + (t.quantity || 0), 0);
 
       const newCoupleCapacity =
-        next.find((t) => t.id === "double")?.quantity || 0;
+        next.find((t) => isCoupleTicketType(t))?.quantity || 0;
 
-      // Đang chọn bao nhiêu ghế đơn / cặp đôi
+      // Đang chọn bao nhiêu ghế đơn / ghế đôi / tổng slot
       const currentSingles = countSelectedSingles(selectedSeats);
-      const currentCouplePairs = countSelectedCouplePairs(selectedSeats);
+      const currentCoupleSeats = countSelectedCoupleSeats(selectedSeats);
+      const currentSeatSlots = countSeatSlots(selectedSeats);
 
       // Nếu giảm vé làm "sức chứa" < số ghế đang chọn → KHÔNG cho giảm
       if (
-        newTotalSeats < selectedSeats.length ||
+        newTotalSeats < currentSeatSlots ||
         newSingleCapacity < currentSingles ||
-        newCoupleCapacity < currentCouplePairs
+        newCoupleCapacity < currentCoupleSeats
       ) {
         showWarning(
           "Không thể giảm số vé vì số ghế đã chọn nhiều hơn. Vui lòng bỏ bớt ghế trước."
@@ -304,7 +304,7 @@ export default function MovieDetailPage() {
         return prev; // giữ nguyên ticketTypes cũ
       }
 
-      // Trường hợp hợp lệ → cập nhật bình thường
+      // Nếu về 0 vé thì clear luôn ghế đang chọn
       if (newTotalSeats === 0 && selectedSeats.length > 0) {
         setSelectedSeats([]);
       }
@@ -313,16 +313,21 @@ export default function MovieDetailPage() {
     });
   };
 
-  //logic chọn ghế
+  // Ghế đơn (NORMAL/VIP)
   function countSelectedSingles(seats) {
-    // Đếm ghế loại NORMAL/VIP
     return seats.filter((s) => s.type !== "COUPLE").length;
   }
 
-  function countSelectedCouplePairs(seats) {
-    // Đếm số CẶP ghế đôi đang chọn (2 ghế COUPLE = 1 cặp)
-    const coupleSeats = seats.filter((s) => s.type === "COUPLE");
-    return Math.floor(coupleSeats.length / 2);
+  // Số GHẾ ĐÔI đang chọn (mỗi seat COUPLE = 1 ghế đôi)
+  function countSelectedCoupleSeats(seats) {
+    return seats.filter((s) => s.type === "COUPLE").length;
+  }
+
+  // Tổng SỐ CHỖ (slot) dùng để so với totalTickets
+  // - Ghế thường = 1 chỗ
+  // - Ghế đôi = 2 chỗ
+  function countSeatSlots(seats) {
+    return seats.reduce((sum, s) => sum + (s.type === "COUPLE" ? 2 : 1), 0);
   }
 
   // chọn ghế
@@ -339,38 +344,22 @@ export default function MovieDetailPage() {
     // ===== GHẾ ĐÔI (COUPLE) =====
     if (seat.type === "COUPLE") {
       // Phải có vé GHẾ ĐÔI
-      const doubleTicket = ticketTypes.find((t) => t.id === "double");
+      const doubleTicket = ticketTypes.find((t) => isCoupleTicketType(t));
       const doubleQty = doubleTicket?.quantity || 0;
 
       if (doubleQty === 0) {
         showWarning(
-          "Hàng ghế cuối là GHẾ ĐÔI. Vui lòng chọn ít nhất 1 vé 'GHẾ ĐÔI (2 NGƯỜI)' trước."
+          "Ghế này là GHẾ ĐÔI. Vui lòng chọn ít nhất 1 vé 'GHẾ ĐÔI (2 NGƯỜI)' trước."
         );
         return;
       }
 
-      const partnerSeat = findPartnerSeat(seatLayout, seat);
-      if (!partnerSeat) {
-        showWarning("Không tìm thấy ghế đôi đi kèm. Vui lòng chọn cặp khác.");
-        return;
-      }
-      if (partnerSeat.status === "BOOKED") {
-        showWarning(
-          "Một trong hai ghế đôi của cặp này đã được đặt. Vui lòng chọn cặp khác."
-        );
-        return;
-      }
+      const already = isSelectedSeat(seat.seat_id);
 
-      const pairIds = [seat.seat_id, partnerSeat.seat_id];
-
-      const isSeatSelected = isSelectedSeat(seat.seat_id);
-      const isPartnerSelected = isSelectedSeat(partnerSeat.seat_id);
-      const pairFullySelected = isSeatSelected && isPartnerSelected;
-
-      if (pairFullySelected) {
-        // 👉 BỎ CHỌN CẢ CẶP
+      // 👉 BỎ CHỌN GHẾ ĐÔI
+      if (already) {
         const newSelected = selectedSeats.filter(
-          (s) => !pairIds.includes(s.seat_id)
+          (s) => s.seat_id !== seat.seat_id
         );
 
         const violates = violatesSeatGapRuleForRow(
@@ -380,52 +369,7 @@ export default function MovieDetailPage() {
         );
         if (violates) {
           showWarning(
-            "Không thể bỏ cặp ghế này vì sẽ để lại 1 ghế trống lẻ giữa các ghế. Vui lòng chọn lại."
-          );
-          return;
-        }
-
-        setSelectedSeats(newSelected);
-        // await releaseSeats(activeShowtime.showtimeId, pairIds);
-
-        // if (newSelected.length === 0) {
-        //   setHoldExpireAt(null);
-        // }
-        return;
-      } else {
-        // 👉 CHỌN CẢ CẶP
-
-        // 1️⃣ Không cho vượt quá số CẶP ghế đôi từ vé double
-        const selectedPairCount = countSelectedCouplePairs(selectedSeats);
-        if (selectedPairCount + 1 > couplePairCapacity) {
-          showWarning(
-            "Số cặp ghế đôi không được vượt quá số vé 'GHẾ ĐÔI (2 NGƯỜI)' đã chọn."
-          );
-          return;
-        }
-
-        // (trong UI chuẩn thì không bao giờ có trạng thái chỉ 1 ghế được chọn,
-        // nhưng mình vẫn xử lý cho chắc)
-        const seatsToAdd = [];
-        if (!isSeatSelected) seatsToAdd.push(seat);
-        if (!isPartnerSelected) seatsToAdd.push(partnerSeat);
-
-        const newSelected = [...selectedSeats, ...seatsToAdd];
-
-        // 2️⃣ Check tổng SỐ CHỖ
-        if (newSelected.length > totalTickets) {
-          showWarning("Số ghế không được vượt quá số chỗ từ loại vé đã chọn.");
-          return;
-        }
-
-        const violates = violatesSeatGapRuleForRow(
-          seatLayout,
-          newSelected,
-          seat.row
-        );
-        if (violates) {
-          showWarning(
-            "Không được để lại 1 ghế trống lẻ giữa các ghế đã chọn. Vui lòng chọn lại."
+            "Không thể bỏ ghế này vì sẽ để lại 1 ghế trống lẻ giữa các ghế. Vui lòng chọn lại."
           );
           return;
         }
@@ -433,6 +377,41 @@ export default function MovieDetailPage() {
         setSelectedSeats(newSelected);
         return;
       }
+
+      // 👉 CHỌN GHẾ ĐÔI MỚI
+      const currentCoupleSeats = countSelectedCoupleSeats(selectedSeats);
+      if (currentCoupleSeats + 1 > doubleQty) {
+        showWarning(
+          "Số ghế đôi không được vượt quá số vé 'GHẾ ĐÔI (2 NGƯỜI)' đã chọn."
+        );
+        return;
+      }
+
+      const newSelected = [...selectedSeats, seat];
+
+      // Check tổng SỐ CHỖ (1 ghế đôi = 2 slot)
+      const newSeatSlots = countSeatSlots(newSelected);
+      if (newSeatSlots > totalTickets) {
+        showWarning(
+          "Số chỗ ngồi (tính cả ghế đôi) không được vượt quá số vé đã chọn."
+        );
+        return;
+      }
+
+      const violates = violatesSeatGapRuleForRow(
+        seatLayout,
+        newSelected,
+        seat.row
+      );
+      if (violates) {
+        showWarning(
+          "Không được để lại 1 ghế trống lẻ giữa các ghế đã chọn. Vui lòng chọn lại."
+        );
+        return;
+      }
+
+      setSelectedSeats(newSelected);
+      return;
     }
 
     // ===== GHẾ THƯỜNG (NORMAL / VIP) =====
@@ -454,12 +433,6 @@ export default function MovieDetailPage() {
         return;
       }
 
-      // 2️⃣ Không cho vượt quá tổng SỐ CHỖ từ mọi loại vé
-      if (selectedSeats.length + 1 > totalTickets) {
-        showWarning("Số ghế không được vượt quá số chỗ từ loại vé đã chọn.");
-        return;
-      }
-
       const newSelected = [
         ...selectedSeats,
         {
@@ -467,6 +440,13 @@ export default function MovieDetailPage() {
           // price: seat.price || activeShowtime.price || 0,
         },
       ];
+
+      // Không cho vượt quá tổng SỐ CHỖ từ mọi loại vé
+      const newSeatSlots = countSeatSlots(newSelected);
+      if (newSeatSlots > totalTickets) {
+        showWarning("Số ghế không được vượt quá số chỗ từ loại vé đã chọn.");
+        return;
+      }
 
       setSelectedSeats(newSelected);
     }
@@ -518,7 +498,7 @@ export default function MovieDetailPage() {
         activeShowtime.cinema?.name ||
         "",
       address:
-        activeShowtime.address || // thêm dòng này
+        activeShowtime.address ||
         activeShowtime.cinemaAddress ||
         activeShowtime.cinema_address ||
         activeShowtime.cinema?.address ||
@@ -798,7 +778,7 @@ function HeroSection({ movie }) {
           <div className="mt-6">
             <button
               onClick={() => window.open(movie.trailerUrl, "_blank")}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl text-[12px] sm:text-[13px] font-semibold text-white bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] shadow-[0_0_24px_rgba(123,92,255,0.9)] hover:shadow-[0_0_34px_rgba(123,92,255,1)] hover:scale-[1.03] active:scale-100 transition-all"
+              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl text-[12px] sm:text-[13px] font-semibold text:white bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] shadow-[0_0_24px_rgba(123,92,255,0.9)] hover:shadow-[0_0_34px_rgba(123,92,255,1)] hover:scale-[1.03] active:scale-100 transition-all"
             >
               🎬 XEM TRAILER
             </button>
@@ -854,7 +834,7 @@ function ShowtimeSection({
           Đang tải lịch chiếu...
         </p>
       ) : showtimes.length === 0 ? (
-        <p className="text-center text-sm text-white/60">
+        <p className="text-center text-sm text:white/60">
           Hiện chưa có lịch chiếu cho ngày này.
         </p>
       ) : (
@@ -871,10 +851,10 @@ function ShowtimeSection({
             >
               {/* Tên rạp + địa chỉ */}
               <div className="mb-4">
-                <p className="text-sm md:text-base font-semibold text-white">
+                <p className="text-sm md:text-base font-semibold text:white">
                   {c.cinemaName}
                 </p>
-                <p className="text-[11px] md:text-xs text-white/60 mt-0.5">
+                <p className="text-[11px] md:text-xs text:white/60 mt-0.5">
                   {c.address}
                 </p>
               </div>
@@ -894,7 +874,7 @@ function ShowtimeSection({
                         flex items-center gap-1.5
                         ${
                           isActive
-                            ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white border-transparent shadow-[0_0_16px_rgba(123,92,255,0.9)]"
+                            ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text:white border-transparent shadow-[0_0_16px_rgba(123,92,255,0.9)]"
                             : "bg-[#020617] border-[#7b5cff66] text-[#e5e7ff] hover:bg-[#7b5cff33] hover:shadow-[0_0_14px_rgba(123,92,255,0.75)]"
                         }
                       `}
@@ -905,10 +885,6 @@ function ShowtimeSection({
                       <span className="text-[10px] md:text-[11px] opacity-85">
                         {s.format} • {s.room}
                       </span>
-                      {/* Nếu sau này có price: mở comment bên dưới */}
-                      {/* <span className="ml-1 text-[#ffe700] font-semibold text-[11px]">
-                        {s.price.toLocaleString()}đ
-                      </span> */}
                     </button>
                   );
                 })}
@@ -941,11 +917,7 @@ function BookingPanel({
           CHỌN LOẠI VÉ
         </h3>
 
-        <div
-          className="
-  grid grid-cols-2 md:grid-cols-4 gap-5 text-[11px]
-"
-        >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 text-[11px]">
           {ticketTypes.map((t) => {
             const isMemberTicket = isMemberTicketType(t);
             const isDisabledMember = isMemberTicket && !isAuthenticated;
@@ -991,7 +963,7 @@ function BookingPanel({
                   </p>
                 )}
 
-                <div className="mt-3 flex items-center justify-center gap-2">
+                <div className="mt-3 flex items-center justify:center gap-2">
                   <button
                     onClick={() => onChangeTicket(t.id, -1)}
                     disabled={isDisabledMember}
@@ -1075,108 +1047,58 @@ function BookingPanel({
           </div>
         </div>
 
-        {/* KHUNG GHẾ – không còn viền to, width = thanh cong */}
+        {/* KHUNG GHẾ */}
         <div className="mx-auto w-full max-w-[960px]">
           <div className="flex flex-col items-center gap-2 text-[9px] sm:text-[10px]">
-            {layoutByRow.map(([row, seats]) => {
-              const isCoupleRow =
-                seats.length > 0 && seats[0].type === "COUPLE";
+            {layoutByRow.map(([row, seats]) => (
+              <div key={row} className="flex items-center gap-2">
+                {/* Ký tự hàng A, B, C... */}
+                <span className="w-4 text-right text-white/60">{row}</span>
 
-              // ===== HÀNG GHẾ ĐÔI (COUPLE) =====
-              if (isCoupleRow) {
-                const pairs = [];
-                for (let i = 0; i < seats.length; i += 2) {
-                  const s1 = seats[i];
-                  const s2 = seats[i + 1];
-                  if (!s1 || !s2) continue;
-                  pairs.push([s1, s2]);
-                }
+                <div className="flex gap-1.5">
+                  {seats.map((seat) => {
+                    const isCoupleSeat = seat.type === "COUPLE";
+                    const selected = isSelectedSeat(seat.seat_id);
+                    const booked = seat.status === "BOOKED";
+                    const locked = seat.status === "LOCKED";
 
-                return (
-                  <div key={row} className="flex items-center gap-2">
-                    {/* Ký tự hàng A, B, C... */}
-                    <span className="w-4 text-right text-white/60">{row}</span>
+                    // Ghế couple: rộng hơn, nhìn giống ghế đôi
+                    const sizeClasses = isCoupleSeat
+                      ? "h-7 sm:h-8 px-4 sm:px-5 rounded-[6px]"
+                      : "w-7 h-7 sm:w-8 sm:h-8 rounded-[4px]";
 
-                    <div className="flex gap-1.5">
-                      {pairs.map(([s1, s2]) => {
-                        const pairSelected =
-                          isSelectedSeat(s1.seat_id) &&
-                          isSelectedSeat(s2.seat_id);
-                        const pairBooked =
-                          s1.status === "BOOKED" || s2.status === "BOOKED";
+                    const label = isCoupleSeat
+                      ? `${seat.row}${seat.number}`
+                      : seat.number;
 
-                        return (
-                          <button
-                            key={s1.seat_id}
-                            onClick={() => onToggleSeat(s1)} // handleToggleSeat lo cả cặp
-                            disabled={pairBooked}
-                            className={`
-      h-7 sm:h-8 px-4 sm:px-5
-      rounded-[6px]
-      text-[9px] sm:text-[10px]
-      flex items-center justify-center
-      border transition-all
-      ${
-        pairBooked
-          ? "bg-slate-800 border border-slate-700 text-slate-400 cursor-not-allowed"
-          : pairSelected
-          ? "bg-[#facc15] border border-[#facc15] text-black font-bold shadow-[0_0_10px_rgba(250,204,21,0.9)]"
-          : "bg-white border border-white/80 text-black hover:bg-slate-100"
-      }
-    `}
-                          >
-                            {row}
-                            {s1.number}-{s2.number}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
+                    return (
+                      <button
+                        key={seat.seat_id}
+                        onClick={() => onToggleSeat(seat)}
+                        disabled={booked || locked}
+                        className={`
+              ${sizeClasses}
+              text-[9px] sm:text-[10px]
+              flex items-center justify-center
+              border transition-all
+              ${
+                booked
+                  ? "bg-slate-800 border border-slate-700 text-slate-400 cursor-not-allowed"
+                  : locked
+                  ? "bg-slate-500 border border-slate-500 text-slate-200 cursor-not-allowed"
+                  : selected
+                  ? "bg-[#facc15] border border-[#facc15] text-black font-bold shadow-[0_0_10px_rgba(250,204,21,0.9)]"
+                  : "bg-white border border-white/80 text-black hover:bg-slate-100"
               }
-
-              // ===== HÀNG GHẾ THƯỜNG / VIP =====
-              return (
-                <div key={row} className="flex items-center gap-2">
-                  {/* Ký tự hàng A, B, C... */}
-                  <span className="w-4 text-right text-white/60">{row}</span>
-
-                  <div className="flex gap-1.5">
-                    {seats.map((seat) => {
-                      const selected = isSelectedSeat(seat.seat_id);
-                      const booked = seat.status === "BOOKED";
-                      const locked = seat.status === "LOCKED";
-
-                      return (
-                        <button
-                          key={seat.seat_id}
-                          onClick={() => onToggleSeat(seat)}
-                          disabled={booked || locked}
-                          className={`
-                      w-7 h-7 sm:w-8 sm:h-8
-                      rounded-[4px]
-                      text-[9px] sm:text-[10px]
-                      flex items-center justify-center
-                      border transition-all
-                      ${
-                        booked
-                          ? "bg-slate-800 border border-slate-700 text-slate-400 cursor-not-allowed"
-                          : locked
-                          ? "bg-slate-500 border border-slate-500 text-slate-200 cursor-not-allowed" // ✅ ghế người khác giữ (xám)
-                          : selected
-                          ? "bg-[#facc15] border border-[#facc15] text-black font-bold shadow-[0_0_10px_rgba(250,204,21,0.9)]"
-                          : "bg-white border border-white/80 text-black hover:bg-slate-100"
-                      }
-                    `}
-                        >
-                          {seat.number}
-                        </button>
-                      );
-                    })}
-                  </div>
+            `}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1213,6 +1135,7 @@ function BookingPanel({
           />
         </div>
       </div>
+
       {/* 🎬 CHỌN BẮP NƯỚC */}
       <section className="max-w-6xl mx-auto px-4 pb-24 mt-16 md:mt-20 lg:mt-24">
         <h3 className="text-center text-2xl md:text-3xl font-extrabold tracking-[0.24em] mb-10 text-white">
@@ -1233,7 +1156,7 @@ function BookingPanel({
                 return acc;
               }, {})
             ).map(([category, items]) => (
-              <div key={category} className="flex flex-col items-center">
+              <div key={category} className="flex flex-col items:center">
                 {/* Tiêu đề nhóm */}
                 <h4 className="mb-5 text-xs md:text-sm font-semibold text-[#ffdf7b] tracking-[0.22em] uppercase text-center">
                   {category}
@@ -1350,7 +1273,8 @@ function Legend({ color, label, imageSrc }) {
 
 /* ===== HELPERS ===== */
 
-// Tìm ghế partner cho ghế đôi: pattern 1-2, 3-4, 5-6, 7-8, 9-10 chọn ghế đôi auto pick 2 ghế
+// (Giờ không dùng nữa nhưng để lại nếu sau này cần)
+// Tìm ghế partner cho ghế đôi: pattern 1-2, 3-4, 5-6, 7-8, 9-10
 function findPartnerSeat(seatLayout, seat) {
   if (!seat || seat.type !== "COUPLE") return null;
 

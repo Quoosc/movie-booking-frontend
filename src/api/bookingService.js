@@ -10,75 +10,6 @@ const USE_MOCK = false; // TẠM THỜI: chỉ để test UI. Sau này gắn BE 
  *  - Dùng cho getSeatLayout khi USE_MOCK = true
  * ==================================================== */
 
-const MOCK_SEATS = {};
-function genMockSeats(showtimeId) {
-  const rows = "ABCDEFGHIJ".split("");
-  const seats = [];
-
-  rows.forEach((row, rIndex) => {
-    const isLastRow = rIndex === rows.length - 1; // hàng J
-
-    // 🔹 HÀNG GHẾ ĐÔI (J): xử lý theo CẶP
-    if (isLastRow) {
-      const count = 10; // 10 chỗ = 5 cặp
-      const type = "COUPLE";
-      const basePrice = 200000;
-
-      // cặp: (1-2), (3-4), (5-6), (7-8), (9-10)
-      for (let i = 1; i <= count; i += 2) {
-        // random 1 lần cho CẢ CẶP
-        const pairBooked = Math.random() < 0.08;
-        const pairLocked = !pairBooked && Math.random() < 0.08; // mock ghế bị giữ
-
-        [0, 1].forEach((offset) => {
-          const number = i + offset;
-          const id = `${showtimeId}-${row}${number}`;
-
-          seats.push({
-            seat_id: id,
-            row, // "J"
-            number, // 1..10
-            type, // "COUPLE"
-            status: pairBooked ? "BOOKED" : pairLocked ? "LOCKED" : "AVAILABLE",
-            price: basePrice,
-          });
-        });
-      }
-
-      return;
-    }
-
-    // 🔹 CÁC HÀNG CÒN LẠI: NORMAL / VIP như cũ
-    const count = 14;
-
-    for (let i = 1; i <= count; i++) {
-      const id = `${showtimeId}-${row}${i}`;
-
-      let type;
-      if (rIndex <= 2) {
-        type = "NORMAL"; // 3 hàng đầu
-      } else {
-        type = "VIP"; // các hàng giữa
-      }
-
-      const basePrice = type === "VIP" ? 120000 : 90000;
-      const isBooked = Math.random() < 0.08;
-      const isLocked = !isBooked && Math.random() < 0.08;
-
-      seats.push({
-        seat_id: id,
-        row, // "A".."I"
-        number: i, // 1..14
-        type, // "NORMAL" | "VIP"
-        status: isBooked ? "BOOKED" : isLocked ? "LOCKED" : "AVAILABLE",
-        price: basePrice,
-      });
-    }
-  });
-
-  return seats;
-}
-
 /* ======================================================
  *  MAP SEAT BE → FE
  *  BE:  GET /seats/layout?showtime_id=UUID
@@ -132,8 +63,6 @@ export async function getSeatLayout(showtimeId) {
     }
     return MOCK_SEATS[showtimeId];
   }
-
-  //  API thật sau này (đã chuẩn theo BE mới):
 
   const res = await apiFetch(`/seats/layout?showtime_id=${showtimeId}`);
   const data = res.data || res;
