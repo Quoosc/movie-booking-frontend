@@ -1227,76 +1227,26 @@ function AdminSeatLayout({
         {layoutByRow.map(([rowName, seats]) => {
           if (!seats || seats.length === 0) return null;
 
-          const isCoupleRow = seats.length > 0 && seats[0].type === "COUPLE";
-
-          // ===== HÀNG GHẾ ĐÔI (COUPLE) =====
-          if (isCoupleRow) {
-            const pairs = [];
-            for (let i = 0; i < seats.length; i += 2) {
-              const s1 = seats[i];
-              const s2 = seats[i + 1];
-              if (!s1 || !s2) continue;
-              pairs.push([s1, s2]);
-            }
-
-            return (
-              <div key={rowName} className="flex items-center gap-2">
-                <span className="w-4 text-right text-white/60">{rowName}</span>
-                <div className="flex gap-1.5">
-                  {pairs.map(([s1, s2]) => {
-                    const s1Id = s1.seatId || s1.seat_id;
-                    const s2Id = s2.seatId || s2.seat_id;
-
-                    const isActivePair =
-                      activeSeatId &&
-                      (activeSeatId === s1Id || activeSeatId === s2Id);
-
-                    const isMatchedPair =
-                      matchedSet.has(s1Id) || matchedSet.has(s2Id);
-
-                    const stateClass = previewMode
-                      ? "bg-white border-white/60 text-black opacity-75"
-                      : isActivePair
-                      ? "bg-[#facc15] border-[#facc15] text-black font-bold shadow-[0_0_10px_rgba(250,204,21,0.9)]"
-                      : isMatchedPair
-                      ? "bg-white border-cyan-300 text-black shadow-[0_0_8px_rgba(34,211,238,0.7)]"
-                      : "bg-white border-white/80 text-black hover:bg-slate-100";
-
-                    return (
-                      <button
-                        key={s1Id}
-                        onClick={() => handleSeatClick(s1)}
-                        className={`
-                          h-7 sm:h-8 px-4 sm:px-5
-                          rounded-[6px]
-                          text-[9px] sm:text-[10px]
-                          flex items-center justify-center
-                          border transition-all
-                          ${stateClass}
-                        `}
-                      >
-                        {rowName}
-                        {s1.number}-{s2.number}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          }
-
-          // ===== HÀNG GHẾ THƯỜNG / VIP =====
           return (
             <div key={rowName} className="flex items-center gap-2">
+              {/* Ký tự hàng */}
               <span className="w-4 text-right text-white/60">{rowName}</span>
 
               <div className="flex gap-1.5">
                 {seats.map((seat) => {
                   const seatId = seat.seatId || seat.seat_id;
+                  if (!seatId) return null;
+
+                  const isCoupleSeat =
+                    (seat.type || "").toUpperCase() === "COUPLE";
 
                   const isActive = activeSeatId && activeSeatId === seatId;
-
                   const isMatched = matchedSet.has(seatId);
+
+                  // Ghế COUPLE: rộng hơn, giống FE MovieDetailPage
+                  const sizeClasses = isCoupleSeat
+                    ? "h-7 sm:h-8 px-4 sm:px-5 rounded-[6px]"
+                    : "w-7 h-7 sm:w-8 sm:h-8 rounded-[4px]";
 
                   const stateClass = previewMode
                     ? "bg-white border-white/60 text-black opacity-75"
@@ -1306,20 +1256,23 @@ function AdminSeatLayout({
                     ? "bg-white border-cyan-300 text-black shadow-[0_0_8px_rgba(34,211,238,0.7)]"
                     : "bg-white border-white/80 text-black hover:bg-slate-100";
 
+                  const label = isCoupleSeat
+                    ? `${rowName}${seat.number}` // ví dụ J1, J2...
+                    : seat.number;
+
                   return (
                     <button
                       key={seatId}
                       onClick={() => handleSeatClick(seat)}
                       className={`
-                        w-7 h-7 sm:w-8 sm:h-8
-                        rounded-[4px]
+                        ${sizeClasses}
                         text-[9px] sm:text-[10px]
                         flex items-center justify-center
                         border transition-all
                         ${stateClass}
                       `}
                     >
-                      {seat.number}
+                      {label}
                     </button>
                   );
                 })}
@@ -1344,18 +1297,22 @@ function AdminSeatLayout({
           label="Ghế khớp tìm kiếm"
         />
         <SeatLegend
-          colorClass="bg-white border border-white/80"
-          label="Hàng COUPLE hiển thị theo cặp"
+          imageSrc="https://cinestar.com.vn/assets/images/seat-couple-w.svg"
+          label="Ghế đôi (COUPLE)"
         />
       </div>
     </div>
   );
 }
 
-function SeatLegend({ colorClass, label }) {
+function SeatLegend({ colorClass, label, imageSrc }) {
   return (
     <div className="flex items-center gap-2">
-      <span className={`inline-block w-4 h-4 rounded-[4px] ${colorClass}`} />
+      {imageSrc ? (
+        <img src={imageSrc} alt={label} className="w-7 h-7 object-contain" />
+      ) : (
+        <span className={`inline-block w-4 h-4 rounded-[4px] ${colorClass}`} />
+      )}
       <span className="text-white/80">{label}</span>
     </div>
   );

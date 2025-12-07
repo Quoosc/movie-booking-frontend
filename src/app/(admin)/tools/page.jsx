@@ -30,6 +30,14 @@ export default function AdminToolsPage() {
   const [priceResult, setPriceResult] = useState(null);
   const [priceError, setPriceError] = useState(null);
 
+  // ====== PROMOTION TOOLS STATES ======
+  const [promoCode, setPromoCode] = useState("");
+  const [promotionId, setPromotionId] = useState("");
+  const [promotionFilter, setPromotionFilter] = useState("valid"); // all | active | valid
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState(null);
+  const [promoResult, setPromoResult] = useState(null);
+
   // ========== HANDLERS – SEAT LOCK TOOLS ==========
 
   const handleViewAvailability = async () => {
@@ -43,7 +51,9 @@ export default function AdminToolsPage() {
       setSeatLockError(null);
       setSeatLockResult(null);
 
-      const data = await AdminToolsService.getSeatLockAvailability(showtimeId);
+      const data = await AdminToolsService.getSeatLockAvailability(
+        showtimeId.trim()
+      );
       setSeatLockResult(data);
     } catch (err) {
       console.error("getSeatLockAvailability error:", err);
@@ -114,7 +124,9 @@ export default function AdminToolsPage() {
       setSeatLockResult(null);
 
       const data = await AdminToolsService.releaseSeatLocks(showtimeId.trim());
-      setSeatLockResult(data || { message: "Đã release mọi lock cho showtime." });
+      setSeatLockResult(
+        data || { message: "Đã release mọi lock cho showtime." }
+      );
     } catch (err) {
       console.error("releaseSeatLocks error:", err);
       setSeatLockError(err?.message || "Lỗi khi release seat-lock.");
@@ -150,6 +162,91 @@ export default function AdminToolsPage() {
     }
   };
 
+  const handleFillSamplePayload = () => {
+    setPricePayloadText(
+      `{
+  "user_id": null,
+  "showtime_id": "REPLACE_SHOWTIME_UUID",
+  "seats": [
+    { "showtime_seat_id": "REPLACE_SEAT_UUID_1", "ticket_type_id": "REPLACE_TICKET_TYPE_UUID_1" }
+  ],
+  "snacks": [],
+  "promotion_code": null
+}`
+    );
+  };
+
+  // ========== HANDLERS – PROMOTION TOOLS ==========
+
+  const resetPromotionState = () => {
+    setPromoError(null);
+    setPromoResult(null);
+  };
+
+  const handleGetPromotionByCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoError("Vui lòng nhập promotion code.");
+      setPromoResult(null);
+      return;
+    }
+    try {
+      setPromoLoading(true);
+      resetPromotionState();
+      const data = await AdminToolsService.getPromotionByCode(promoCode.trim());
+      setPromoResult(data);
+    } catch (err) {
+      console.error("getPromotionByCode error:", err);
+      setPromoError(
+        err?.message || "Lỗi khi lấy promotion theo promotion code."
+      );
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleGetPromotionById = async () => {
+    if (!promotionId.trim()) {
+      setPromoError("Vui lòng nhập promotionId.");
+      setPromoResult(null);
+      return;
+    }
+    try {
+      setPromoLoading(true);
+      resetPromotionState();
+      const data = await AdminToolsService.getPromotionById(promotionId.trim());
+      setPromoResult(data);
+    } catch (err) {
+      console.error("getPromotionById error:", err);
+      setPromoError(err?.message || "Lỗi khi lấy promotion theo ID.");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleListPromotions = async () => {
+    try {
+      setPromoLoading(true);
+      resetPromotionState();
+      let data;
+
+      if (promotionFilter === "active") {
+        data = await AdminToolsService.getActivePromotions();
+      } else if (promotionFilter === "valid") {
+        data = await AdminToolsService.getValidPromotions();
+      } else {
+        // all
+        data = await AdminToolsService.getPromotions();
+      }
+
+      setPromoResult(data);
+    } catch (err) {
+      console.error("getPromotions error:", err);
+      setPromoError(err?.message || "Lỗi khi lấy danh sách promotions.");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
   // ========== RENDER HELPERS ==========
 
   const renderJson = (obj) => {
@@ -159,6 +256,14 @@ export default function AdminToolsPage() {
         {JSON.stringify(obj, null, 2)}
       </pre>
     );
+  };
+
+  // Helper lấy các key phổ biến cho preview giá (snake_case + camelCase)
+  const pickPriceField = (obj, keys) => {
+    for (const key of keys) {
+      if (key in obj) return obj[key];
+    }
+    return undefined;
   };
 
   return (
@@ -174,8 +279,8 @@ export default function AdminToolsPage() {
           </span>
         </h1>
         <p className="text-xs md:text-sm text-white/60 max-w-3xl">
-          Bộ công cụ hỗ trợ debug seat-lock và kiểm tra logic tính giá booking
-          theo spec API v2.4. Chỉ dành cho admin / developer nội bộ.
+          Bộ công cụ hỗ trợ debug seat-lock, kiểm tra logic tính giá booking &
+          promotions theo spec API v2.5. Chỉ dành cho admin / developer nội bộ.
         </p>
       </header>
 
@@ -272,7 +377,9 @@ export default function AdminToolsPage() {
               disabled={seatLockLoading}
               className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase border border-red-500/60 bg-red-500/10 text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
             >
-              {seatLockLoading ? "Đang release..." : "Release mọi lock của showtime"}
+              {seatLockLoading
+                ? "Đang release..."
+                : "Release mọi lock của showtime"}
             </button>
           </div>
 
@@ -305,8 +412,9 @@ export default function AdminToolsPage() {
                 Checkout Price Preview
               </h2>
               <p className="mt-1 text-[11px] text-white/60 max-w-2xl">
-                Gửi payload giống <code className="font-mono">/bookings/price-preview</code>{" "}
-                để tính thử giá booking (vé + bắp nước + promotion) mà không tạo
+                Gửi payload giống{" "}
+                <code className="font-mono">/bookings/price-preview</code> để
+                tính thử giá booking (vé + bắp nước + promotion) mà không tạo
                 booking thật.
               </p>
             </div>
@@ -333,14 +441,23 @@ export default function AdminToolsPage() {
                 seats / promotion_code để test nhanh.
               </p>
 
-              <button
-                type="button"
-                onClick={handlePreviewPrice}
-                disabled={priceLoading}
-                className="mt-3 inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-              >
-                {priceLoading ? "Đang tính giá..." : "Preview giá booking"}
-              </button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handlePreviewPrice}
+                  disabled={priceLoading}
+                  className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                >
+                  {priceLoading ? "Đang tính giá..." : "Preview giá booking"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFillSamplePayload}
+                  className="inline-flex items-center justify-center rounded-2xl px-3 py-2.5 text-[10px] font-semibold tracking-[0.16em] uppercase border border-white/25 bg-white/5 text-white hover:bg-white/10 transition-all"
+                >
+                  Load ví dụ đơn giản
+                </button>
+              </div>
 
               {priceError && (
                 <div className="mt-3 rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-xs text-red-100">
@@ -359,48 +476,83 @@ export default function AdminToolsPage() {
 
               {priceResult ? (
                 <>
-                  {/* Nếu BE có fields tổng quát, show nhẹ lên trên */}
+                  {/* Summary box – hỗ trợ både snake_case và camelCase */}
                   <div className="rounded-2xl border border-emerald-400/50 bg-emerald-400/10 px-4 py-3 text-xs text-emerald-50 mb-3 space-y-1">
-                    {"total_price" in priceResult && (
+                    {pickPriceField(priceResult, [
+                      "total_price",
+                      "totalPrice",
+                      "finalAmount",
+                    ]) !== undefined && (
                       <div>
                         Tổng tiền:{" "}
                         <span className="font-semibold">
-                          {priceResult.total_price}
+                          {pickPriceField(priceResult, [
+                            "total_price",
+                            "totalPrice",
+                            "finalAmount",
+                          ])}
                         </span>
                       </div>
                     )}
-                    {"base_price" in priceResult && (
+                    {pickPriceField(priceResult, [
+                      "base_price",
+                      "basePrice",
+                      "ticketTotal",
+                    ]) !== undefined && (
                       <div>
                         Giá gốc:{" "}
-                          <span className="font-semibold">
-                            {priceResult.base_price}
-                          </span>
+                        <span className="font-semibold">
+                          {pickPriceField(priceResult, [
+                            "base_price",
+                            "basePrice",
+                            "ticketTotal",
+                          ])}
+                        </span>
                       </div>
                     )}
-                    {"discount_total" in priceResult && (
+                    {pickPriceField(priceResult, [
+                      "discount_total",
+                      "discountTotal",
+                      "discountAmount",
+                    ]) !== undefined && (
                       <div>
                         Giảm giá:{" "}
                         <span className="font-semibold">
-                          -{priceResult.discount_total}
+                          -
+                          {pickPriceField(priceResult, [
+                            "discount_total",
+                            "discountTotal",
+                            "discountAmount",
+                          ])}
                         </span>
                       </div>
                     )}
-                    {"snack_total" in priceResult && (
+                    {pickPriceField(priceResult, [
+                      "snack_total",
+                      "snackTotal",
+                    ]) !== undefined && (
                       <div>
                         Bắp nước:{" "}
                         <span className="font-semibold">
-                          {priceResult.snack_total}
+                          {pickPriceField(priceResult, [
+                            "snack_total",
+                            "snackTotal",
+                          ])}
                         </span>
                       </div>
                     )}
-                    {"promotion" in priceResult && priceResult.promotion && (
-                      <div>
-                        Promotion:{" "}
-                        <span className="font-semibold">
-                          {priceResult.promotion.code}
-                        </span>
-                      </div>
-                    )}
+                    {"promotion" in priceResult &&
+                      priceResult.promotion &&
+                      (priceResult.promotion.code ||
+                        priceResult.promotion.promotionCode) && (
+                        <div>
+                          Promotion:{" "}
+                          <span className="font-semibold">
+                            {priceResult.promotion.code ||
+                              priceResult.promotion.promotionCode}
+                          </span>
+                        </div>
+                      )}
                   </div>
 
                   {renderJson(priceResult)}
@@ -409,6 +561,159 @@ export default function AdminToolsPage() {
                 <p className="text-[11px] text-white/45">
                   Chưa có dữ liệu. Gửi một payload ở bên trái để xem kết quả
                   preview giá.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== SECTION: PROMOTION TOOLS ====== */}
+      <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#140034]/90 via-[#050018] to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-transparent to-cyan-500/20 pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400" />
+
+        <div className="relative p-5 md:p-7 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h2 className="text-sm md:text-base font-extrabold tracking-[0.2em] uppercase text-white/80">
+                Promotion Tools
+              </h2>
+              <p className="mt-1 text-[11px] text-white/60 max-w-2xl">
+                Dùng để nhanh chóng kiểm tra promotion theo code / ID hoặc xem
+                danh sách promotions đang active / valid.
+              </p>
+            </div>
+            <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] uppercase text-emerald-100">
+              Promotions Debug
+            </span>
+          </div>
+
+          <div className="grid lg:grid-cols-[3fr,2fr] gap-5">
+            {/* Form bên trái */}
+            <div className="space-y-4">
+              {/* By code / id */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                    Promotion Code
+                  </label>
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    placeholder="VD: SALE20"
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 focus:bg-white/10 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGetPromotionByCode}
+                    disabled={promoLoading}
+                    className="mt-2 inline-flex items-center justify-center rounded-2xl px-3 py-2 text-[10px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 text-black shadow-md shadow-emerald-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                  >
+                    {promoLoading ? "Đang lấy..." : "Lấy promotion theo code"}
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                    Promotion ID
+                  </label>
+                  <input
+                    type="text"
+                    value={promotionId}
+                    onChange={(e) => setPromotionId(e.target.value)}
+                    placeholder="UUID của promotion..."
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 focus:bg-white/10 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGetPromotionById}
+                    disabled={promoLoading}
+                    className="mt-2 inline-flex items-center justify-center rounded-2xl px-3 py-2 text-[10px] font-semibold tracking-[0.16em] uppercase border border-emerald-300/70 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                  >
+                    {promoLoading ? "Đang lấy..." : "Lấy promotion theo ID"}
+                  </button>
+                </div>
+              </div>
+
+              {/* List promotions */}
+              <div className="mt-1 space-y-2">
+                <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                  Danh sách promotions
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <select
+                    value={promotionFilter}
+                    onChange={(e) => setPromotionFilter(e.target.value)}
+                    className="rounded-full bg-white/5 border border-white/20 px-3 py-2 text-[11px] text-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 focus:bg-white/10 transition-all"
+                  >
+                    <option value="valid">
+                      Chỉ valid (đang trong date range)
+                    </option>
+                    <option value="active">Chỉ active</option>
+                    <option value="all">Tất cả</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleListPromotions}
+                    disabled={promoLoading}
+                    className="inline-flex items-center justify-center rounded-2xl px-4 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 text-black shadow-md shadow-emerald-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                  >
+                    {promoLoading ? "Đang tải..." : "Lấy danh sách"}
+                  </button>
+                </div>
+                <p className="text-[10px] text-white/45">
+                  Dùng để xem nhanh các promotions đang hoạt động / hợp lệ với
+                  hệ thống pricing hiện tại.
+                </p>
+              </div>
+
+              {promoError && (
+                <div className="mt-2 rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-xs text-red-100">
+                  {promoError}
+                </div>
+              )}
+            </div>
+
+            {/* Result viewer bên phải */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-semibold text-white/60 uppercase tracking-[0.18em]">
+                  Kết quả / Promotions
+                </span>
+              </div>
+
+              {promoResult ? (
+                <>
+                  {/* Nếu là array, show chút summary */}
+                  {Array.isArray(promoResult) && (
+                    <div className="mb-3 rounded-2xl border border-emerald-400/50 bg-emerald-400/10 px-4 py-3 text-xs text-emerald-50 space-y-1">
+                      <div>
+                        Số promotion:{` `}
+                        <span className="font-semibold">
+                          {promoResult.length}
+                        </span>
+                      </div>
+                      {promoResult[0] && (
+                        <div>
+                          Ví dụ:{" "}
+                          <span className="font-semibold">
+                            {promoResult[0].code ||
+                              promoResult[0].promotionCode ||
+                              "(không có code)"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {renderJson(promoResult)}
+                </>
+              ) : (
+                <p className="text-[11px] text-white/45">
+                  Chưa có dữ liệu. Tìm promotion theo code / ID hoặc lấy danh
+                  sách theo filter ở bên trái để xem response.
                 </p>
               )}
             </div>
