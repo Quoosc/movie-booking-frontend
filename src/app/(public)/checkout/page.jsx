@@ -21,8 +21,8 @@ function mapPaymentMethodForApi(method) {
       return "MOMO";
     case "CARD_LOCAL":
       return "PAYPAL";
-    case "CARD_INTL":
-      return "PAYPAL";
+    // case "CARD_INTL":
+    //   return "PAYPAL";
     default:
       return "MOMO";
   }
@@ -1116,14 +1116,14 @@ function Step2Payment({
     },
     {
       id: "CARD_LOCAL",
-      label: "Thanh toán qua thẻ nội địa",
+      label: "Thanh toán qua PayPal",
       img: "https://cinestar.com.vn/assets/images/img-card.png",
     },
-    {
-      id: "CARD_INTL",
-      label: "Thanh toán qua thẻ quốc tế",
-      img: "https://cinestar.com.vn/assets/images/img-card.png",
-    },
+    // {
+    //   id: "CARD_INTL",
+    //   label: "Thanh toán qua thẻ quốc tế",
+    //   img: "https://cinestar.com.vn/assets/images/img-card.png",
+    // },
   ];
 
   return (
