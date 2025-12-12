@@ -22,6 +22,14 @@ export function getStoredUser() {
   }
 }
 
+export function setStoredUser(user) {
+  saveUserToStorage(user);
+}
+
+export function clearStoredUser() {
+  saveUserToStorage(null);
+}
+
 /**
  * ĐĂNG KÝ USER THƯỜNG
  * POST /auth/register

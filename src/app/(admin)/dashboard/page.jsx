@@ -52,13 +52,14 @@ export default function AdminDashboardPage() {
       setError(null);
 
       const [usersRes, moviesRes, cinemasRes, bookingsRes] = await Promise.all([
-        // AdminUserService.getAllUsers(),
-        AdminUserService.getAllUsers?.() ?? AdminUserService.getUsers?.(),
-        AdminMovieService.getAllMovies?.() ?? AdminMovieService.getMovies?.(),
-        AdminCinemaService.getAllCinemas?.() ??
-          AdminCinemaService.getCinemas?.(),
-        AdminOrderService.getAllBookings?.() ??
-          AdminOrderService.getBookings?.(),
+        // AdminUserService.getAllUsers?.() ??
+        AdminUserService.getUsers?.(),
+        // AdminMovieService.getAllMovies?.() ??
+        AdminMovieService.getMovies?.(),
+        // AdminCinemaService.getAllCinemas?.() ??
+        AdminCinemaService.getCinemas?.(),
+        // AdminOrderService.getAllBookings?.() ??
+        //   AdminOrderService.getBookings?.(),
       ]);
 
       const unwrap = (res) =>

@@ -4,7 +4,7 @@ import { FiMail, FiLock, FiUser, FiPhone } from "react-icons/fi";
 import { toast } from "react-toastify";
 import LoadingIcon from "@/components/shared/LoadingIcon";
 import TextInput from "@/components/shared/TextInput";
-import { register as registerApi } from "@/api/authService"; // ✅ dùng API thật
+import { register as registerApi } from "@/api/authService"; 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 

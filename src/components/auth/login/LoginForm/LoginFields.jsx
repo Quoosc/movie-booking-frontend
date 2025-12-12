@@ -8,7 +8,6 @@ import TextInput from "@/components/shared/TextInput";
 import { useAuth } from "@/context/AuthContext";
 import { USE_EMAIL_VERIFY } from "@/utils/constants";
 import { useNavigate, useLocation } from "react-router-dom";
-import { API_BASE_URL } from "@/api/fetchConfig"; 
 
 export default function LoginFields() {
   const { login } = useAuth();
@@ -83,10 +82,8 @@ export default function LoginFields() {
       toast.success("Đăng nhập thành công!");
 
       if (role === "ADMIN") {
-        // ADMIN: quăng thẳng vào trang admin
         navigate("/admin", { replace: true });
       } else {
-        //  USER / guest member: quay về trang trước (nếu có) hoặc /
         const target =
           from === "/auth/login" || from === "/auth/register" ? "/" : from;
         navigate(target, { replace: true });
@@ -102,24 +99,6 @@ export default function LoginFields() {
       }
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // ✅ Google Login handler
-  const handleGoogleLogin = () => {
-    try {
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
-      const redirectUri = `${origin}/oauth2/success`;
-
-      const url = `${API_BASE_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}`;
-
-      window.location.href = url;
-    } catch (e) {
-      console.error("Google login error:", e);
-      toast.error("Không thể chuyển tới Google Login.");
     }
   };
 
@@ -191,34 +170,7 @@ export default function LoginFields() {
         </button>
       </form>
 
-      {/* Divider */}
-      <div className="flex items-center gap-2 mt-6 mb-3">
-        <span className="h-px flex-1 bg-white/10" />
-        <span className="text-xs text-white/60 uppercase tracking-wide">
-          hoặc
-        </span>
-        <span className="h-px flex-1 bg-white/10" />
-      </div>
-
       {/* Google Login button */}
-      <button
-        type="button"
-        onClick={handleGoogleLogin}
-        className="
-          w-full flex items-center justify-center gap-2
-          rounded-xl border border-white/20 bg-white/5
-          py-3.5 px-4 text-sm font-semibold text-white
-          hover:bg-white/10 hover:border-[#43e1ff]
-          transition-all duration-200
-        "
-      >
-        <img
-          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-          alt="Google"
-          className="w-5 h-5"
-        />
-        <span>Đăng nhập với Google</span>
-      </button>
 
       {USE_EMAIL_VERIFY && showVerifyModal && (
         <VerifyModal
