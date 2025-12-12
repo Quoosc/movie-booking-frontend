@@ -73,8 +73,8 @@ export default function HomePage() {
         {/* Spotlight chính (tím) */}
         <div
           className="
-      absolute left-1/2 top-[32%] -translate-x-1/2 -translate-y-1/2
-      w-[140vw] h-[95vh]
+      absolute left-1/2 top-[16%] -translate-x-1/2 -translate-y-1/2
+      w-[165vw] h-[95vh]
       md:w-[115vw] md:h-[80vh]
       bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)]
       blur-[110px]
@@ -82,22 +82,10 @@ export default function HomePage() {
     "
         />
 
-        {/* Halo cyan phụ */}
-        <div
-          className="
-      absolute left-1/2 top-[36%] -translate-x-1/2 -translate-y-1/2
-      w-[135vw] h-[90vh]
-      md:w-[110vw] md:h-[75vh]
-      bg-[radial-gradient(ellipse_at_center,#43e1ff66,transparent_50%)]
-      blur-[120px]
-      opacity-90
-    "
-        />
-
         {/* Hồng nhẹ */}
         <div
           className="
-      absolute left-1/2 top-[36%] -translate-x-1/2 -translate-y-1/2
+      absolute left-1/2 top-[18%] -translate-x-1/2 -translate-y-1/2
       w-[130vw] h-[85vh]
       md:w-[105vw] md:h-[70vh]
       bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)]
@@ -106,6 +94,64 @@ export default function HomePage() {
     "
         />
       </div>
+
+      <div
+        className="
+      absolute left-1/2 top-[22%] -translate-x-1/2 -translate-y-1/2
+      w-[165vw] h-[95vh]
+      md:w-[115vw] md:h-[80vh]
+      bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)]
+      blur-[110px]
+      opacity-100
+    "
+      />
+
+      {/* Hồng nhẹ */}
+      <div
+        className="
+      absolute left-1/2 top-[24%] -translate-x-1/2 -translate-y-1/2
+      w-[130vw] h-[85vh]
+      md:w-[105vw] md:h-[70vh]
+      bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)]
+      blur-[135px]
+      opacity-80
+    "
+      />
+
+      {/* Halo cyan phụ */}
+      <div
+        className="
+      absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2
+      w-[165vw] h-[90vh]
+      md:w-[110vw] md:h-[75vh]
+      bg-[radial-gradient(ellipse_at_center,#43e1ff66,transparent_50%)]
+      blur-[120px]
+      opacity-90
+    "
+      />
+
+      <div
+        className="
+      absolute left-1/2 top-[36%] -translate-x-1/2 -translate-y-1/2
+      w-[165vw] h-[95vh]
+      md:w-[115vw] md:h-[80vh]
+      bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)]
+      blur-[110px]
+      opacity-100
+    "
+      />
+
+      {/* Hồng nhẹ */}
+      <div
+        className="
+      absolute left-1/2 top-[32%] -translate-x-1/2 -translate-y-1/2
+      w-[130vw] h-[85vh]
+      md:w-[105vw] md:h-[70vh]
+      bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)]
+      blur-[135px]
+      opacity-80
+    "
+      />
 
       {/* đến đây */}
       <Navbar />

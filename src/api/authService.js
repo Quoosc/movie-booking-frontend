@@ -3,14 +3,13 @@ import { apiFetch } from "./fetchConfig";
 
 const STORAGE_KEYS = {
   user: "user",
+  accessToken: "accessToken",
+  refreshToken: "refreshToken",
 };
 
 function saveUserToStorage(user) {
-  if (user) {
-    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
-  } else {
-    localStorage.removeItem(STORAGE_KEYS.user);
-  }
+  if (user) localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+  else localStorage.removeItem(STORAGE_KEYS.user);
 }
 
 export function getStoredUser() {
@@ -28,17 +27,40 @@ export function setStoredUser(user) {
 
 export function clearStoredUser() {
   saveUserToStorage(null);
+  localStorage.removeItem(STORAGE_KEYS.accessToken);
+  localStorage.removeItem(STORAGE_KEYS.refreshToken);
 }
 
-/**
- * ĐĂNG KÝ USER THƯỜNG
- * POST /auth/register
- */
+// ===== helper: decode role từ JWT (Laravel) =====
+function decodeJwtPayload(token) {
+  try {
+    if (!token || typeof token !== "string") return null;
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function roleFromJwt(token) {
+  const p = decodeJwtPayload(token);
+  return p?.role || p?.userRole || p?.authorities?.[0] || null;
+}
+
+/** REGISTER */
 export async function register({ fullName, email, phone, password }) {
   const body = {
     phoneNumber: phone || "",
     email,
-    username: fullName, // map sang username của BE
+    username: fullName,
     password,
     confirmPassword: password,
   };
@@ -48,66 +70,98 @@ export async function register({ fullName, email, phone, password }) {
     body: JSON.stringify(body),
   });
 
-  // 201 + body rỗng → chỉ cần không lỗi là OK
   return { success: true };
 }
 
-/**
- * LOGIN
- * POST /auth/login
- * BE set cookie accessToken + refreshToken, body rỗng
- */
+/** LOGIN */
 export async function login({ email, password }) {
-  await apiFetch("/auth/login", {
+  const res = await apiFetch("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
 
-  // cookie đã được set, FE sẽ tự gọi /users/profile để lấy user
+  const data = res?.data ?? res;
+
+  const accessToken =
+    data?.accessToken ||
+    data?.data?.accessToken ||
+    data?.user?.accessToken ||
+    null;
+
+  const refreshToken =
+    data?.refreshToken ||
+    data?.data?.refreshToken ||
+    data?.user?.refreshToken ||
+    null;
+
+  const user =
+    data?.user || data?.data?.user || null;
+
+  if (accessToken) localStorage.setItem(STORAGE_KEYS.accessToken, accessToken);
+  if (refreshToken) localStorage.setItem(STORAGE_KEYS.refreshToken, refreshToken);
+
+  if (user) {
+    saveUserToStorage(user);
+  } else {
+  }
+
   return { success: true };
 }
 
-/**
- * LẤY PROFILE HIỆN TẠI
- * (dùng cookie accessToken)
- */
+/** ME / PROFILE */
 export async function me() {
   const res = await apiFetch("/users/profile");
-  const data = res.data || res;
-  saveUserToStorage(data);
-  return data;
+  const raw = res?.data ?? res;
+
+  const stored = getStoredUser();
+  const token = localStorage.getItem(STORAGE_KEYS.accessToken);
+
+  const role =
+    raw?.role ||
+    raw?.userRole ||
+    stored?.role ||
+    stored?.userRole ||
+    roleFromJwt(token) ||
+    null;
+
+  const profile = {
+    ...stored, // giữ các field cũ nếu raw thiếu
+    ...raw,
+    role,
+  };
+
+  saveUserToStorage(profile);
+  return profile;
 }
 
-/**
- * LOGOUT HIỆN TẠI
- * POST /auth/logout
- */
+/** LOGOUT */
 export async function logout() {
-  saveUserToStorage(null);
-
+  clearStoredUser();
   try {
     await apiFetch("/auth/logout", { method: "POST" });
-  } catch {
-    // token hết hạn thì bỏ qua
-  }
+  } catch {}
 }
 
-/**
- * LOGOUT TẤT CẢ PHIÊN
- * POST /auth/logout-all?email=...
- */
+/** LOGOUT ALL */
 export async function logoutAll(email) {
   await apiFetch(`/auth/logout-all?email=${encodeURIComponent(email)}`, {
     method: "POST",
   });
 }
 
-/**
- * REFRESH ACCESS TOKEN
- * GET /auth/refresh
- */
+/** REFRESH */
 export async function refreshToken() {
-  await apiFetch("/auth/refresh", { method: "GET" });
-  // cookie đã được set lại → FE chỉ cần biết là thành công
+  const res = await apiFetch("/auth/refresh", { method: "GET" });
+
+  // Laravel refresh có thể trả token mới
+  const payload = res?.data ?? res;
+  const accessToken =
+    payload?.accessToken ||
+    payload?.data?.accessToken ||
+    payload?.user?.accessToken ||
+    null;
+
+  if (accessToken) localStorage.setItem(STORAGE_KEYS.accessToken, accessToken);
+
   return true;
 }

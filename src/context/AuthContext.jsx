@@ -1,6 +1,7 @@
+// src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as authApi from "@/api/authService";
-// src/context/AuthContext.jsx
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -16,7 +17,6 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
-  // helper: lưu user vào storage
   const persistUser = (profile) => {
     try {
       authApi.setStoredUser?.(profile);
@@ -25,7 +25,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // helper: merge 1 phần user (dùng sau khi update profile, đổi avatar...)
   const updateUser = (partial) => {
     setUser((prev) => {
       if (!prev) {
@@ -39,7 +38,6 @@ export function AuthProvider({ children }) {
     });
   };
 
-  // helper: gọi lại /auth/me để sync từ BE 
   const refreshProfile = async () => {
     try {
       const profile = await authApi.me();
@@ -65,13 +63,11 @@ export function AuthProvider({ children }) {
       try {
         const profile = await authApi.me();
         if (!mounted) return;
-
         setUser(profile);
         persistUser(profile);
       } catch (err) {
         console.error("Fetch profile error:", err);
         if (!mounted) return;
-
         setUser(null);
         try {
           authApi.clearStoredUser?.();
@@ -89,14 +85,28 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  async function handleLogin({ email, password }, rememberMe = false) {
+  async function handleLogin({ email, password }) {
     setLoading(true);
     try {
       await authApi.login({ email, password });
+
+      const storedAfterLogin = authApi.getStoredUser?.() ?? null;
       const profile = await authApi.me();
-      setUser(profile);
-      persistUser(profile);
-      return profile;
+
+      const merged = {
+        ...storedAfterLogin,
+        ...profile,
+        role:
+          profile?.role ||
+          profile?.userRole ||
+          storedAfterLogin?.role ||
+          storedAfterLogin?.userRole ||
+          null,
+      };
+
+      setUser(merged);
+      persistUser(merged);
+      return merged;
     } finally {
       setLoading(false);
     }
@@ -158,7 +168,6 @@ export function AuthProvider({ children }) {
       logout: handleLogout,
 
       setUser,
-
       updateUser,
       refreshProfile,
     };

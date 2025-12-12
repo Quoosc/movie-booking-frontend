@@ -34,7 +34,6 @@ export default function HeroSlider() {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
-  // ✅ aspect ratio CHỐT theo ảnh id=1 (w/h)
   const [baseRatio, setBaseRatio] = useState(null);
 
   if (!slides.length) return null;
@@ -49,7 +48,7 @@ export default function HeroSlider() {
   const prev = () => goTo(index - 1, -1);
 
   useEffect(() => {
-    const timer = setTimeout(() => next(), 10000);
+    const timer = setTimeout(() => next(), 30000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
