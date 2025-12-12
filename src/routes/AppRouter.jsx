@@ -4,7 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 // admin
 import AdminLayout from "@/layouts/AdminLayout";
 import AdminRoute from "./AdminRoute";
-import PrivateRoute from "./PrivateRoute"; // 👈 THÊM IMPORT NÀY
+import PrivateRoute from "./PrivateRoute";
 
 // ==== admin pages ====
 import AdminDashboardPage from "@/app/(admin)/dashboard/page";
@@ -35,6 +35,7 @@ import BookingDetailPage from "@/app/(protected)/account/account-history/[bookin
 // Auth
 import LoginPage from "@/app/(auth)/login/page";
 import RegisterPage from "@/app/(auth)/register/page";
+import OAuth2SuccessPage from "@/app/(auth)/oauth2-success/page";
 
 import MoviesPage from "@/app/(public)/movie/movies/page";
 import MoviesShowingPage from "@/app/(public)/movie/movies/moviesShowing/page";
@@ -60,6 +61,7 @@ export default function AppRouter() {
       {/* Auth */}
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
+      <Route path="/oauth2/success" element={<OAuth2SuccessPage />} />
 
       {/* Public pages */}
       <Route path="/promotions" element={<PromotionsPage />} />

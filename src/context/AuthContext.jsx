@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as authApi from "@/api/authService";
-
+// src/context/AuthContext.jsx
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
-  // ✅ helper: lưu user vào storage
+  // helper: lưu user vào storage
   const persistUser = (profile) => {
     try {
       authApi.setStoredUser?.(profile);
@@ -25,7 +25,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // ✅ helper: merge 1 phần user (dùng sau khi update profile, đổi avatar...)
+  // helper: merge 1 phần user (dùng sau khi update profile, đổi avatar...)
   const updateUser = (partial) => {
     setUser((prev) => {
       if (!prev) {
@@ -39,7 +39,7 @@ export function AuthProvider({ children }) {
     });
   };
 
-  // ✅ helper: gọi lại /auth/me để sync từ BE (nếu cần)
+  // helper: gọi lại /auth/me để sync từ BE 
   const refreshProfile = async () => {
     try {
       const profile = await authApi.me();
