@@ -52,6 +52,7 @@ import PaymentCallbackPage from "@/app/(public)/payment-callback/page";
 import CheckoutSuccessPage from "@/app/(public)/checkout-success/page";
 import MovieSearchPage from "@/app/(public)/movie/search/page";
 import CinemaPage from "@/app/(public)/cinema/[cinemaId]/page.jsx";
+import EntertainmentServicesPage from "@/app/(public)/game/page.jsx";
 
 export default function AppRouter() {
   return (
@@ -77,6 +78,8 @@ export default function AppRouter() {
 
       {/* Cinema theo rạp */}
       <Route path="/cinema/:cinemaId" element={<CinemaPage />} />
+
+      <Route path="/dich-vu-giai-tri" element={<EntertainmentServicesPage />} />
 
       {/* Movie detail + booking */}
       <Route path="/movie/:id" element={<MovieDetailPage />} />

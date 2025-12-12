@@ -2,12 +2,13 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { FaRegUser } from "react-icons/fa";
-import { FaLocationDot } from "react-icons/fa6";
-import { LuCalendarClock } from "react-icons/lu";
 import { PiCalendarCheckBold, PiPopcornBold } from "react-icons/pi";
 import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
 import CinemaDropdown from "@/components/cinema/CinemaDropdown";
 import { toast } from "react-toastify";
+import { MdLocalActivity } from "react-icons/md";
+import { RiCoupon3Fill } from "react-icons/ri";
+import { AiOutlineInfoCircle } from "react-icons/ai";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -231,30 +232,47 @@ export default function Navbar() {
               {Underline}
             </div>
 
-            <button className={`${LinkBase} flex items-center gap-2`}>
-              <LuCalendarClock className="text-[#ff7af6]" />
-              <span>Lịch chiếu</span>
+            <span className="opacity-25">|</span>
+
+            <NavLink
+              to="/dich-vu-giai-tri"
+              className={({ isActive }) =>
+                `${LinkBase} ${
+                  isActive ? "text-white" : ""
+                } flex items-center gap-2`
+              }
+            >
+              <MdLocalActivity className="text-[16px] text-[#9ca3ff]/80 group-hover:text-[#ff7af6] transition-colors" />
+              Dịch vụ giải trí
               {Underline}
-            </button>
+            </NavLink>
 
             <span className="opacity-25">|</span>
 
             <NavLink
               to="/promotions"
               className={({ isActive }) =>
-                `${LinkBase} ${isActive ? "text-white" : ""}`
+                `${LinkBase} ${
+                  isActive ? "text-white" : ""
+                } flex items-center gap-2`
               }
             >
+              <RiCoupon3Fill className="text-[16px] text-[#9ca3ff]/80 group-hover:text-[#ff7af6] transition-colors" />
               Khuyến mãi
               {Underline}
             </NavLink>
 
+            <span className="opacity-25">|</span>
+
             <NavLink
               to="/about"
               className={({ isActive }) =>
-                `${LinkBase} ${isActive ? "text-white" : ""}`
+                `${LinkBase} ${
+                  isActive ? "text-white" : ""
+                } flex items-center gap-2`
               }
             >
+              <AiOutlineInfoCircle className="text-[16px] text-[#9ca3ff]/80 group-hover:text-[#ff7af6] transition-colors" />
               Giới thiệu
               {Underline}
             </NavLink>
@@ -398,7 +416,7 @@ export default function Navbar() {
               Chọn rạp
             </button>
             <button className="w-full text-left text-[#d4ddff]/85 py-2">
-              Lịch chiếu
+              Dịch Vụ giải trí
             </button>
             <button
               onClick={() => {

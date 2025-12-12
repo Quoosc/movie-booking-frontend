@@ -7,8 +7,6 @@ import { HiOutlineMail, HiOutlinePhone, HiOutlineLocationMarker } from "react-ic
 export default function ContactSection() {
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Sau này gọi API backend tại đây
-    // ví dụ: await contactService.send(formData)
     console.log("Contact form submitted");
   };
 

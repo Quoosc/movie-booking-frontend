@@ -1,6 +1,7 @@
 // src/app/(admin)/snacks/page.jsx
 import { useEffect, useMemo, useState } from "react";
 import { AdminCinemaService } from "@/api/adminservice";
+import { uploadSnackImage } from "@/api/cloudinaryService";
 
 export default function AdminSnacksPage() {
   const [snacks, setSnacks] = useState([]);
@@ -9,6 +10,7 @@ export default function AdminSnacksPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [uploadingSnackImage, setUploadingSnackImage] = useState(false);
 
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -35,6 +37,10 @@ export default function AdminSnacksPage() {
     imageCloudinaryId: "",
   });
 
+  // upload image state
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+
   const resetForm = () => {
     setEditingId(null);
     setForm({
@@ -46,6 +52,17 @@ export default function AdminSnacksPage() {
       imageUrl: "",
       imageCloudinaryId: "",
     });
+
+    // clear upload
+    setImageFile(null);
+    if (imagePreview?.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(imagePreview);
+      } catch {
+        // ignore
+      }
+    }
+    setImagePreview("");
   };
 
   const handleChangeForm = (field) => (e) => {
@@ -63,6 +80,31 @@ export default function AdminSnacksPage() {
 
   const closeWarning = () =>
     setWarning((prev) => ({ ...prev, open: false, onConfirm: null }));
+
+  const handlePickImage = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingSnackImage(true);
+      const { imageUrl, imageCloudinaryId } = await uploadSnackImage(file);
+
+      setForm((prev) => ({
+        ...prev,
+        imageUrl,
+        imageCloudinaryId,
+      }));
+
+      // preview dùng URL cloudinary luôn (đỡ blob)
+      setImagePreview(imageUrl);
+      setImageFile(null);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || "Upload snack image thất bại");
+    } finally {
+      setUploadingSnackImage(false);
+    }
+  };
 
   // ====== LOAD DATA ======
   const loadData = async () => {
@@ -88,6 +130,18 @@ export default function AdminSnacksPage() {
 
   useEffect(() => {
     loadData();
+
+    // cleanup blob url when unmount
+    return () => {
+      if (imagePreview?.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(imagePreview);
+        } catch {
+          // ignore
+        }
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // chỉ reload snacks sau create/update/delete
@@ -111,8 +165,8 @@ export default function AdminSnacksPage() {
     const priceNumber = Number(form.price);
     const category = form.category.trim(); // ← vẫn giữ tên category ở form
     const description = form.description.trim();
-    const imageUrl = form.imageUrl.trim();
-    const imageCloudinaryId = (form.imageCloudinaryId || "").trim();
+    const manualImageUrl = form.imageUrl.trim();
+    const manualImageCloudinaryId = (form.imageCloudinaryId || "").trim();
     const cinemaId = form.cinemaId || null;
 
     if (!name) {
@@ -130,18 +184,28 @@ export default function AdminSnacksPage() {
       return;
     }
 
-    const payload = {
-      name,
-      price: priceNumber,
-      cinemaId,
-      type: category || null, //  BE cần field `type`
-      description: description || null,
-      imageUrl: imageUrl || null,
-      imageCloudinaryId: imageCloudinaryId || null,
-    };
-
     try {
       setSaving(true);
+
+      // Nếu user chọn file -> upload Cloudinary trước
+      let finalImageUrl = manualImageUrl || null;
+      let finalImageCloudinaryId = manualImageCloudinaryId || null;
+
+      if (imageFile) {
+        const uploaded = await uploadSnackImage(imageFile);
+        finalImageUrl = uploaded.imageUrl;
+        finalImageCloudinaryId = uploaded.imageCloudinaryId;
+      }
+
+      const payload = {
+        name,
+        price: priceNumber,
+        cinemaId,
+        type: category || null, // BE cần field `type`
+        description: description || null,
+        imageUrl: finalImageUrl,
+        imageCloudinaryId: finalImageCloudinaryId,
+      };
 
       if (editingId) {
         await AdminCinemaService.updateSnack(editingId, payload);
@@ -175,9 +239,19 @@ export default function AdminSnacksPage() {
       imageCloudinaryId: snack.imageCloudinaryId || "",
     });
 
+    // clear file selection when switching to edit
+    setImageFile(null);
+    if (imagePreview?.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(imagePreview);
+      } catch {
+        // ignore
+      }
+    }
+    setImagePreview("");
+
     setError(null);
     setSuccess(null);
-    // có thể scroll lên form nếu muốn
   };
 
   const handleDeleteSnack = async (snack) => {
@@ -445,10 +519,6 @@ export default function AdminSnacksPage() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-2 text-[11px] text-white/45">
-                  Mỗi bản ghi vẫn có cinemaId để thống kê doanh thu theo rạp,
-                  nhưng FE vẫn có thể hiển thị như menu chung.
-                </p>
               </div>
             </div>
 
@@ -480,6 +550,61 @@ export default function AdminSnacksPage() {
                 <p className="mt-2 text-[11px] text-white/45">
                   Dùng để hiển thị hình ảnh đẹp hơn trên trang đặt vé.
                 </p>
+
+                {/* Upload file */}
+                <div className="mt-3">
+                  <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                    Hoặc upload ảnh (Cloudinary)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePickImage}
+                    disabled={saving}
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-white/15"
+                  />
+
+                  {uploadingSnackImage && (
+                    <p className="mt-2 text-xs text-cyan-300">
+                      Đang upload ảnh snack...
+                    </p>
+                  )}
+
+                  {(imagePreview || form.imageUrl) && (
+                    <div className="mt-3 flex items-center gap-3">
+                      <img
+                        src={imagePreview || form.imageUrl}
+                        alt="snack-preview"
+                        className="h-16 w-16 rounded-2xl object-cover border border-white/10"
+                      />
+
+                      {imageFile && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImageFile(null);
+                            if (imagePreview?.startsWith("blob:")) {
+                              try {
+                                URL.revokeObjectURL(imagePreview);
+                              } catch {
+                                // ignore
+                              }
+                            }
+                            setImagePreview("");
+                          }}
+                          className="rounded-2xl border border-white/20 bg-white/5 px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase text-white hover:bg-white/10 transition-all"
+                        >
+                          Bỏ ảnh đã chọn
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="mt-2 text-[11px] text-white/45">
+                    Nếu chọn file, hệ thống sẽ upload lên Cloudinary và tự set{" "}
+                    <b>imageUrl</b> + <b>imageCloudinaryId</b> khi bấm Lưu.
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -494,8 +619,7 @@ export default function AdminSnacksPage() {
                   className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                 />
                 <p className="mt-2 text-[11px] text-white/45">
-                  Tuỳ chọn: nếu dùng Cloudinary, nhập public_id để gửi kèm khi
-                  tạo/cập nhật.
+                  Tuỳ chọn: nếu upload file thì field này sẽ tự fill.
                 </p>
               </div>
 
@@ -633,7 +757,7 @@ export default function AdminSnacksPage() {
                             </>
                           ) : (
                             <span className="text-[11px] text-white/40">
-                              Menu chung / chưa gán rạp
+                              Menu chung
                             </span>
                           )}
                         </td>
