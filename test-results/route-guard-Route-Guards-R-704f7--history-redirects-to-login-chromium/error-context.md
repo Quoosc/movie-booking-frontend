@@ -1,0 +1,156 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "CinesVerse" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "CinesVerse" [ref=e8]
+        - button "ĐẶT VÉ / BẮP NƯỚC NGAY" [ref=e10] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e13]
+            - img [ref=e15]
+            - generic [ref=e17]: ĐẶT VÉ / BẮP NƯỚC NGAY
+        - generic [ref=e19]:
+          - textbox "Tìm phim, rạp, suất chiếu..." [ref=e20]
+          - button "Tìm kiếm" [ref=e21] [cursor=pointer]:
+            - img [ref=e22]
+        - button "hieuhoccode@gmail.com" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e30]: hieuhoccode@gmail.com
+      - navigation [ref=e32]:
+        - button "Chọn rạp" [ref=e35] [cursor=pointer]:
+          - img [ref=e36]
+          - generic [ref=e38]: Chọn rạp
+        - generic [ref=e39]: "|"
+        - link "Dịch vụ giải trí" [ref=e40] [cursor=pointer]:
+          - /url: /dich-vu-giai-tri
+          - img [ref=e41]
+          - text: Dịch vụ giải trí
+        - generic [ref=e44]: "|"
+        - link "Khuyến mãi" [ref=e45] [cursor=pointer]:
+          - /url: /promotions
+          - img [ref=e46]
+          - text: Khuyến mãi
+        - generic [ref=e48]: "|"
+        - link "Giới thiệu" [ref=e49] [cursor=pointer]:
+          - /url: /about
+          - img [ref=e50]
+          - text: Giới thiệu
+    - generic:
+      - generic:
+        - generic:
+          - img
+          - button:
+            - img
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - img
+                - generic:
+                  - generic: hieuhoccode@gmail.com
+                  - generic: Thành viên
+            - button: Hồ sơ cá nhân
+            - button: Lịch sử đặt vé
+            - button: Membership
+            - button: Đăng xuất
+          - button: Chọn rạp
+          - button: Dịch Vụ giải trí
+          - button: Khuyến mãi
+          - button: Giới thiệu
+  - main [ref=e53]:
+    - generic [ref=e54]:
+      - generic [ref=e55]:
+        - paragraph [ref=e56]: HISTORY
+        - heading "LỊCH SỬ ĐẶT VÉ" [level=1] [ref=e57]
+        - paragraph [ref=e58]: Xem lại toàn bộ hành trình điện ảnh của bạn tại CinesVerse.
+      - generic [ref=e59]:
+        - complementary [ref=e60]:
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - generic [ref=e67]: H
+                - generic [ref=e68]: M
+              - generic [ref=e69]:
+                - heading "Hieu Hoc Code" [level=3] [ref=e70]
+                - paragraph [ref=e71]: MEMBER MEMBER
+            - navigation [ref=e72]:
+              - button "Thông tin khách hàng" [ref=e73] [cursor=pointer]:
+                - generic [ref=e75]: Thông tin khách hàng
+              - button "Thành viên CinesVerse" [ref=e76] [cursor=pointer]:
+                - generic [ref=e78]: Thành viên CinesVerse
+              - button "Lịch sử mua hàng" [ref=e79] [cursor=pointer]:
+                - generic [ref=e81]: Lịch sử mua hàng
+                - img [ref=e83]
+            - button "Đăng xuất" [ref=e86] [cursor=pointer]:
+              - img [ref=e87]
+              - text: Đăng xuất
+        - generic [ref=e89]:
+          - generic [ref=e91]:
+            - generic [ref=e92]:
+              - button "Tất cả" [ref=e93] [cursor=pointer]
+              - button "Sắp chiếu" [ref=e94] [cursor=pointer]
+              - button "Đã xem" [ref=e95] [cursor=pointer]
+            - generic [ref=e97]:
+              - text: "Tổng:"
+              - generic [ref=e99]: "0"
+              - text: vé
+          - generic [ref=e101]:
+            - paragraph [ref=e102]: Chưa có lịch sử đặt vé
+            - paragraph [ref=e103]: Hãy chọn một bộ phim và bắt đầu hành trình CinesVerse của bạn ✨
+  - contentinfo [ref=e104]:
+    - generic [ref=e105]:
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - img "CinesVerse" [ref=e109]
+            - generic [ref=e110]:
+              - paragraph [ref=e111]: Movie Booking Platform
+              - paragraph [ref=e112]: CinesVerse
+          - paragraph [ref=e113]: BE HAPPY, BE A STAR — Nền tảng đặt vé phim hiện đại với trải nghiệm điện ảnh sống động, giao diện tối giản và hiệu ứng neon sang trọng.
+          - generic [ref=e114]:
+            - link "Facebook" [ref=e115] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e116]
+            - link "YouTube" [ref=e118] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e119]
+            - link "TikTok" [ref=e121] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e122]
+        - generic [ref=e124]:
+          - heading "Tài khoản" [level=4] [ref=e125]
+          - link "Đăng nhập" [ref=e126] [cursor=pointer]:
+            - /url: /auth/login
+          - link "Đăng ký" [ref=e127] [cursor=pointer]:
+            - /url: /auth/register
+          - link "Membership" [ref=e128] [cursor=pointer]:
+            - /url: /membership
+        - generic [ref=e129]:
+          - heading "Xem phim" [level=4] [ref=e130]
+          - link "Phim đang chiếu" [ref=e131] [cursor=pointer]:
+            - /url: /movie/moviesShowing
+          - link "Phim sắp chiếu" [ref=e132] [cursor=pointer]:
+            - /url: /movie/moviesUpComming
+          - link "Suất chiếu đặc biệt" [ref=e133] [cursor=pointer]:
+            - /url: /movie/movies
+        - generic [ref=e134]:
+          - heading "Hệ thống rạp" [level=4] [ref=e135]
+          - paragraph [ref=e136]: CinesVerse Tran Quoc(Hà Nội)
+          - paragraph [ref=e137]: CinesVerse Tran Quoc1(TP.HCM)
+          - paragraph [ref=e138]: CinesVerse Tran Quoc2(Huế)
+          - paragraph [ref=e139]: CinesVerse Tran Quoc3(Đà Lạt)
+      - generic [ref=e141]:
+        - paragraph [ref=e142]: © 2025 CinesVerse.Copyright by PhamTranQuoc.
+        - generic [ref=e143]:
+          - button "Liên hệ" [ref=e144] [cursor=pointer]
+          - link "Chính sách bảo mật" [ref=e145] [cursor=pointer]:
+            - /url: /privacy
+          - link "Tin điện ảnh" [ref=e146] [cursor=pointer]:
+            - /url: /news
+          - link "Hỏi & Đáp" [ref=e147] [cursor=pointer]:
+            - /url: /faq
+```

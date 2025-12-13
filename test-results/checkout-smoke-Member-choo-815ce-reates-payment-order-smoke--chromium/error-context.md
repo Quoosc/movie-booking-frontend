@@ -62,114 +62,93 @@
           - button: Khuyến mãi
           - button: Giới thiệu
   - main [ref=e53]:
-    - link "Trang chủ" [ref=e55] [cursor=pointer]:
-      - /url: /
-      - img [ref=e57]
-      - generic [ref=e59]: Trang chủ
-    - generic [ref=e60]:
-      - 'img "Avatar: The Way of Water" [ref=e63]'
-      - generic [ref=e64]:
-        - paragraph [ref=e65]: Movie Detail • CinesVerse
-        - 'heading "Avatar: The Way of Water" [level=1] [ref=e66]'
-        - generic [ref=e67]:
-          - generic [ref=e68]: T13
-          - generic [ref=e69]: Sci-Fi, Action
-          - generic [ref=e70]: 192 phút
-          - generic [ref=e71]: English
-        - paragraph [ref=e72]: Jake Sully lives with his newfound family formed on the extrasolar moon Pandora. Once a familiar threat returns to finish what was previously started, Jake must work with Neytiri and the army of the Na'vi race to protect their home.
-        - generic [ref=e73]:
-          - generic [ref=e74]:
-            - paragraph [ref=e75]: Đạo diễn
-            - paragraph [ref=e76]: James Cameron
+    - generic [ref=e54]:
+      - generic [ref=e55]:
+        - heading "PHIM ĐANG CHIẾU" [level=1] [ref=e56]
+        - paragraph [ref=e57]: Toàn bộ phim đang chiếu tại hệ thống rạp CinesVerse. Chọn phim bạn thích và đặt vé ngay chỉ với vài bước.
+      - link "Trang chủ" [ref=e59] [cursor=pointer]:
+        - /url: /
+        - img [ref=e61]
+        - generic [ref=e63]: Trang chủ
+    - generic [ref=e66]:
+      - 'link "Avatar: The Way of Water ĐẶT VÉ TRAILER Avatar: The Way of Water Sci-Fi, Action T13 192 phút • English" [ref=e68] [cursor=pointer]':
+        - /url: /movie/23787b0f-661b-4916-9bc3-85e230323e0f
+        - generic [ref=e69]:
+          - 'img "Avatar: The Way of Water" [ref=e70]'
+          - generic [ref=e71]:
+            - button "ĐẶT VÉ" [ref=e72]
+            - button "TRAILER" [ref=e73]
+        - generic [ref=e74]:
+          - 'heading "Avatar: The Way of Water" [level=4] [ref=e75]'
+          - paragraph [ref=e76]: Sci-Fi, Action
           - generic [ref=e77]:
-            - paragraph [ref=e78]: Diễn viên
-            - paragraph [ref=e79]: Sam Worthington, Zoe Saldana, Sigourney Weaver
-        - button "🎬 XEM TRAILER" [ref=e81] [cursor=pointer]
-    - generic [ref=e82]:
-      - heading "LỊCH CHIẾU THEO RẠP" [level=2] [ref=e83]
-      - generic [ref=e84]:
-        - button "HÔM NAY 14/12" [active] [ref=e85] [cursor=pointer]:
-          - generic [ref=e86]: HÔM NAY
-          - generic [ref=e87]: 14/12
-        - button "TH 2 15/12" [ref=e88] [cursor=pointer]:
-          - generic [ref=e89]: TH 2
-          - generic [ref=e90]: 15/12
-        - button "TH 3 16/12" [ref=e91] [cursor=pointer]:
-          - generic [ref=e92]: TH 3
-          - generic [ref=e93]: 16/12
-        - button "TH 4 17/12" [ref=e94] [cursor=pointer]:
-          - generic [ref=e95]: TH 4
-          - generic [ref=e96]: 17/12
-        - button "TH 5 18/12" [ref=e97] [cursor=pointer]:
-          - generic [ref=e98]: TH 5
-          - generic [ref=e99]: 18/12
-        - button "TH 6 19/12" [ref=e100] [cursor=pointer]:
-          - generic [ref=e101]: TH 6
-          - generic [ref=e102]: 19/12
-        - button "TH 7 20/12" [ref=e103] [cursor=pointer]:
-          - generic [ref=e104]: TH 7
-          - generic [ref=e105]: 20/12
-      - generic [ref=e107]:
-        - generic [ref=e108]:
-          - paragraph [ref=e109]: CGV Vincom Dong Khoi
-          - paragraph [ref=e110]: 72 Le Thanh Ton, Ben Nghe Ward, District 1, HCMC
-        - generic [ref=e111]:
-          - button "10:00 2D • Phòng 1" [ref=e112] [cursor=pointer]:
-            - generic [ref=e113]: 10:00
-            - generic [ref=e114]: 2D • Phòng 1
-          - button "19:00 IMAX 2D • Phòng 2" [ref=e115] [cursor=pointer]:
-            - generic [ref=e116]: 19:00
-            - generic [ref=e117]: IMAX 2D • Phòng 2
-  - contentinfo [ref=e118]:
-    - generic [ref=e119]:
-      - generic [ref=e120]:
-        - generic [ref=e121]:
-          - generic [ref=e122]:
-            - img "CinesVerse" [ref=e123]
-            - generic [ref=e124]:
-              - paragraph [ref=e125]: Movie Booking Platform
-              - paragraph [ref=e126]: CinesVerse
-          - paragraph [ref=e127]: BE HAPPY, BE A STAR — Nền tảng đặt vé phim hiện đại với trải nghiệm điện ảnh sống động, giao diện tối giản và hiệu ứng neon sang trọng.
-          - generic [ref=e128]:
-            - link "Facebook" [ref=e129] [cursor=pointer]:
+            - generic [ref=e78]: T13
+            - generic [ref=e79]: 192 phút
+            - generic [ref=e80]: • English
+      - link "The Batman ĐẶT VÉ TRAILER The Batman Action, Crime T16 176 phút • English" [ref=e82] [cursor=pointer]:
+        - /url: /movie/635ed10c-79e0-476e-ae38-9f6633fada33
+        - generic [ref=e83]:
+          - img "The Batman" [ref=e84]
+          - generic [ref=e85]:
+            - button "ĐẶT VÉ" [ref=e86]
+            - button "TRAILER" [ref=e87]
+        - generic [ref=e88]:
+          - heading "The Batman" [level=4] [ref=e89]
+          - paragraph [ref=e90]: Action, Crime
+          - generic [ref=e91]:
+            - generic [ref=e92]: T16
+            - generic [ref=e93]: 176 phút
+            - generic [ref=e94]: • English
+  - contentinfo [ref=e95]:
+    - generic [ref=e96]:
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - generic [ref=e99]:
+            - img "CinesVerse" [ref=e100]
+            - generic [ref=e101]:
+              - paragraph [ref=e102]: Movie Booking Platform
+              - paragraph [ref=e103]: CinesVerse
+          - paragraph [ref=e104]: BE HAPPY, BE A STAR — Nền tảng đặt vé phim hiện đại với trải nghiệm điện ảnh sống động, giao diện tối giản và hiệu ứng neon sang trọng.
+          - generic [ref=e105]:
+            - link "Facebook" [ref=e106] [cursor=pointer]:
               - /url: "#"
-              - img [ref=e130]
-            - link "YouTube" [ref=e132] [cursor=pointer]:
+              - img [ref=e107]
+            - link "YouTube" [ref=e109] [cursor=pointer]:
               - /url: "#"
-              - img [ref=e133]
-            - link "TikTok" [ref=e135] [cursor=pointer]:
+              - img [ref=e110]
+            - link "TikTok" [ref=e112] [cursor=pointer]:
               - /url: "#"
-              - img [ref=e136]
-        - generic [ref=e138]:
-          - heading "Tài khoản" [level=4] [ref=e139]
-          - link "Đăng nhập" [ref=e140] [cursor=pointer]:
+              - img [ref=e113]
+        - generic [ref=e115]:
+          - heading "Tài khoản" [level=4] [ref=e116]
+          - link "Đăng nhập" [ref=e117] [cursor=pointer]:
             - /url: /auth/login
-          - link "Đăng ký" [ref=e141] [cursor=pointer]:
+          - link "Đăng ký" [ref=e118] [cursor=pointer]:
             - /url: /auth/register
-          - link "Membership" [ref=e142] [cursor=pointer]:
+          - link "Membership" [ref=e119] [cursor=pointer]:
             - /url: /membership
-        - generic [ref=e143]:
-          - heading "Xem phim" [level=4] [ref=e144]
-          - link "Phim đang chiếu" [ref=e145] [cursor=pointer]:
+        - generic [ref=e120]:
+          - heading "Xem phim" [level=4] [ref=e121]
+          - link "Phim đang chiếu" [active] [ref=e122] [cursor=pointer]:
             - /url: /movie/moviesShowing
-          - link "Phim sắp chiếu" [ref=e146] [cursor=pointer]:
+          - link "Phim sắp chiếu" [ref=e123] [cursor=pointer]:
             - /url: /movie/moviesUpComming
-          - link "Suất chiếu đặc biệt" [ref=e147] [cursor=pointer]:
+          - link "Suất chiếu đặc biệt" [ref=e124] [cursor=pointer]:
             - /url: /movie/movies
-        - generic [ref=e148]:
-          - heading "Hệ thống rạp" [level=4] [ref=e149]
-          - paragraph [ref=e150]: CinesVerse Tran Quoc(Hà Nội)
-          - paragraph [ref=e151]: CinesVerse Tran Quoc1(TP.HCM)
-          - paragraph [ref=e152]: CinesVerse Tran Quoc2(Huế)
-          - paragraph [ref=e153]: CinesVerse Tran Quoc3(Đà Lạt)
-      - generic [ref=e155]:
-        - paragraph [ref=e156]: © 2025 CinesVerse.Copyright by PhamTranQuoc.
-        - generic [ref=e157]:
-          - button "Liên hệ" [ref=e158] [cursor=pointer]
-          - link "Chính sách bảo mật" [ref=e159] [cursor=pointer]:
+        - generic [ref=e125]:
+          - heading "Hệ thống rạp" [level=4] [ref=e126]
+          - paragraph [ref=e127]: CinesVerse Tran Quoc(Hà Nội)
+          - paragraph [ref=e128]: CinesVerse Tran Quoc1(TP.HCM)
+          - paragraph [ref=e129]: CinesVerse Tran Quoc2(Huế)
+          - paragraph [ref=e130]: CinesVerse Tran Quoc3(Đà Lạt)
+      - generic [ref=e132]:
+        - paragraph [ref=e133]: © 2025 CinesVerse.Copyright by PhamTranQuoc.
+        - generic [ref=e134]:
+          - button "Liên hệ" [ref=e135] [cursor=pointer]
+          - link "Chính sách bảo mật" [ref=e136] [cursor=pointer]:
             - /url: /privacy
-          - link "Tin điện ảnh" [ref=e160] [cursor=pointer]:
+          - link "Tin điện ảnh" [ref=e137] [cursor=pointer]:
             - /url: /news
-          - link "Hỏi & Đáp" [ref=e161] [cursor=pointer]:
+          - link "Hỏi & Đáp" [ref=e138] [cursor=pointer]:
             - /url: /faq
 ```
