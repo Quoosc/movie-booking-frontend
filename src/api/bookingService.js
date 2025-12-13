@@ -1,6 +1,6 @@
 // src/api/bookingService.js
 import { apiFetch } from "./fetchConfig";
-const USE_MOCK = false; 
+const USE_MOCK = false;
 
 function mapSeatFromApi(seat) {
   if (!seat) return null;
@@ -698,32 +698,32 @@ export async function createBooking(payload = {}) {
  *  - Bạn có thể dùng createPaymentOrder là đủ
  * ==================================================== */
 
-export async function createPaymentSession({
-  bookingId,
-  amount,
-  method, // "PAYPAL" | "MOMO"
-  returnUrl,
-  cancelUrl,
-}) {
-  if (!bookingId || !amount || !method) {
-    throw new Error("createPaymentSession: thiếu bookingId/amount/method");
-  }
+// export async function createPaymentSession({
+//   bookingId,
+//   amount,
+//   method, // "PAYPAL" | "MOMO"
+//   returnUrl,
+//   cancelUrl,
+// }) {
+//   if (!bookingId || !amount || !method) {
+//     throw new Error("createPaymentSession: thiếu bookingId/amount/method");
+//   }
 
-  const normalizedMethod = String(method).toUpperCase();
+//   const normalizedMethod = String(method).toUpperCase();
 
-  const res = await apiFetch("/payments/order", {
-    method: "POST",
-    body: JSON.stringify({
-      bookingId,
-      paymentMethod: normalizedMethod,
-      amount,
-      returnUrl,
-      cancelUrl,
-    }),
-  });
+//   const res = await apiFetch("/payments/order", {
+//     method: "POST",
+//     body: JSON.stringify({
+//       bookingId,
+//       paymentMethod: normalizedMethod,
+//       amount,
+//       returnUrl,
+//       cancelUrl,
+//     }),
+//   });
 
-  return res;
-}
+//   return res;
+// }
 
 /* ======================================================
  *  TẠO LỆNH THANH TOÁN (PAYMENT ORDER)

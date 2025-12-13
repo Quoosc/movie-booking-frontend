@@ -6,7 +6,7 @@ import { capturePayment } from "@/api/paymentService";
 
 /*
  * - User thanh toán xong ở cổng (PayPal / Momo)
- * - Gateway redirect → FE: /payment-callback?transactionId=...&method=PAYPAL|MOMO[&bookingId=... optional]
+ * - Gateway redirect → FE: /payment-callback?... (tùy gateway)
  * - FE gọi POST /payments/order/capture (capturePayment)
  * - BE:
  *    + xác nhận giao dịch với gateway
@@ -26,31 +26,52 @@ export default function PaymentCallbackPage() {
     let cancelled = false;
 
     const run = async () => {
-      // Lấy param từ URL
-      const transactionId =
-        searchParams.get("transactionId") ||
-        searchParams.get("token") || // PayPal thường trả token
-        searchParams.get("requestId") ||
-        searchParams.get("orderId");
+      const paypalToken = searchParams.get("token");
+      const payerId =
+        searchParams.get("PayerID") ||
+        searchParams.get("payerId") ||
+        searchParams.get("payerID");
 
-      const methodParam = (
+      // Momo / common: requestId/orderId/transactionId...
+      const momoOrCommonId =
+        searchParams.get("transactionId") ||
+        searchParams.get("requestId") ||
+        searchParams.get("orderId") ||
+        searchParams.get("txnRef");
+
+      // 1) transactionId ưu tiên PayPal token, fallback momo/common
+      const transactionId = paypalToken || momoOrCommonId;
+
+      // 2) method: ưu tiên query param, nếu thiếu thì tự suy ra
+      let methodParam = (
         searchParams.get("method") ||
         searchParams.get("paymentMethod") ||
+        searchParams.get("pm") ||
         ""
       ).toUpperCase();
 
-      const bookingIdFromQuery = searchParams.get("bookingId");
+      if (!methodParam) {
+        if (paypalToken && payerId) methodParam = "PAYPAL";
+        else if (momoOrCommonId) methodParam = "MOMO";
+      }
+
+      const bookingIdFromQuery =
+        searchParams.get("bookingId") || searchParams.get("booking_id");
 
       console.log("[PaymentCallback] params =", {
         transactionId,
         methodParam,
         bookingIdFromQuery,
+        paypalToken,
+        payerId,
+        momoOrCommonId,
       });
 
       if (!transactionId || !methodParam) {
         setStatus("error");
         setMessage(
           "Thông tin thanh toán không hợp lệ hoặc đã hết hạn.\n" +
+            "Thiếu token/requestId hoặc thiếu method.\n" +
             "Vui lòng quay lại và thử thanh toán lại từ đầu."
         );
         return;
@@ -69,11 +90,8 @@ export default function PaymentCallbackPage() {
 
         const wrapper = res || {};
         const data = wrapper.data || wrapper;
-
-        // Nếu BE trả code != 200 → xem là lỗi
         if (wrapper.code && wrapper.code !== 200) {
           if (wrapper.code === 409) {
-            // Giao dịch đã xử lý trước đó
             setStatus("error");
             setMessage(
               wrapper.message ||
@@ -103,16 +121,12 @@ export default function PaymentCallbackPage() {
 
         // Thành công → nhảy sang trang CheckoutSuccess
         setStatus("success");
-        setMessage(
-          "Thanh toán thành công! Đang chuyển tới trang thông tin vé..."
-        );
+        setMessage("Thanh toán thành công! Đang chuyển tới trang thông tin vé...");
+
         setTimeout(() => {
-          navigate(
-            `/checkout-success?bookingId=${bookingId}&method=${methodParam}`,
-            {
-              replace: true,
-            }
-          );
+          navigate(`/checkout-success?bookingId=${bookingId}&method=${methodParam}`, {
+            replace: true,
+          });
         }, 1200);
       } catch (err) {
         console.error("[PaymentCallback] capturePayment error:", err);
@@ -188,6 +202,7 @@ export default function PaymentCallbackPage() {
     </div>
   );
 }
+
 
 
 
