@@ -1,0 +1,175 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "CinesVerse" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "CinesVerse" [ref=e8]
+        - button "ĐẶT VÉ / BẮP NƯỚC NGAY" [ref=e10] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e13]
+            - img [ref=e15]
+            - generic [ref=e17]: ĐẶT VÉ / BẮP NƯỚC NGAY
+        - generic [ref=e19]:
+          - textbox "Tìm phim, rạp, suất chiếu..." [ref=e20]
+          - button "Tìm kiếm" [ref=e21] [cursor=pointer]:
+            - img [ref=e22]
+        - button "hieuhoccode@gmail.com" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e30]: hieuhoccode@gmail.com
+      - navigation [ref=e32]:
+        - button "Chọn rạp" [ref=e35] [cursor=pointer]:
+          - img [ref=e36]
+          - generic [ref=e38]: Chọn rạp
+        - generic [ref=e39]: "|"
+        - link "Dịch vụ giải trí" [ref=e40] [cursor=pointer]:
+          - /url: /dich-vu-giai-tri
+          - img [ref=e41]
+          - text: Dịch vụ giải trí
+        - generic [ref=e44]: "|"
+        - link "Khuyến mãi" [ref=e45] [cursor=pointer]:
+          - /url: /promotions
+          - img [ref=e46]
+          - text: Khuyến mãi
+        - generic [ref=e48]: "|"
+        - link "Giới thiệu" [ref=e49] [cursor=pointer]:
+          - /url: /about
+          - img [ref=e50]
+          - text: Giới thiệu
+    - generic:
+      - generic:
+        - generic:
+          - img
+          - button:
+            - img
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - img
+                - generic:
+                  - generic: hieuhoccode@gmail.com
+                  - generic: Thành viên
+            - button: Hồ sơ cá nhân
+            - button: Lịch sử đặt vé
+            - button: Membership
+            - button: Đăng xuất
+          - button: Chọn rạp
+          - button: Dịch Vụ giải trí
+          - button: Khuyến mãi
+          - button: Giới thiệu
+  - main [ref=e53]:
+    - link "Trang chủ" [ref=e55] [cursor=pointer]:
+      - /url: /
+      - img [ref=e57]
+      - generic [ref=e59]: Trang chủ
+    - generic [ref=e60]:
+      - 'img "Avatar: The Way of Water" [ref=e63]'
+      - generic [ref=e64]:
+        - paragraph [ref=e65]: Movie Detail • CinesVerse
+        - 'heading "Avatar: The Way of Water" [level=1] [ref=e66]'
+        - generic [ref=e67]:
+          - generic [ref=e68]: T13
+          - generic [ref=e69]: Sci-Fi, Action
+          - generic [ref=e70]: 192 phút
+          - generic [ref=e71]: English
+        - paragraph [ref=e72]: Jake Sully lives with his newfound family formed on the extrasolar moon Pandora. Once a familiar threat returns to finish what was previously started, Jake must work with Neytiri and the army of the Na'vi race to protect their home.
+        - generic [ref=e73]:
+          - generic [ref=e74]:
+            - paragraph [ref=e75]: Đạo diễn
+            - paragraph [ref=e76]: James Cameron
+          - generic [ref=e77]:
+            - paragraph [ref=e78]: Diễn viên
+            - paragraph [ref=e79]: Sam Worthington, Zoe Saldana, Sigourney Weaver
+        - button "🎬 XEM TRAILER" [ref=e81] [cursor=pointer]
+    - generic [ref=e82]:
+      - heading "LỊCH CHIẾU THEO RẠP" [level=2] [ref=e83]
+      - generic [ref=e84]:
+        - button "HÔM NAY 14/12" [active] [ref=e85] [cursor=pointer]:
+          - generic [ref=e86]: HÔM NAY
+          - generic [ref=e87]: 14/12
+        - button "TH 2 15/12" [ref=e88] [cursor=pointer]:
+          - generic [ref=e89]: TH 2
+          - generic [ref=e90]: 15/12
+        - button "TH 3 16/12" [ref=e91] [cursor=pointer]:
+          - generic [ref=e92]: TH 3
+          - generic [ref=e93]: 16/12
+        - button "TH 4 17/12" [ref=e94] [cursor=pointer]:
+          - generic [ref=e95]: TH 4
+          - generic [ref=e96]: 17/12
+        - button "TH 5 18/12" [ref=e97] [cursor=pointer]:
+          - generic [ref=e98]: TH 5
+          - generic [ref=e99]: 18/12
+        - button "TH 6 19/12" [ref=e100] [cursor=pointer]:
+          - generic [ref=e101]: TH 6
+          - generic [ref=e102]: 19/12
+        - button "TH 7 20/12" [ref=e103] [cursor=pointer]:
+          - generic [ref=e104]: TH 7
+          - generic [ref=e105]: 20/12
+      - generic [ref=e107]:
+        - generic [ref=e108]:
+          - paragraph [ref=e109]: CGV Vincom Dong Khoi
+          - paragraph [ref=e110]: 72 Le Thanh Ton, Ben Nghe Ward, District 1, HCMC
+        - generic [ref=e111]:
+          - button "10:00 2D • Phòng 1" [ref=e112] [cursor=pointer]:
+            - generic [ref=e113]: 10:00
+            - generic [ref=e114]: 2D • Phòng 1
+          - button "19:00 IMAX 2D • Phòng 2" [ref=e115] [cursor=pointer]:
+            - generic [ref=e116]: 19:00
+            - generic [ref=e117]: IMAX 2D • Phòng 2
+  - contentinfo [ref=e118]:
+    - generic [ref=e119]:
+      - generic [ref=e120]:
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - img "CinesVerse" [ref=e123]
+            - generic [ref=e124]:
+              - paragraph [ref=e125]: Movie Booking Platform
+              - paragraph [ref=e126]: CinesVerse
+          - paragraph [ref=e127]: BE HAPPY, BE A STAR — Nền tảng đặt vé phim hiện đại với trải nghiệm điện ảnh sống động, giao diện tối giản và hiệu ứng neon sang trọng.
+          - generic [ref=e128]:
+            - link "Facebook" [ref=e129] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e130]
+            - link "YouTube" [ref=e132] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e133]
+            - link "TikTok" [ref=e135] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e136]
+        - generic [ref=e138]:
+          - heading "Tài khoản" [level=4] [ref=e139]
+          - link "Đăng nhập" [ref=e140] [cursor=pointer]:
+            - /url: /auth/login
+          - link "Đăng ký" [ref=e141] [cursor=pointer]:
+            - /url: /auth/register
+          - link "Membership" [ref=e142] [cursor=pointer]:
+            - /url: /membership
+        - generic [ref=e143]:
+          - heading "Xem phim" [level=4] [ref=e144]
+          - link "Phim đang chiếu" [ref=e145] [cursor=pointer]:
+            - /url: /movie/moviesShowing
+          - link "Phim sắp chiếu" [ref=e146] [cursor=pointer]:
+            - /url: /movie/moviesUpComming
+          - link "Suất chiếu đặc biệt" [ref=e147] [cursor=pointer]:
+            - /url: /movie/movies
+        - generic [ref=e148]:
+          - heading "Hệ thống rạp" [level=4] [ref=e149]
+          - paragraph [ref=e150]: CinesVerse Tran Quoc(Hà Nội)
+          - paragraph [ref=e151]: CinesVerse Tran Quoc1(TP.HCM)
+          - paragraph [ref=e152]: CinesVerse Tran Quoc2(Huế)
+          - paragraph [ref=e153]: CinesVerse Tran Quoc3(Đà Lạt)
+      - generic [ref=e155]:
+        - paragraph [ref=e156]: © 2025 CinesVerse.Copyright by PhamTranQuoc.
+        - generic [ref=e157]:
+          - button "Liên hệ" [ref=e158] [cursor=pointer]
+          - link "Chính sách bảo mật" [ref=e159] [cursor=pointer]:
+            - /url: /privacy
+          - link "Tin điện ảnh" [ref=e160] [cursor=pointer]:
+            - /url: /news
+          - link "Hỏi & Đáp" [ref=e161] [cursor=pointer]:
+            - /url: /faq
+```

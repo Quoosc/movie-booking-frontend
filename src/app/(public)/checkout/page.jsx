@@ -815,20 +815,6 @@ export default function CheckoutPage() {
       <Navbar />
 
       <main className="relative z-10 max-w-6xl mx-auto px-4 pb-12 pt-4">
-        {/* back to movie (giữ chỗ, có thể thêm lại nút sau) */}
-        <div className="flex items-center justify-between mb-4">
-          <button
-            type="button"
-            onClick={handleBackToSeatSelection}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl
-                       text-[11px] md:text-[12px] font-extrabold uppercase tracking-[0.18em]
-                       bg-white/5 border border-white/15 text-white/80
-                       hover:bg-white/10 hover:text-white transition-all"
-          >
-            ← Quay lại chọn ghế
-          </button>
-        </div>
-
         {/* Heading + Step indicator */}
         <header className="mb-8 text-center md:text-left">
           <p className="text-[11px] sm:text-xs tracking-[0.22em] text-[#9ca3ff] uppercase mb-2">

@@ -1,0 +1,35 @@
+{
+  "cookies": [
+    {
+      "name": "refresh_token",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NjU2NTg0MDksImV4cCI6MTc2NjI2MzIwOX0.EeEzb2SCMjmakcIVOiIFrtlp7FtVq3wf-y3JBzliUgU",
+      "domain": "localhost",
+      "path": "/auth",
+      "expires": 1766263209.457716,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Strict"
+    },
+    {
+      "name": "access_token",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NTY1ODQwOSwiZXhwIjoxNzY1NjYyMDA5fQ.dJarmC1ukFZnx2dQeWVSCCMZHws8vluvPbSQI3lr2xM",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1765662009.457632,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Strict"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "user",
+          "value": "{\"userId\":\"73c8d5ac-2806-426d-858e-c0c6184e099e\",\"email\":\"admin@gmail.com\",\"username\":\"Admin User\",\"phoneNumber\":\"0901234567\",\"avatarUrl\":null,\"avatarCloudinaryId\":null,\"loyaltyPoints\":0,\"membershipTier\":null,\"createdAt\":\"2025-12-13T19:45:05.900656\",\"updatedAt\":\"2025-12-13T19:45:05.900674\",\"role\":null}"
+        }
+      ]
+    }
+  ]
+}
