@@ -14,4 +14,8 @@ export default defineConfig({
     setupFiles: "./src/test/setupTests.js",
     css: true,
   },
+  coverage: {
+    provider: "v8",
+    reporter: ["text", "html"],
+  },
 });

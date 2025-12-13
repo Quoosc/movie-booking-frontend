@@ -126,11 +126,7 @@ export default function EntertainmentServicesPage() {
                   backdrop-blur-sm
                 "
               >
-                <button
-                  type="button"
-                  onClick={() => navigate("/movie/movies")}
-                  className="w-full text-left group"
-                >
+                <button type="button" className="w-full text-left group">
                   <div className="relative">
                     <img
                       src={s.image}

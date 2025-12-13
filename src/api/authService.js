@@ -31,7 +31,13 @@ export function clearStoredUser() {
   localStorage.removeItem(STORAGE_KEYS.refreshToken);
 }
 
-// ===== helper: decode role từ JWT (Laravel) =====
+// ===== helpers =====
+function normalizeRole(role) {
+  if (!role) return null;
+  const r = String(role).toUpperCase();
+  return r.startsWith("ROLE_") ? r.replace("ROLE_", "") : r; 
+}
+
 function decodeJwtPayload(token) {
   try {
     if (!token || typeof token !== "string") return null;
@@ -52,7 +58,7 @@ function decodeJwtPayload(token) {
 
 function roleFromJwt(token) {
   const p = decodeJwtPayload(token);
-  return p?.role || p?.userRole || p?.authorities?.[0] || null;
+  return normalizeRole(p?.role || p?.userRole || p?.authorities?.[0] || null);
 }
 
 /** REGISTER */
@@ -79,30 +85,27 @@ export async function login({ email, password }) {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
-
   const data = res?.data ?? res;
 
   const accessToken =
-    data?.accessToken ||
-    data?.data?.accessToken ||
-    data?.user?.accessToken ||
-    null;
+    data?.accessToken || data?.data?.accessToken || data?.user?.accessToken || null;
 
   const refreshToken =
-    data?.refreshToken ||
-    data?.data?.refreshToken ||
-    data?.user?.refreshToken ||
-    null;
+    data?.refreshToken || data?.data?.refreshToken || data?.user?.refreshToken || null;
 
   const user =
-    data?.user || data?.data?.user || null;
+    data?.user ||
+    data?.data?.user ||
+    (data?.userId || data?.user_id || data?.email ? data : null);
 
   if (accessToken) localStorage.setItem(STORAGE_KEYS.accessToken, accessToken);
   if (refreshToken) localStorage.setItem(STORAGE_KEYS.refreshToken, refreshToken);
 
   if (user) {
-    saveUserToStorage(user);
-  } else {
+    saveUserToStorage({
+      ...user,
+      role: normalizeRole(user?.role || user?.userRole || null),
+    });
   }
 
   return { success: true };
@@ -117,15 +120,13 @@ export async function me() {
   const token = localStorage.getItem(STORAGE_KEYS.accessToken);
 
   const role =
-    raw?.role ||
-    raw?.userRole ||
-    stored?.role ||
-    stored?.userRole ||
+    normalizeRole(raw?.role || raw?.userRole) ||
+    normalizeRole(stored?.role || stored?.userRole) ||
     roleFromJwt(token) ||
     null;
 
   const profile = {
-    ...stored, // giữ các field cũ nếu raw thiếu
+    ...stored, 
     ...raw,
     role,
   };
@@ -153,7 +154,6 @@ export async function logoutAll(email) {
 export async function refreshToken() {
   const res = await apiFetch("/auth/refresh", { method: "GET" });
 
-  // Laravel refresh có thể trả token mới
   const payload = res?.data ?? res;
   const accessToken =
     payload?.accessToken ||
@@ -162,6 +162,5 @@ export async function refreshToken() {
     null;
 
   if (accessToken) localStorage.setItem(STORAGE_KEYS.accessToken, accessToken);
-
   return true;
 }
