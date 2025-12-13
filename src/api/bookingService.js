@@ -1,24 +1,6 @@
 // src/api/bookingService.js
 import { apiFetch } from "./fetchConfig";
-
-// TẠM THỜI: booking vẫn luôn dùng mock (không gọi BE)
-const USE_MOCK = false; // TẠM THỜI: chỉ để test UI. Sau này gắn BE thì đổi thành false.
-
-/* ======================================================
- *  MOCK SEAT LAYOUT
- *  - Sinh layout ghế giống rạp thật
- *  - Dùng cho getSeatLayout khi USE_MOCK = true
- * ==================================================== */
-
-/* ======================================================
- *  MAP SEAT BE → FE
- *  BE:  GET /seats/layout?showtime_id=UUID
- *       data[]: {
- *         seatId, row, number, type, status, price
- *       }
- *
- *  FE dùng: { seat_id, row, number, type, status, price }
- * ==================================================== */
+const USE_MOCK = false; 
 
 function mapSeatFromApi(seat) {
   if (!seat) return null;
