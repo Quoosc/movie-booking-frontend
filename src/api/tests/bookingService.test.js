@@ -16,6 +16,7 @@ import {
   createPaymentOrder,
   getBookingById,
   getMyBookings,
+  getBookingDetail,
 } from "../bookingService";
 
 function setGuestSession(id = "guest-123") {
@@ -225,6 +226,7 @@ describe("bookingService", () => {
       amount: 270000,
     });
 
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
     const [path, opts] = apiFetchMock.mock.calls[0];
     expect(path).toBe("/payments/order");
     expect(opts.method).toBe("POST");
@@ -255,5 +257,33 @@ describe("bookingService", () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith("/bookings/my-bookings");
     expect(res).toEqual([{ id: "b1" }, { id: "b2" }]);
+  });
+
+  describe("bookingService - detail", () => {
+    it("getBookingById throws if missing bookingId", async () => {
+      await expect(getBookingById()).rejects.toThrow(/bookingId là bắt buộc/i);
+    });
+
+    it("getBookingById unwraps res.data.data", async () => {
+      apiFetchMock.mockResolvedValueOnce({
+        data: { data: { bookingId: "b1" } },
+      });
+
+      const res = await getBookingById("b1");
+
+      expect(apiFetchMock).toHaveBeenCalledWith("/bookings/b1");
+      expect(res).toEqual({ bookingId: "b1" });
+    });
+
+    it("getBookingDetail uses getBookingById", async () => {
+      apiFetchMock.mockResolvedValueOnce({
+        data: { data: { bookingId: "b2" } },
+      });
+
+      const res = await getBookingDetail("b2");
+
+      expect(apiFetchMock).toHaveBeenCalledWith("/bookings/b2");
+      expect(res).toEqual({ bookingId: "b2" });
+    });
   });
 });

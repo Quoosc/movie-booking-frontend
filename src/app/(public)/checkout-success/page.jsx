@@ -100,10 +100,14 @@ export default function CheckoutSuccessPage() {
     };
   }, [bookingId]);
 
-  const formattedShowtime = useMemo(
-    () => (booking ? formatShowtime(booking.showtimeStartTime) : ""),
-    [booking]
-  );
+  // const formattedShowtime = useMemo(
+  //   () => (booking ? formatShowtime(booking.showtimeStartTime) : ""),
+  //   [booking]
+  // );
+  const formattedShowtime = useMemo(() => {
+    const iso = booking?.showtimeStartTime || booking?.startTime;
+    return booking ? formatShowtime(iso) : "";
+  }, [booking]);
 
   const seatList = useMemo(
     () => (booking ? buildSeatList(booking.seats) : ""),
@@ -130,7 +134,10 @@ export default function CheckoutSuccessPage() {
     "https://via.placeholder.com/300x450?text=Movie";
 
   const qrImageUrl = booking?.qrCode || "";
-  const bookingCode = booking?.bookingId?.slice(0, 8)?.toUpperCase() || "";
+  // const bookingCode = booking?.bookingId?.slice(0, 8)?.toUpperCase() || ""
+  const bookingCode = (booking?.bookingId || booking?.id || bookingId || "")
+    .slice(0, 8)
+    .toUpperCase();
 
   return (
     <div
@@ -315,7 +322,7 @@ export default function CheckoutSuccessPage() {
                 <HomeButton />
                 {isMemberUser && (
                   <button
-                    onClick={() => navigate("/my-bookings")}   // sau này có routes chính thì đổi routes 
+                    onClick={() => navigate("/account/account-history")}
                     className="inline-flex items-center justify-center rounded-full border border-white/40 px-7 py-2.5 text-xs md:text-sm font-semibold uppercase tracking-[0.2em] hover:bg-white hover:text-black transition shadow-[0_10px_30px_rgba(0,0,0,0.6)]"
                   >
                     Xem lịch sử đặt vé
