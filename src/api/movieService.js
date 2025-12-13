@@ -474,8 +474,6 @@ export async function filterMoviesByGenre(genre) {
  * ]
  */
 
-// 👉 với MOCK: map rạp -> danh sách movieId đang chiếu
-// (đã derive từ MOCK_SHOWTIMES_BY_MOVIE trong showtimeService)
 const MOCK_CINEMA_MOVIES_SHOWING = {
   c1: ["1", "2", "3", "4"],
   c2: ["1", "2", "3"],
@@ -513,7 +511,6 @@ export async function getCinemaMovies(cinemaId, status) {
     return [];
   }
 
-  // 🚀 BE thật:
   const res = await apiFetch(
     `/cinemas/${cinemaId}/movies?status=${encodeURIComponent(normalizedStatus)}`
   );
