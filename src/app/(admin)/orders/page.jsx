@@ -236,9 +236,9 @@ export default function AdminOrdersPage() {
   const displayStatus = (p) => (p.status || "").toUpperCase();
 
   const displayDateTime = (iso) => {
-    if (!iso) return "";
+    if (!iso || iso === "null" || iso === "undefined") return null;
     const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "";
+    if (Number.isNaN(d.getTime())) return null;
     return d.toLocaleString("vi-VN");
   };
 
@@ -473,9 +473,6 @@ export default function AdminOrdersPage() {
                   <th className="py-3 px-4 text-left hidden md:table-cell">
                     Booking / User
                   </th>
-                  <th className="py-3 px-4 text-left hidden lg:table-cell">
-                    Thời gian
-                  </th>
                   <th className="py-3 px-4 text-left">Trạng thái</th>
                   <th className="py-3 pl-4 pr-2 text-right">Thao tác</th>
                 </tr>
@@ -539,22 +536,6 @@ export default function AdminOrdersPage() {
                               </span>
                             </div>
                           )}
-                        </td>
-
-                        {/* Time */}
-                        <td className="py-3 px-4 align-top hidden lg:table-cell">
-                          <div className="text-[11px] text-white/70">
-                            Tạo:{" "}
-                            <span className="text-white/90">
-                              {displayDateTime(p.createdAt)}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-white/60 mt-0.5">
-                            Cập nhật:{" "}
-                            <span className="text-white/80">
-                              {displayDateTime(p.updatedAt)}
-                            </span>
-                          </div>
                         </td>
 
                         {/* Status */}
@@ -856,9 +837,9 @@ function BookingDetailModal({
                   Suất chiếu
                 </h3>
                 <div className="space-y-2 text-xs text-white/80">
-                  {booking.movie?.title && (
+                  {(booking.movie?.title || booking.movieTitle) && (
                     <div className="font-semibold text-white text-sm">
-                      {booking.movie.title}
+                      {booking.movie?.title || booking.movieTitle}
                     </div>
                   )}
                   {(booking.cinema?.name || booking.cinemaName) && (
@@ -869,22 +850,34 @@ function BookingDetailModal({
                       </span>
                     </div>
                   )}
-                  {(booking.room?.roomNumber || booking.roomNumber) && (
+                  {(booking.room?.roomNumber ||
+                    booking.roomNumber ||
+                    booking.roomName) && (
                     <div className="text-white/70">
                       Phòng:{" "}
                       <span className="font-semibold">
-                        {booking.room?.roomNumber || booking.roomNumber}
+                        {booking.room?.roomNumber ||
+                          booking.roomNumber ||
+                          booking.roomName}
                       </span>
                     </div>
                   )}
-                  <div className="text-white/70">
-                    Thời gian:{" "}
-                    <span className="font-semibold">
-                      {displayDateTime(
-                        booking.showtime?.startTime || booking.showtimeTime
-                      )}
-                    </span>
-                  </div>
+                  {displayDateTime(
+                    booking.showtime?.startTime ||
+                      booking.showtimeStartTime ||
+                      booking.showtimeTime
+                  ) && (
+                    <div className="text-white/70">
+                      Thời gian:{" "}
+                      <span className="font-semibold">
+                        {displayDateTime(
+                          booking.showtime?.startTime ||
+                            booking.showtimeStartTime ||
+                            booking.showtimeTime
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </section>
 
