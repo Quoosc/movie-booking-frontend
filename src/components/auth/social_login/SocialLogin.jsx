@@ -13,9 +13,11 @@ export default function SocialLogin() {
         typeof window !== "undefined" ? window.location.origin : "";
       const redirectUri = `${origin}/oauth2/success`;
 
-      const url = `${API_BASE_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}`;
+      // const url = `${API_BASE_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
+      //   redirectUri
+      // )}`;
+      const url = `http://4-194-140-32.nip.io:8080/oauth2/authorization/google?redirect_uri=${encodeURIComponent(redirectUri)}`;
+
 
       window.location.href = url;
     } catch (e) {
