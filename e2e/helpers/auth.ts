@@ -59,6 +59,8 @@ export async function logoutUI(page: Page) {
     return; // Already logged out
   }
 
+  // Scroll into view first
+  await logoutBtn.scrollIntoViewIfNeeded({ timeout: 10_000 });
   await expect(logoutBtn).toBeVisible({ timeout: 10_000 });
   // Force click to bypass viewport/overlay issues
   await logoutBtn.click({ force: true, timeout: 10_000 });

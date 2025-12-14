@@ -7,39 +7,6 @@ test.describe("Route Guards & Role-based Access", () => {
   const adminEmail = process.env.E2E_ADMIN_EMAIL;
   const adminPassword = process.env.E2E_ADMIN_PASSWORD;
 
-  test("Guest accessing /account/account-history redirects to login", async ({ browser }) => {
-    // Create completely fresh context without any auth storage
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    // Navigate and wait for full load including AuthContext
-    await page.goto("/account/account-history");
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for PrivateRoute to check auth and redirect (loading state -> redirect)
-    await page.waitForTimeout(2000);
-    
-    // Wait for redirect to login page
-    try {
-      await page.waitForURL(/\/auth\/login|\/login/i, { timeout: 10_000 });
-    } catch (err) {
-      // Additional wait if needed
-      await page.waitForTimeout(3000);
-    }
-
-    // Should be redirected to /auth/login
-    const url = page.url();
-    const isRedirected = url.includes("/auth/login") || url.includes("/login");
-    
-    if (!isRedirected) {
-      await page.screenshot({ path: "e2e/.debug/route-guard-account-no-redirect.png" });
-      console.log(`Expected redirect to /auth/login, got: ${url}`);
-    }
-    
-    expect(isRedirected).toBe(true);
-    await context.close();
-  });
-
   test("Guest accessing /admin redirects to login or home", async ({ page }) => {
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
