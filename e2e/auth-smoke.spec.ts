@@ -50,7 +50,10 @@ test.describe("Auth: Basic Login/Logout", () => {
 
     // 3) Logout
     await logoutUI(page);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
+    
+    // Wait for logout to complete and redirect
+    await page.waitForLoadState('networkidle');
 
     // 4) Verify logged out - should be redirected or see guest UI
     loggedIn = await isLoggedIn(page);
@@ -87,7 +90,9 @@ test.describe("Auth: Basic Login/Logout", () => {
     await emailInput.fill(userEmail!);
     await passwordInput.fill("wrong-password-123");
 
-    await page.getByRole("button", { name: /đăng nhập|login/i }).click();
+    // Use same selector as auth.ts helper to avoid strict mode
+    const loginBtn = page.locator('button[type="submit"]').first();
+    await loginBtn.click();
     await page.waitForTimeout(2000);
 
     // Should stay on login page or show error

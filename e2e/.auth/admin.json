@@ -2,20 +2,20 @@
   "cookies": [
     {
       "name": "refresh_token",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NjU2NjA2NTMsImV4cCI6MTc2NjI2NTQ1M30.ESEkrwCg8sevN7ioNyiEh1zhUXcyXTh2uU1BeabGPLc",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NjU3MDUzMzksImV4cCI6MTc2NjMxMDEzOX0.EisHaH3N_daOJROmHY03OooWoq4UCbc6EFegHJyqeNw",
       "domain": "localhost",
       "path": "/auth",
-      "expires": 1766265453.934138,
+      "expires": 1766310140.000598,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Strict"
     },
     {
       "name": "access_token",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NTY2MDY1MywiZXhwIjoxNzY1NjY0MjUzfQ.GYgEVFDP_IH8Yw24QEIDbY2gwqoxEj1xqOlAN1ZHo30",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NTcwNTMzOSwiZXhwIjoxNzY1NzA4OTM5fQ.8u6GkH0Z-gRtQQIL3oTEwanX7FnwhPEEM0Kiiho2Jw8",
       "domain": "localhost",
       "path": "/",
-      "expires": 1765664253.934055,
+      "expires": 1765708940.000512,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Strict"
@@ -27,7 +27,7 @@
       "localStorage": [
         {
           "name": "user",
-          "value": "{\"userId\":\"73c8d5ac-2806-426d-858e-c0c6184e099e\",\"email\":\"admin@gmail.com\",\"username\":\"Admin User\",\"phoneNumber\":\"0901234567\",\"avatarUrl\":null,\"avatarCloudinaryId\":null,\"loyaltyPoints\":0,\"membershipTier\":null,\"createdAt\":\"2025-12-13T19:45:05.900656\",\"updatedAt\":\"2025-12-13T19:45:05.900674\",\"role\":null}"
+          "value": "{\"userId\":\"8cc5bceb-4d7d-4ccc-b5ff-e91b4f5279b5\",\"username\":\"Admin User\",\"email\":\"admin@gmail.com\",\"phoneNumber\":\"0901234567\",\"provider\":null,\"role\":\"ADMIN\",\"avatarUrl\":null,\"avatarCloudinaryId\":null,\"loyaltyPoints\":0,\"membershipTierId\":null,\"createdAt\":\"2025-12-14T07:56:36.770662\",\"updatedAt\":\"2025-12-14T07:56:36.770686\",\"membershipTier\":null}"
         }
       ]
     }

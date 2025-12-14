@@ -14,7 +14,10 @@ export async function loginUI(page: Page, email: string, password: string) {
   await emailInput.fill(email);
   await passwordInput.fill(password);
 
-  const loginBtn = page.getByRole("button", { name: /đăng nhập|login/i });
+  // Use exact match or type=submit to avoid matching "Đăng nhập với Google/Facebook/Instagram"
+  const loginBtn = page.locator('button[type="submit"]').first().or(
+    page.getByRole("button", { name: "Đăng nhập", exact: true })
+  );
   await expect(loginBtn).toBeVisible({ timeout: 10_000 });
   
   await loginBtn.click();
@@ -43,16 +46,22 @@ export async function logoutUI(page: Page) {
 
   if (await userMenu.count() > 0) {
     await userMenu.click();
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
   }
 
-  // Click nút logout
+  // Click nút logout - check if exists first
   const logoutBtn = page.getByRole('button', { name: /đăng xuất|logout/i }).or(
     page.locator('button').filter({ hasText: /đăng xuất|logout/i })
   ).first();
 
+  // If logout button doesn't exist, user might not be logged in
+  if (await logoutBtn.count() === 0) {
+    return; // Already logged out
+  }
+
   await expect(logoutBtn).toBeVisible({ timeout: 10_000 });
-  await logoutBtn.click();
+  // Force click to bypass viewport/overlay issues
+  await logoutBtn.click({ force: true, timeout: 10_000 });
   await page.waitForLoadState('networkidle');
 }
 
@@ -83,10 +92,15 @@ export async function isLoggedIn(page: Page): Promise<boolean> {
 }
 
 export async function ensureLoggedOut(page: Page) {
-  const loggedIn = await isLoggedIn(page);
-  if (loggedIn) {
+  // Check if there's a logout button visible
+  const logoutExists = await page.getByRole('button', { name: /đăng xuất|logout/i }).or(
+    page.locator('button').filter({ hasText: /đăng xuất|logout/i })
+  ).count() > 0;
+  
+  if (logoutExists) {
     await logoutUI(page);
   }
+  // If no logout button, assume already logged out
   
   // Verify logged out
   await page.waitForTimeout(500);

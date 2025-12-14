@@ -18,23 +18,23 @@ export default function CinemaHero({ cinema }) {
         >
           {/* bg image */}
           <div className="absolute inset-0">
-            <img
+            {/* <img
               src={cinema.heroImageUrl}
               alt={cinema.name}
               className="w-full h-full object-cover opacity-[0.38]"
-            />
+            /> */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/20" />
           </div>
 
           {/* content */}
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 px-6 py-5">
-            <div className="hidden md:block w-40 h-28 rounded-2xl overflow-hidden border border-white/20 bg-black/40">
+            {/* <div className="hidden md:block w-40 h-28 rounded-2xl overflow-hidden border border-white/20 bg-black/40">
               <img
                 src={cinema.thumbnailUrl}
                 alt={cinema.name}
                 className="w-full h-full object-cover"
               />
-            </div>
+            </div> */}
 
             <div className="flex-1">
               <p className="text-[11px] uppercase tracking-[0.18em] text-[#9ca3ff]">
