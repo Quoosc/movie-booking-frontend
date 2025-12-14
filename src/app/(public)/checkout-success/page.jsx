@@ -134,7 +134,6 @@ export default function CheckoutSuccessPage() {
     "https://via.placeholder.com/300x450?text=Movie";
 
   const qrImageUrl = booking?.qrCode || "";
-  // const bookingCode = booking?.bookingId?.slice(0, 8)?.toUpperCase() || ""
   const bookingCode = (booking?.bookingId || booking?.id || bookingId || "")
     .slice(0, 8)
     .toUpperCase();

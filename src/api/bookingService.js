@@ -790,40 +790,6 @@ export async function getBookingDetail(bookingId) {
   return getBookingById(bookingId);
 }
 
-//  api for user
-const MOCK_MY_BOOKINGS = [
-  {
-    bookingId: "mock-booking-1",
-    showtimeId: "mock-showtime-1",
-    movieTitle: "Inception",
-    showtimeStartTime: "2025-12-01T19:30:00",
-    cinemaName: "CinesVerse Nguyễn Huệ",
-    roomName: "Phòng 1",
-    seats: [
-      {
-        rowLabel: "D",
-        seatNumber: 7,
-        seatType: "VIP",
-        price: 120000,
-      },
-      {
-        rowLabel: "D",
-        seatNumber: 8,
-        seatType: "VIP",
-        price: 120000,
-      },
-    ],
-    totalPrice: 240000,
-    discountReason: "WINTER2024 (-10%)",
-    discountValue: 24000,
-    finalPrice: 216000,
-    status: "CONFIRMED",
-    bookedAt: "2025-11-25T20:15:00",
-    qrCode: null,
-    qrPayload: null,
-    paymentExpiresAt: "2025-11-25T20:30:00",
-  },
-];
 /**
  * GET /bookings/my-bookings
  * - Chỉ dành cho member (role USER)

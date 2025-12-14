@@ -57,7 +57,7 @@ export async function updateUserRole(userId, role) {
   const res = await apiFetch(`/users/${userId}/role`, {
     method: "PATCH",
     // swagger: body là plain JSON string
-    body: JSON.stringify(role),
+    body: JSON.stringify({ role }),
   });
   return res.data || res; // UserDataResponse
 }
