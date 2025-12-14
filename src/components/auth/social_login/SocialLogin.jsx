@@ -16,8 +16,9 @@ export default function SocialLogin() {
       // const url = `${API_BASE_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
       //   redirectUri
       // )}`;
-      const url = `http://4-194-140-32.nip.io:8080/oauth2/authorization/google?redirect_uri=${encodeURIComponent(redirectUri)}`;
-
+      const url = `https://4-194-140-32.nip.io:8080/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}`;
 
       window.location.href = url;
     } catch (e) {
