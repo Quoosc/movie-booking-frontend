@@ -2,25 +2,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi";
 
 const promos = [
   {
     id: 1,
     title: "C'SCHOOL - Vé từ 45K cho HSSV/U22/Giáo viên",
-    image:
-      "/movies/CINESVERSE1.jpg",
+    image: "/movies/CINESVERSE1.jpg",
   },
   {
     id: 2,
     title: "HAPPY HOUR - Suất sớm & khuya chỉ từ 45K",
-    image:
-      "/movies/CINESVERSE2.jpg",
+    image: "/movies/CINESVERSE2.jpg",
   },
   {
     id: 3,
     title: "THỨ 4 HAPPY DAY - Ưu đãi siêu dễ",
-    image:
-      "/movies/CINESVERSE3.jpg",
+    image: "/movies/CINESVERSE3.jpg",
   },
 ];
 
@@ -31,8 +29,7 @@ export default function PromoHighlight() {
   const current = promos[index];
 
   const next = () => setIndex((i) => (i + 1) % promos.length);
-  const prev = () =>
-    setIndex((i) => (i - 1 + promos.length) % promos.length);
+  const prev = () => setIndex((i) => (i - 1 + promos.length) % promos.length);
 
   return (
     <section className="relative mt-16">
@@ -47,15 +44,15 @@ export default function PromoHighlight() {
           {/* Arrows */}
           <button
             onClick={prev}
-            className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 border border-white/20 text-white items-center justify-center hover:bg-white/15 transition"
+            className="hidden md:flex absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 border border-white/25 text-white items-center justify-center hover:bg-white/20 transition-all duration-200 z-20"
           >
-            ‹
+            <HiOutlineChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={next}
-            className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 border border-white/20 text-white items-center justify-center hover:bg-white/15 transition"
+            className="hidden md:flex absolute right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 border border-white/25 text-white items-center justify-center hover:bg-white/20 transition-all duration-200 z-20"
           >
-            ›
+            <HiOutlineChevronRight className="w-5 h-5" />
           </button>
 
           {/* Slider content */}
