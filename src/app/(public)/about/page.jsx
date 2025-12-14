@@ -97,28 +97,28 @@ export default function AboutPage() {
                 title="Rạp Chiếu Phim Đỉnh Cao"
                 desc="Hệ thống phòng chiếu tối tân với công nghệ hình ảnh và âm thanh chuẩn quốc tế, mang đến cảm xúc chân thực nhất cho từng thước phim bom tấn quốc tế và những tác phẩm điện ảnh Việt Nam đặc sắc."
                 tag="Cinema"
-                img="/public/movies/z7324456300477_3abf9077a63b1b4a8048fde7a5e8865c.jpg"
+                img="/movies/z7324456300477_3abf9077a63b1b4a8048fde7a5e8865c.jpg"
               />
               {/* Card 2 */}
               <InfoCard
                 title="Khu Vui Chơi CinesZone"
                 desc="Tổ hợp giải trí năng động với Bowling, Billiards, các trò chơi thực tế ảo (VR Games) và khu vui chơi giáo trí KidZone dành cho trẻ em."
                 tag="CinesZone"
-                img="/public/movies/z7324457307940_8a902f87077dd9cc44a0bf2e1df16c5a.jpg"
+                img="/movies/z7324457307940_8a902f87077dd9cc44a0bf2e1df16c5a.jpg"
               />
               {/* Card 3 */}
               <InfoCard
                 title="Ẩm Thực & Giải Khát"
                 desc="Chuỗi Nhà Hàng, Quán Cà Phê phong cách và Phố Bia C'Beer độc đáo, phục vụ từ món ăn nhanh đến ẩm thực cao cấp."
                 tag="Food & Drink"
-                img="/public/movies/z7324458514974_36ac6d18a218b57b8d8f2b7dee680f6c.jpg"
+                img="/movies/z7324458514974_36ac6d18a218b57b8d8f2b7dee680f6c.jpg"
               />
               {/* Card 4 */}
               <InfoCard
                 title="Không Gian Sự Kiện"
                 desc="Các phòng đa chức năng và Nhà hát mini hiện đại, lý tưởng cho việc tổ chức sự kiện, họp báo và biểu diễn nghệ thuật."
                 tag="Event Space"
-                img="/public/movies/z7324460668977_34a86153bb4c8e10a6ed31294e1aa544.jpg"
+                img="/movies/z7324460668977_34a86153bb4c8e10a6ed31294e1aa544.jpg"
               />
             </div>
           </div>

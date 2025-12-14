@@ -72,7 +72,7 @@ export default function Navbar() {
             className="flex items-center gap-2 shrink-0 hover:opacity-95 transition"
           >
             <img
-              src="/public/movies/—Pngtree—film festival logo popcorn and_4686389.png"
+              src="/movies/—Pngtree—film festival logo popcorn and_4686389.png"
               alt="CinesVerse"
               className="h-9 w-auto drop-shadow-[0_0_14px_rgba(123,92,255,0.9)]"
             />
