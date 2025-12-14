@@ -231,14 +231,14 @@ export default function AdminOrdersPage() {
     return Number(raw).toLocaleString("vi-VN") + " đ";
   };
 
-  const displayMethod = (p) => p.method || p.paymentMethod || "N/A";
+  const displayMethod = (p) => p.method || p.paymentMethod || "";
 
   const displayStatus = (p) => (p.status || "").toUpperCase();
 
   const displayDateTime = (iso) => {
-    if (!iso) return "N/A";
+    if (!iso) return "";
     const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
+    if (Number.isNaN(d.getTime())) return "";
     return d.toLocaleString("vi-VN");
   };
 
@@ -523,26 +523,22 @@ export default function AdminOrdersPage() {
 
                         {/* Booking/User */}
                         <td className="py-3 px-4 align-top hidden md:table-cell">
-                          <div className="text-[11px] text-white/70 font-mono">
-                            Booking:{" "}
-                            {p.bookingId ? (
+                          {p.bookingId && (
+                            <div className="text-[11px] text-white/70 font-mono">
+                              Booking:{" "}
                               <span className="text-white/90">
                                 {p.bookingId.slice(0, 8)}…
                               </span>
-                            ) : (
-                              <span className="text-white/40">N/A</span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-white/60 mt-0.5 font-mono">
-                            User:{" "}
-                            {p.userId ? (
+                            </div>
+                          )}
+                          {p.userId && (
+                            <div className="text-[11px] text-white/60 mt-0.5 font-mono">
+                              User:{" "}
                               <span className="text-white/80">
                                 {p.userId.slice(0, 8)}…
                               </span>
-                            ) : (
-                              <span className="text-white/40">Guest</span>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </td>
 
                         {/* Time */}
@@ -750,12 +746,12 @@ function RefundModal({
                 {displayAmount(payment)}
               </span>
             </div>
-            <div>
-              Phương thức:{" "}
-              <span className="font-semibold">
-                {displayMethod(payment) || "N/A"}
-              </span>
-            </div>
+            {displayMethod(payment) && (
+              <div>
+                Phương thức:{" "}
+                <span className="font-semibold">{displayMethod(payment)}</span>
+              </div>
+            )}
             {payment.bookingId && (
               <div className="font-mono text-[11px] text-white/60">
                 Booking: {payment.bookingId.slice(0, 12)}…
@@ -860,21 +856,27 @@ function BookingDetailModal({
                   Suất chiếu
                 </h3>
                 <div className="space-y-2 text-xs text-white/80">
-                  <div className="font-semibold text-white text-sm">
-                    {booking.movie?.title || "N/A"}
-                  </div>
-                  <div className="text-white/70">
-                    Rạp:{" "}
-                    <span className="font-semibold">
-                      {booking.cinema?.name || booking.cinemaName || "N/A"}
-                    </span>
-                  </div>
-                  <div className="text-white/70">
-                    Phòng:{" "}
-                    <span className="font-semibold">
-                      {booking.room?.roomNumber || booking.roomNumber || "N/A"}
-                    </span>
-                  </div>
+                  {booking.movie?.title && (
+                    <div className="font-semibold text-white text-sm">
+                      {booking.movie.title}
+                    </div>
+                  )}
+                  {(booking.cinema?.name || booking.cinemaName) && (
+                    <div className="text-white/70">
+                      Rạp:{" "}
+                      <span className="font-semibold">
+                        {booking.cinema?.name || booking.cinemaName}
+                      </span>
+                    </div>
+                  )}
+                  {(booking.room?.roomNumber || booking.roomNumber) && (
+                    <div className="text-white/70">
+                      Phòng:{" "}
+                      <span className="font-semibold">
+                        {booking.room?.roomNumber || booking.roomNumber}
+                      </span>
+                    </div>
+                  )}
                   <div className="text-white/70">
                     Thời gian:{" "}
                     <span className="font-semibold">
@@ -941,33 +943,44 @@ function BookingDetailModal({
               </section>
 
               {/* Customer */}
-              <section className="rounded-2xl border border-white/10 bg-white/5/5 p-4 md:p-5">
-                <h3 className="text-xs font-semibold tracking-[0.2em] uppercase text-white/70 mb-3">
-                  Thông tin khách hàng
-                </h3>
-                <div className="grid md:grid-cols-3 gap-3 text-xs text-white/80">
-                  <div>
-                    <div className="text-white/60">Tên</div>
-                    <div className="font-semibold">
-                      {booking.customerName || booking.user?.username || "N/A"}
-                    </div>
+              {(booking.customerName ||
+                booking.user?.username ||
+                booking.customerEmail ||
+                booking.user?.email ||
+                booking.customerPhone ||
+                booking.user?.phoneNumber) && (
+                <section className="rounded-2xl border border-white/10 bg-white/5/5 p-4 md:p-5">
+                  <h3 className="text-xs font-semibold tracking-[0.2em] uppercase text-white/70 mb-3">
+                    Thông tin khách hàng
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-3 text-xs text-white/80">
+                    {(booking.customerName || booking.user?.username) && (
+                      <div>
+                        <div className="text-white/60">Tên</div>
+                        <div className="font-semibold">
+                          {booking.customerName || booking.user?.username}
+                        </div>
+                      </div>
+                    )}
+                    {(booking.customerEmail || booking.user?.email) && (
+                      <div>
+                        <div className="text-white/60">Email</div>
+                        <div className="font-mono text-[11px]">
+                          {booking.customerEmail || booking.user?.email}
+                        </div>
+                      </div>
+                    )}
+                    {(booking.customerPhone || booking.user?.phoneNumber) && (
+                      <div>
+                        <div className="text-white/60">Số điện thoại</div>
+                        <div className="font-mono text-[11px]">
+                          {booking.customerPhone || booking.user?.phoneNumber}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <div className="text-white/60">Email</div>
-                    <div className="font-mono text-[11px]">
-                      {booking.customerEmail || booking.user?.email || "N/A"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-white/60">Số điện thoại</div>
-                    <div className="font-mono text-[11px]">
-                      {booking.customerPhone ||
-                        booking.user?.phoneNumber ||
-                        "N/A"}
-                    </div>
-                  </div>
-                </div>
-              </section>
+                </section>
+              )}
             </div>
           )}
         </div>
