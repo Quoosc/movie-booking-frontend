@@ -717,11 +717,19 @@ export default function AdminSnacksPage() {
                         <td className="py-3 pr-4 align-top">
                           <div className="flex items-start gap-3">
                             <div className="relative">
-                              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-[1px]">
-                                <div className="h-full w-full rounded-2xl bg-[#050012] flex items-center justify-center text-xs font-bold">
-                                  {(s.name || "S").charAt(0).toUpperCase()}
+                              {s.imageUrl ? (
+                                <img
+                                  src={s.imageUrl}
+                                  alt={s.name || "Snack"}
+                                  className="h-12 w-12 rounded-2xl object-cover border border-white/10 shadow-lg"
+                                />
+                              ) : (
+                                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-[1px]">
+                                  <div className="h-full w-full rounded-2xl bg-[#050012] flex items-center justify-center text-xs font-bold">
+                                    {(s.name || "S").charAt(0).toUpperCase()}
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                             </div>
                             <div>
                               <div className="text-xs font-semibold text-white line-clamp-1">

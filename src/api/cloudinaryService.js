@@ -23,16 +23,16 @@ function validateCloudinaryConfig() {
   if (!CLOUD_NAME) {
     throw new Error(
       "❌ Missing Vercel environment variable: VITE_CLOUDINARY_CLOUD_NAME\n" +
-      "Please add it in Vercel Dashboard → Project Settings → Environment Variables\n" +
-      "Then redeploy your application."
+        "Please add it in Vercel Dashboard → Project Settings → Environment Variables\n" +
+        "Then redeploy your application."
     );
   }
   if (!UPLOAD_PRESET) {
     throw new Error(
       "❌ Missing Vercel environment variable: VITE_CLOUDINARY_UPLOAD_PRESET\n" +
-      "Please add it in Vercel Dashboard → Project Settings → Environment Variables\n" +
-      "Ensure the preset is configured as 'unsigned' in Cloudinary settings.\n" +
-      "Then redeploy your application."
+        "Please add it in Vercel Dashboard → Project Settings → Environment Variables\n" +
+        "Ensure the preset is configured as 'unsigned' in Cloudinary settings.\n" +
+        "Then redeploy your application."
     );
   }
 }
@@ -40,7 +40,7 @@ function validateCloudinaryConfig() {
 export async function uploadPoster(file) {
   // Validate configuration before attempting upload
   validateCloudinaryConfig();
-  
+
   if (!file) throw new Error("No file provided");
 
   const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
@@ -67,11 +67,10 @@ export async function uploadPoster(file) {
   };
 }
 
-
 export async function uploadSnackImage(file) {
   // Validate configuration before attempting upload
   validateCloudinaryConfig();
-  
+
   if (!file) throw new Error("No file provided");
 
   const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
