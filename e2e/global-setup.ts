@@ -104,26 +104,15 @@ export default async function globalSetup(config: FullConfig) {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // ✅ đúng route trong AppRouter
   await page.goto(`${baseURL}/auth/login`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(1000);
 
-  // Email: placeholder VN / type=email
-  const emailInput = page
-    .locator('input[type="email"]')
-    .or(page.locator('input[placeholder*="email" i]'))
-    .or(page.locator('input[placeholder*="Địa chỉ email" i]'))
-    .first();
-
+  // Use name attribute selectors (matches TextInput component)
+  const emailInput = page.locator('input[name="email"]');
   await emailInput.waitFor({ state: "visible", timeout: 30_000 });
   await emailInput.fill(email);
 
-  // Password: có thể placeholder VN "Mật khẩu" hoặc type=password
-  const passInput = page
-    .locator('input[type="password"]')
-    .or(page.locator('input[placeholder*="mật" i]'))
-    .or(page.locator('input[placeholder*="pass" i]'))
-    .first();
-
+  const passInput = page.locator('input[name="password"]');
   await passInput.waitFor({ state: "visible", timeout: 30_000 });
   await passInput.fill(password);
 
@@ -132,14 +121,14 @@ export default async function globalSetup(config: FullConfig) {
     .or(page.locator('button[type="submit"]'))
     .first();
 
-  await Promise.all([
-    page.waitForLoadState("networkidle"),
-    submitBtn.click(),
-  ]);
+  await submitBtn.click();
+  await page.waitForLoadState("networkidle", { timeout: 30_000 });
 
-  // Nếu login thành công: thường sẽ redirect khỏi /auth/login
-  if ((page.url() || "").includes("/auth/login")) {
-    // chụp debug để xem thông báo lỗi login nếu có
+  // Wait a bit more for redirect
+  await page.waitForTimeout(2000);
+
+  // Check if login succeeded
+  if (page.url().includes("/auth/login")) {
     await page.screenshot({
       path: path.join(debugDir, `login-failed-${fileName.replace(".json", "")}.png`),
       fullPage: true,

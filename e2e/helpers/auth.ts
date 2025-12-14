@@ -81,3 +81,19 @@ export async function isLoggedIn(page: Page): Promise<boolean> {
 
   return isProtectedPage;
 }
+
+export async function ensureLoggedOut(page: Page) {
+  const loggedIn = await isLoggedIn(page);
+  if (loggedIn) {
+    await logoutUI(page);
+  }
+  
+  // Verify logged out
+  await page.waitForTimeout(500);
+  const stillLoggedIn = await isLoggedIn(page);
+  if (stillLoggedIn) {
+    // Clear cookies as fallback
+    await page.context().clearCookies();
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+  }
+}

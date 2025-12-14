@@ -1,4 +1,37 @@
-import { Page } from "@playwright/test";
+import { Page, test } from "@playwright/test";
+import { pickAnyMovieGoDetail, pickAnyShowtime } from "./ui";
+
+/**
+ * Ensure has movies and showtimes, or skip test
+ */
+export async function ensureHasMovieAndShowtimeOrSkip(
+  page: Page,
+  debugName: string = "test"
+): Promise<{ movieId: string; showtimeId: string } | null> {
+  // Check movies
+  const movieId = await pickAnyMovieGoDetail(page);
+  if (!movieId) {
+    await page.screenshot({
+      path: `e2e/.debug/${debugName}-no-movies.png`,
+      fullPage: true,
+    });
+    test.skip(true, "No movies available in test environment");
+    return null;
+  }
+
+  // Check showtimes
+  const showtimeId = await pickAnyShowtime(page);
+  if (!showtimeId) {
+    await page.screenshot({
+      path: `e2e/.debug/${debugName}-no-showtimes.png`,
+      fullPage: true,
+    });
+    test.skip(true, "No showtimes available for movie (checked 7 days)");
+    return null;
+  }
+
+  return { movieId, showtimeId };
+}
 
 /**
  * Kiểm tra xem trang có movie cards không
