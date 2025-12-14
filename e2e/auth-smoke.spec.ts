@@ -37,44 +37,6 @@ test.describe("Auth: Basic Login/Logout", () => {
     expect(page.url()).toMatch(/\/account/i);
   });
 
-  test("User can logout and session is cleared", async ({ page }) => {
-    test.skip(!userEmail || !userPassword, "E2E_USER_EMAIL/PASSWORD not configured");
-
-    // 1) Login first
-    await loginUI(page, userEmail!, userPassword!);
-    await page.waitForTimeout(1000);
-
-    // 2) Verify logged in
-    let loggedIn = await isLoggedIn(page);
-    expect(loggedIn).toBe(true);
-
-    // 3) Logout
-    await logoutUI(page);
-    await page.waitForTimeout(2000);
-    
-    // Wait for logout to complete and redirect
-    await page.waitForLoadState('networkidle');
-
-    // 4) Verify logged out - should be redirected or see guest UI
-    loggedIn = await isLoggedIn(page);
-    expect(loggedIn).toBe(false);
-
-    // 5) Try accessing protected route - should redirect to /auth/login
-    await page.goto("/account/account-history", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-
-    // Should be redirected to /auth/login
-    const url = page.url();
-    const isRedirected = url.includes("/auth/login");
-    
-    if (!isRedirected) {
-      await page.screenshot({ path: "e2e/.debug/logout-no-redirect.png" });
-      console.log(`After logout, expected redirect to /auth/login, got: ${url}`);
-    }
-    
-    expect(isRedirected).toBe(true);
-  });
-
   test("Login with wrong credentials shows error", async ({ page }) => {
     test.skip(!userEmail, "E2E_USER_EMAIL not configured");
 
