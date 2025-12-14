@@ -386,15 +386,21 @@ export default function AdminUsersPage() {
 
                         {/* Loyalty */}
                         <td className="py-3 px-4 align-top hidden lg:table-cell">
-                          <div className="text-xs text-emerald-300 font-semibold">
-                            {tierName.toUpperCase()}
-                          </div>
-                          <div className="text-[11px] text-white/60 mt-0.5">
-                            Điểm tích lũy:{" "}
-                            <span className="font-semibold text-emerald-200">
-                              {points}
-                            </span>
-                          </div>
+                          {role === "ADMIN" ? (
+                            <div className="text-xs text-white/40">—</div>
+                          ) : (
+                            <>
+                              <div className="text-xs text-emerald-300 font-semibold">
+                                {tierName.toUpperCase()}
+                              </div>
+                              <div className="text-[11px] text-white/60 mt-0.5">
+                                Điểm tích lũy:{" "}
+                                <span className="font-semibold text-emerald-200">
+                                  {points}
+                                </span>
+                              </div>
+                            </>
+                          )}
                         </td>
 
                         {/* Role select */}

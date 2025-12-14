@@ -2,20 +2,20 @@
   "cookies": [
     {
       "name": "refresh_token",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyQGdtYWlsLmNvbSIsImlhdCI6MTc2NTcxMDQzNywiZXhwIjoxNzY2MzE1MjM3fQ.nSdY9nVM-h8VmMw5dz_F9EeFx9ZqneNQf1hsZ1YVwdc",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJoaWV1aG9jY29kZUBnbWFpbC5jb20iLCJpYXQiOjE3NjU3MTU1MzEsImV4cCI6MTc2NjMyMDMzMX0.F71hsbbpE03ZQw3TvtBhGH7OTzmhrVFCnsaYilTsMQY",
       "domain": "localhost",
       "path": "/auth",
-      "expires": 1766315237.762626,
+      "expires": 1766320331.06717,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Strict"
     },
     {
       "name": "access_token",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX1VTRVIiXSwic3ViIjoiMkBnbWFpbC5jb20iLCJpYXQiOjE3NjU3MTA0MzcsImV4cCI6MTc2NTcxNDAzN30.36yzRheaSQRkJMkxYmsN0g7wrzQpqhG9wyQ6CWJCnmY",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX1VTRVIiXSwic3ViIjoiaGlldWhvY2NvZGVAZ21haWwuY29tIiwiaWF0IjoxNzY1NzE1NTMxLCJleHAiOjE3NjU3MTkxMzF9.90rtgNYF_7x3HZ1iaGHL8dsjIRljjW321lJfP50Bi8k",
       "domain": "localhost",
       "path": "/",
-      "expires": 1765714037.762099,
+      "expires": 1765719131.064909,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Strict"
@@ -27,7 +27,7 @@
       "localStorage": [
         {
           "name": "user",
-          "value": "{\"userId\":\"fbcfc4a3-a67f-43a0-b480-7c4df9d022c2\",\"username\":\"Pham Tran 2\",\"email\":\"2@gmail.com\",\"phoneNumber\":\"0123456789\",\"provider\":null,\"role\":\"USER\",\"avatarUrl\":null,\"avatarCloudinaryId\":null,\"loyaltyPoints\":0,\"membershipTierId\":null,\"createdAt\":\"2025-12-14T08:07:17.187039\",\"updatedAt\":\"2025-12-14T08:07:17.187076\",\"membershipTier\":{\"membershipTierId\":\"41b02994-6ea4-46db-a0d6-6eb0bc10c111\",\"name\":\"Bronze\",\"minPoints\":0,\"discountType\":\"PERCENTAGE\",\"discountValue\":0,\"description\":\"Default tier for new members\",\"isActive\":true,\"createdAt\":\"2025-12-14T07:56:34.921655\",\"updatedAt\":\"2025-12-14T07:56:34.921753\"}}"
+          "value": "{\"userId\":\"319ac1fd-fceb-4f2f-95fd-fa679c341475\",\"username\":\"Hieu Hoc Code\",\"email\":\"hieuhoccode@gmail.com\",\"phoneNumber\":\"0987654321\",\"provider\":null,\"role\":\"USER\",\"avatarUrl\":null,\"avatarCloudinaryId\":null,\"loyaltyPoints\":500,\"membershipTierId\":null,\"createdAt\":\"2025-12-14T12:18:59.590134\",\"updatedAt\":\"2025-12-14T12:18:59.590153\",\"membershipTier\":null}"
         }
       ]
     }

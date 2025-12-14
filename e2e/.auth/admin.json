@@ -2,20 +2,20 @@
   "cookies": [
     {
       "name": "refresh_token",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NjU3MTA0NDEsImV4cCI6MTc2NjMxNTI0MX0.bcohUG7jX3a1ULDtG4YTAFxI2agnPxNAcCdiob9Wuhc",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NjU3MTU1MzUsImV4cCI6MTc2NjMyMDMzNX0.DrXLxCJ4G3Pp_ouPzRfjeJ6KG6Y87T5B3ppaV9GLe8o",
       "domain": "localhost",
       "path": "/auth",
-      "expires": 1766315241.340263,
+      "expires": 1766320335.362969,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Strict"
     },
     {
       "name": "access_token",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NTcxMDQ0MSwiZXhwIjoxNzY1NzE0MDQxfQ.BcCpDQEELPc-2OhPpr_tMPZ-qvcfBiISolU0H9VJ1W0",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInN1YiI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NTcxNTUzNSwiZXhwIjoxNzY1NzE5MTM1fQ.5Mg18ugkZQRUEsu-1HGoxQlBNx_nZXHAxp5hzqTLAqQ",
       "domain": "localhost",
       "path": "/",
-      "expires": 1765714041.340171,
+      "expires": 1765719135.362877,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Strict"
@@ -27,7 +27,7 @@
       "localStorage": [
         {
           "name": "user",
-          "value": "{\"userId\":\"8cc5bceb-4d7d-4ccc-b5ff-e91b4f5279b5\",\"username\":\"Admin User\",\"email\":\"admin@gmail.com\",\"phoneNumber\":\"0901234567\",\"provider\":null,\"role\":\"ADMIN\",\"avatarUrl\":null,\"avatarCloudinaryId\":null,\"loyaltyPoints\":0,\"membershipTierId\":null,\"createdAt\":\"2025-12-14T07:56:36.770662\",\"updatedAt\":\"2025-12-14T07:56:36.770686\",\"membershipTier\":null}"
+          "value": "{\"userId\":\"49bd0659-9d45-447a-a418-46f62b852f73\",\"username\":\"Admin User\",\"email\":\"admin@gmail.com\",\"phoneNumber\":\"0901234567\",\"provider\":null,\"role\":\"ADMIN\",\"avatarUrl\":null,\"avatarCloudinaryId\":null,\"loyaltyPoints\":0,\"membershipTierId\":null,\"createdAt\":\"2025-12-14T12:18:59.520609\",\"updatedAt\":\"2025-12-14T12:18:59.52063\",\"membershipTier\":null}"
         }
       ]
     }
