@@ -56,7 +56,7 @@ export default function RegisterForm() {
         <AuthRedirect
           text="Bạn đã có tài khoản?"
           linkText="Đăng nhập ngay"
-          href="http://localhost:5173/auth/login"
+          href="/auth/login"
           textColor="text-[#bdbfff]/70"
           linkColor="text-[#7b5cff] hover:text-[#43e1ff]"
         />

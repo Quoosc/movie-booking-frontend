@@ -54,7 +54,7 @@ export default function LoginForm() {
         <AuthRedirect
           text="Bạn chưa có tài khoản?"
           linkText="Đăng ký ngay"
-          href="http://localhost:5173/auth/register"
+          href="/auth/register"
           textColor="text-[#bdbfff]/70"
           linkColor="text-[#7b5cff] hover:text-[#43e1ff]"
         />
