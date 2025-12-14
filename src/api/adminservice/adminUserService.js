@@ -56,9 +56,12 @@ export async function deleteUser(userId) {
 export async function updateUserRole(userId, role) {
   const res = await apiFetch(`/users/${userId}/role`, {
     method: "PATCH",
-    // swagger: body là plain JSON string
-    body: JSON.stringify({ role }),
+    headers: {
+      "Content-Type": "text/plain",
+    },
+    body: role, // "ADMIN" | "USER"
   });
+
   return res.data || res; // UserDataResponse
 }
 
