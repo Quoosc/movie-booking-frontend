@@ -130,6 +130,7 @@ export default function CheckoutSuccessPage() {
 
   const posterUrl =
     location.state?.movie?.posterUrl ||
+    booking?.PosterUrl ||
     booking?.posterUrl ||
     "https://via.placeholder.com/300x450?text=Movie";
 
