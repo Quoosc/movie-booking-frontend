@@ -361,7 +361,7 @@ export default function AccountHistoryPage() {
                           {/* Poster */}
                           <div className="w-full lg:w-48 h-64 lg:h-auto rounded-2xl overflow-hidden shadow-2xl">
                             <img
-                              src={b.moviePosterUrl || "/placeholder-movie.jpg"}
+                              src={b.PosterUrl || "/placeholder-movie.jpg"}
                               alt={b.movieTitle}
                               className="w-full h-full object-cover"
                             />
