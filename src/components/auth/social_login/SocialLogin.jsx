@@ -9,16 +9,18 @@ import { toast } from "react-toastify";
 export default function SocialLogin() {
   const handleGoogleLogin = () => {
     try {
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
-      const redirectUri = `${origin}/oauth2/success`;
+      // const origin =
+      //   typeof window !== "undefined" ? window.location.origin : "";
+      // const redirectUri = `${origin}/oauth2/success`;
 
       // const url = `${API_BASE_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
       //   redirectUri
       // )}`;
-      const url = `https://4-194-140-32.nip.io/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}`;
+      // const url = `https://4-194-140-32.nip.io/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
+      //   redirectUri
+      // )}`;
+      const url = `https://4-194-140-32.nip.io/oauth2/authorization/google`;
+      window.location.href = url;
 
       window.location.href = url;
     } catch (e) {
