@@ -22,6 +22,9 @@ export default function AdminPricingPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  const getBaseId = (b) =>
+    b?.priceBaseId || b?.id || b?.price_base_id || b?.priceBaseID;
+
   // ====== FORM STATE ======
   // Base price
   const [baseForm, setBaseForm] = useState({
@@ -125,7 +128,9 @@ export default function AdminPricingPage() {
   };
 
   const handleEditBase = (b) => {
-    setEditingBaseId(b.priceBaseId);
+    const id = getBaseId(b);
+    setEditingBaseId(id);
+
     setBaseForm({
       name: b.name || "",
       basePrice:
@@ -134,6 +139,14 @@ export default function AdminPricingPage() {
           : "",
       isActive: !!b.isActive,
     });
+
+    setError(null);
+    setSuccess(null);
+    setShowBaseForm(true);
+  };
+
+  const openCreateBase = () => {
+    resetBaseForm();
     setError(null);
     setSuccess(null);
     setShowBaseForm(true);
@@ -167,14 +180,25 @@ export default function AdminPricingPage() {
           name: baseForm.name.trim(),
           isActive: !!baseForm.isActive,
         };
+
         const res = await AdminPricingService.updatePriceBase(
           editingBaseId,
           payload
         );
         const updated = res?.data || res;
+
         setPriceBases((prev) =>
-          prev.map((b) => (b.priceBaseId === updated.priceBaseId ? updated : b))
+          prev.map((b) => {
+            const bid = b?.priceBaseId || b?.id || b?.price_base_id;
+            if (bid !== editingBaseId) return b;
+            return {
+              ...b,
+              ...updated,
+              priceBaseId: updated?.priceBaseId || bid,
+            };
+          })
         );
+
         setSuccess("Cập nhật base price thành công.");
       } else {
         // CREATE
@@ -182,13 +206,14 @@ export default function AdminPricingPage() {
           name: baseForm.name.trim(),
           basePrice: Number(baseForm.basePrice),
         };
+
         const res = await AdminPricingService.createPriceBase(payload);
         const created = res?.data || res;
+
         setPriceBases((prev) => [created, ...prev]);
         setSuccess("Thêm base price thành công.");
       }
 
-      // Auto-close on success for both CREATE and UPDATE
       resetBaseForm();
       setShowBaseForm(false);
     } catch (err) {
@@ -530,11 +555,19 @@ export default function AdminPricingPage() {
               <div className="flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowBaseForm((v) => !v)}
+                  onClick={() =>
+                    showBaseForm ? setShowBaseForm(false) : openCreateBase()
+                  }
                   className="rounded-2xl px-3 py-1.5 text-[11px] font-semibold uppercase bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 text-black hover:brightness-110 transition-all"
                 >
-                  {showBaseForm ? "Đóng" : "Thêm mới base price"}
+                  {showBaseForm ? "Đóng form" : "+ Thêm base price"}
                 </button>
+
+                {editingBaseId && (
+                  <span className="text-[11px] text-amber-200 border border-amber-400/40 bg-amber-500/10 px-3 py-1 rounded-2xl font-semibold uppercase tracking-[0.14em]">
+                    Đang sửa
+                  </span>
+                )}
               </div>
 
               {/* Base form (collapsible) */}
@@ -590,17 +623,30 @@ export default function AdminPricingPage() {
                     </label>
                   </div>
 
-                  <div className="pt-2 flex justify-end">
+                  <div className="pt-2 flex items-center justify-between gap-3">
+                    {editingBaseId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          resetBaseForm();
+                          setShowBaseForm(false);
+                        }}
+                        className="text-[11px] font-semibold tracking-[0.16em] uppercase rounded-2xl border border-white/20 px-3 py-2 text-white/70 hover:bg-white/10 transition-all"
+                      >
+                        Hủy chỉnh sửa
+                      </button>
+                    )}
+
                     <button
                       type="submit"
                       disabled={savingSection === "base"}
-                      className="rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 text-black shadow-md shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                      className="ml-auto rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 text-black shadow-md shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                     >
                       {savingSection === "base"
                         ? "Đang lưu..."
                         : editingBaseId
                         ? "Lưu thay đổi"
-                        : "Thêm mới base price"}
+                        : "Thêm mới"}
                     </button>
                   </div>
                 </form>

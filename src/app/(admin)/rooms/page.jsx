@@ -299,86 +299,78 @@ export default function AdminRoomsPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400" />
 
-        <div className="relative p-4 md:p-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="flex-1 flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="flex-1">
-              <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
-                Tìm kiếm
-              </label>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo rạp, loại phòng, số phòng..."
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-              />
+        <div className="relative p-4 md:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 items-end">
+            {/* LEFT: Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Filter by cinema */}
+              <div>
+                <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                  Rạp chiếu
+                </label>
+                <select
+                  value={cinemaFilter}
+                  onChange={(e) => setCinemaFilter(e.target.value)}
+                  className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+            border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+            shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+            focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+            transition-all"
+                >
+                  <option value="ALL">Tất cả rạp</option>
+                  {cinemas.map((c) => (
+                    <option key={c.cinemaId || c.id} value={c.cinemaId || c.id}>
+                      {c.name || c.cinemaName || "Rạp"}{" "}
+                      {(c.code || c.cinemaCode) &&
+                        `(${c.code || c.cinemaCode})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter by room type */}
+              <div>
+                <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                  Loại phòng
+                </label>
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
+            border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+            shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+            focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+            transition-all"
+                >
+                  <option value="ALL">Tất cả</option>
+                  {roomTypeOptions.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Filter by cinema */}
-            <div className="w-full sm:w-52">
-              <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
-                Rạp chiếu
-              </label>
-              <select
-                value={cinemaFilter}
-                onChange={(e) => setCinemaFilter(e.target.value)}
-                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
-                  border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
-                  shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
-                  focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
-                  transition-all"
+            {/* RIGHT: Actions */}
+            <div className="flex flex-col sm:flex-row gap-2 lg:justify-end">
+              <button
+                type="button"
+                onClick={fetchData}
+                disabled={loading}
+                className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
               >
-                <option value="ALL">Tất cả rạp</option>
-                {cinemas.map((c) => (
-                  <option key={c.cinemaId || c.id} value={c.cinemaId || c.id}>
-                    {c.name || c.cinemaName || "Rạp"}{" "}
-                    {(c.code || c.cinemaCode) && `(${c.code || c.cinemaCode})`}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {loading ? "Đang tải..." : "Làm mới"}
+              </button>
 
-            {/* Filter by room type */}
-            <div className="w-full sm:w-44">
-              <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
-                Loại phòng
-              </label>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
-                  border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
-                  shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
-                  focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
-                  transition-all"
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase border border-emerald-400/70 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/20 transition-all"
               >
-                <option value="ALL">Tất cả</option>
-                {roomTypeOptions.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
+                + Thêm phòng
+              </button>
             </div>
-          </div>
-
-          <div className="flex gap-2 justify-end md:self-end">
-            <button
-              type="button"
-              onClick={fetchData}
-              disabled={loading}
-              className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-            >
-              {loading ? "Đang tải..." : "Làm mới"}
-            </button>
-            <button
-              type="button"
-              onClick={openCreateModal}
-              className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase border border-emerald-400/70 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/20 transition-all"
-            >
-              + Thêm phòng
-            </button>
           </div>
         </div>
       </section>
