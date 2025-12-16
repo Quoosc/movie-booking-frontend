@@ -5,6 +5,8 @@ import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { getUserProfile, updateUserProfile } from "@/api/userService";
+import { uploadAvatar } from "@/api/cloudinaryService";
+import { toast } from "react-toastify";
 
 export default function AccountProfilePage() {
   const { currentUser, logout } = useAuth();
@@ -23,6 +25,8 @@ export default function AccountProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const avatarSrc = profile?.avatarUrl || form.avatarUrl || "";
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(form.avatarUrl || "");
 
   // Load profile
   useEffect(() => {
@@ -50,6 +54,10 @@ export default function AccountProfilePage() {
 
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    setAvatarPreview(form.avatarUrl || "");
+  }, [form.avatarUrl]);
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -99,6 +107,29 @@ export default function AccountProfilePage() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+// update ảnh 
+  const handlePickAvatar = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const localUrl = URL.createObjectURL(file);
+    setAvatarPreview(localUrl);
+
+    try {
+      setAvatarUploading(true);
+      const { avatarUrl } = await uploadAvatar(file);
+
+      setForm((prev) => ({ ...prev, avatarUrl }));
+      toast.success("Upload avatar thành công!");
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.message || "Upload avatar thất bại");
+      setAvatarPreview(form.avatarUrl || "");
+    } finally {
+      setAvatarUploading(false);
+      e.target.value = ""; 
     }
   };
 
@@ -426,19 +457,51 @@ export default function AccountProfilePage() {
                         />
                       </div>
 
-                      {/* Avatar URL */}
+                      {/* Avatar Upload */}
                       <div>
                         <label className="block text-xs font-bold text-white/70 mb-2">
-                          Link ảnh đại diện (tùy chọn)
+                          Ảnh đại diện
                         </label>
-                        <input
-                          type="url"
-                          value={form.avatarUrl}
-                          onChange={handleChange("avatarUrl")}
-                          placeholder="https://example.com/avatar.jpg"
-                          className="w-full rounded-2xl bg-white/5 border border-white/15 px-5 py-4 text-sm text-white placeholder-white/30
-                               focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all duration-300"
-                        />
+
+                        <div className="flex items-center gap-4">
+                          <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/15 bg-white/5">
+                            {avatarPreview ? (
+                              <img
+                                src={avatarPreview}
+                                alt="avatar"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-[11px] text-white/40">
+                                No Avatar
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handlePickAvatar}
+                              disabled={avatarUploading}
+                              className="block w-full text-sm text-white/70
+                   file:mr-4 file:rounded-xl file:border-0
+                   file:bg-white/10 file:px-4 file:py-2
+                   file:text-white file:font-semibold
+                   hover:file:bg-white/15"
+                            />
+                            <p className="mt-1 text-[11px] text-white/40">
+                              Chọn ảnh (jpg/png/webp)
+                              
+                            </p>
+
+                            {avatarUploading && (
+                              <p className="mt-2 text-[11px] text-yellow-200/80">
+                                Đang tải ảnh lên...
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       {/* Buttons */}
@@ -532,4 +595,3 @@ export default function AccountProfilePage() {
     </div>
   );
 }
- 

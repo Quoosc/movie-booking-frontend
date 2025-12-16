@@ -5,6 +5,8 @@ const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 const FOLDER = import.meta.env.VITE_CLOUDINARY_FOLDER || "movie-posters";
 const SNACKS_FOLDER = import.meta.env.VITE_CLOUDINARY_SNACKS_FOLDER || "snacks";
+const AVATAR_FOLDER = import.meta.env.VITE_CLOUDINARY_SNACKS_FOLDER || "avatars";
+
 
 // Debug logging (only in development)
 if (import.meta.env.DEV) {
@@ -94,5 +96,30 @@ export async function uploadSnackImage(file) {
   return {
     imageUrl: data.secure_url,
     imageCloudinaryId: data.public_id,
+  };
+}
+
+export async function uploadAvatar(file) {
+  validateCloudinaryConfig();
+  if (!file) throw new Error("No file provided");
+
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+  formData.append("folder", AVATAR_FOLDER);
+
+  const res = await fetch(url, { method: "POST", body: formData });
+  const data = await res.json();
+
+  if (!res.ok) {
+    console.error("Cloudinary upload error:", data);
+    throw new Error(data.error?.message || "Upload avatar thất bại");
+  }
+
+  return {
+    avatarUrl: data.secure_url,
+    avatarCloudinaryId: data.public_id,
   };
 }

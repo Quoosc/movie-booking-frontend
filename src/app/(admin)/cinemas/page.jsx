@@ -9,9 +9,6 @@ const EMPTY_FORM = {
   name: "",
   address: "",
   city: "",
-  district: "",
-  hotline: "",
-  description: "",
   isActive: true,
 };
 
@@ -84,13 +81,9 @@ export default function AdminCinemasPage() {
   const openEditModal = (cinema) => {
     setEditingCinema(cinema);
     setForm({
-      code: cinema.code || cinema.cinemaCode || "",
       name: cinema.name || cinema.cinemaName || "",
       address: cinema.address || "",
-      city: cinema.city || "",
-      district: cinema.district || "",
       hotline: cinema.hotline || cinema.phone || "",
-      description: cinema.description || "",
       isActive: cinema.isActive ?? cinema.active ?? true,
     });
     setError(null);
@@ -122,19 +115,14 @@ export default function AdminCinemasPage() {
     // const payload = {
     //   name: form.name.trim(),
     //   address: form.address.trim() || null,
-    //   city: form.city.trim() || null,
-    //   district: form.district.trim() || null,
     //   hotline: form.hotline.trim() || null,
-    //   description: form.description.trim() || null,
     //   isActive: !!form.isActive,
     // };
     const payload = {
-      // 🔹 BE hiện tại chỉ có 3 field này
       name: form.name.trim(),
       address: form.address.trim() || null,
       hotline: form.hotline.trim() || null,
-      // 🔸 Các field còn lại (code, city, district, description, isActive)
-      // chỉ dùng nội bộ FE / để dành sau này, KHÔNG gửi lên BE cho đúng swagger.
+      isActive: !!form.isActive,
     };
 
     try {
@@ -145,16 +133,21 @@ export default function AdminCinemasPage() {
       if (editingCinema) {
         const id = editingCinema.cinemaId || editingCinema.id;
         const updated = await AdminCinemaService.updateCinema(id, payload);
+        const updatedCinema = updated?.data ?? updated;
 
         setCinemas((prev) =>
           prev.map((c) =>
-            (c.cinemaId || c.id) === id ? { ...c, ...(updated || {}) } : c
+            (c.cinemaId || c.id) === id
+              ? { ...c, ...updatedCinema, isActive: payload.isActive }
+              : c
           )
         );
         setSuccess("Cập nhật rạp thành công.");
       } else {
         const created = await AdminCinemaService.createCinema(payload);
-        setCinemas((prev) => [created || payload, ...prev]);
+        const createdCinema = created?.data ?? created;
+
+        setCinemas((prev) => [createdCinema, ...prev]);
         setSuccess("Thêm rạp mới thành công.");
       }
 
@@ -202,10 +195,7 @@ export default function AdminCinemasPage() {
   const filteredCinemas = useMemo(() => {
     return cinemas.filter((c) => {
       const name = c.name || c.cinemaName || "";
-      const code = c.code || c.cinemaCode || "";
       const address = c.address || "";
-      const city = c.city || "";
-      const district = c.district || "";
       const hotline = c.hotline || c.phone || "";
       const isActive = c.isActive ?? c.active ?? true;
 
@@ -419,10 +409,7 @@ export default function AdminCinemasPage() {
                   filteredCinemas.map((c) => {
                     const id = c.cinemaId || c.id;
                     const name = c.name || c.cinemaName || "Không rõ tên";
-                    const code = c.code || c.cinemaCode || "—";
                     const address = c.address || "";
-                    const city = c.city || "";
-                    const district = c.district || "";
                     const hotline = c.hotline || c.phone || "";
                     const isActive = c.isActive ?? c.active ?? true;
 
@@ -443,12 +430,6 @@ export default function AdminCinemasPage() {
                               <div className="text-xs font-semibold text-white line-clamp-1">
                                 {name}
                               </div>
-                              {/* <div className="text-[11px] text-white/50 mt-0.5">
-                                Mã rạp:{" "}
-                                <span className="font-mono text-[10px]">
-                                  {code}
-                                </span>
-                              </div> */}
                             </div>
                           </div>
                         </td>
@@ -461,11 +442,6 @@ export default function AdminCinemasPage() {
                                 Chưa cập nhật
                               </span>
                             )}
-                          </div>
-                          <div className="text-[11px] text-white/60 mt-0.5">
-                            {district && city
-                              ? `${district}, ${city}`
-                              : city || district || ""}
                           </div>
                         </td>
 
@@ -619,18 +595,7 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
                   placeholder="CinesVerse Vincom Center..."
                 />
               </div>
-              <div>
-                {/* <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
-                  Mã rạp (code) *
-                </label>
-                <input
-                  type="text"
-                  value={form.code}
-                  onChange={onChange("code")}
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                  placeholder="CNS_VINCOM_Q1"
-                /> */}
-              </div>
+              <div></div>
             </div>
 
             <div>
@@ -644,33 +609,6 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
                 className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                 placeholder="Số nhà, đường, khu vực..."
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
-                  Quận / Huyện
-                </label>
-                <input
-                  type="text"
-                  value={form.district}
-                  onChange={onChange("district")}
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                  placeholder="Quận 1, Quận 7..."
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
-                  Thành phố
-                </label>
-                <input
-                  type="text"
-                  value={form.city}
-                  onChange={onChange("city")}
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                  placeholder="TP. Hồ Chí Minh..."
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -697,19 +635,6 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
                   <span>Đang hoạt động</span>
                 </label>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
-                Mô tả
-              </label>
-              <textarea
-                rows={3}
-                value={form.description}
-                onChange={onChange("description")}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all resize-none"
-                placeholder="Mô tả ngắn về rạp, tiện ích, vị trí..."
-              />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-4">

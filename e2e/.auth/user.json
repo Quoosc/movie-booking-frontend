@@ -2,20 +2,20 @@
   "cookies": [
     {
       "name": "refresh_token",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJoaWV1aG9jY29kZUBnbWFpbC5jb20iLCJpYXQiOjE3NjU3MTU1MzEsImV4cCI6MTc2NjMyMDMzMX0.F71hsbbpE03ZQw3TvtBhGH7OTzmhrVFCnsaYilTsMQY",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJoaWV1aG9jY29kZUBnbWFpbC5jb20iLCJpYXQiOjE3NjU3NjE2NDUsImV4cCI6MTc2NjM2NjQ0NX0.FLahNEZQbMOfJzyvxAnJ8YbxG8XavcLjqhv8jnVTHL8",
       "domain": "localhost",
       "path": "/auth",
-      "expires": 1766320331.06717,
+      "expires": 1766366445.116913,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Strict"
     },
     {
       "name": "access_token",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX1VTRVIiXSwic3ViIjoiaGlldWhvY2NvZGVAZ21haWwuY29tIiwiaWF0IjoxNzY1NzE1NTMxLCJleHAiOjE3NjU3MTkxMzF9.90rtgNYF_7x3HZ1iaGHL8dsjIRljjW321lJfP50Bi8k",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX1VTRVIiXSwic3ViIjoiaGlldWhvY2NvZGVAZ21haWwuY29tIiwiaWF0IjoxNzY1NzYxNjQ1LCJleHAiOjE3NjU3NjUyNDV9.ZKYWsux8E6Si2BZ4WnLZwUoAt4fn_rvP9tDlQ27mn9Y",
       "domain": "localhost",
       "path": "/",
-      "expires": 1765719131.064909,
+      "expires": 1765765245.113703,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Strict"
@@ -27,7 +27,7 @@
       "localStorage": [
         {
           "name": "user",
-          "value": "{\"userId\":\"319ac1fd-fceb-4f2f-95fd-fa679c341475\",\"username\":\"Hieu Hoc Code\",\"email\":\"hieuhoccode@gmail.com\",\"phoneNumber\":\"0987654321\",\"provider\":null,\"role\":\"USER\",\"avatarUrl\":null,\"avatarCloudinaryId\":null,\"loyaltyPoints\":500,\"membershipTierId\":null,\"createdAt\":\"2025-12-14T12:18:59.590134\",\"updatedAt\":\"2025-12-14T12:18:59.590153\",\"membershipTier\":null}"
+          "value": "{\"userId\":\"41420e20-8cd6-4187-9211-041ed725a08d\",\"username\":\"Hieu Hoc Code\",\"email\":\"hieuhoccode@gmail.com\",\"phoneNumber\":\"0987654321\",\"provider\":null,\"role\":\"USER\",\"avatarUrl\":null,\"avatarCloudinaryId\":null,\"loyaltyPoints\":500,\"membershipTierId\":null,\"createdAt\":\"2025-12-15T01:05:09.36862\",\"updatedAt\":\"2025-12-15T01:05:09.368644\",\"membershipTier\":null}"
         }
       ]
     }
