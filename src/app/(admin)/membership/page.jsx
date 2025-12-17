@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminUserService } from "@/api/adminservice";
+import { toast } from "react-toastify";
+
 const DISCOUNT_TYPE_OPTIONS = [
   { value: "PERCENTAGE", label: "Phần trăm (%)" },
   { value: "FIXED_AMOUNT", label: "Số tiền (VND)" },
@@ -65,9 +67,11 @@ export default function AdminMembershipPage() {
       setTiers(list);
     } catch (err) {
       console.error("getMembershipTiers error:", err);
-      setError(
-        err?.message || "Không tải được danh sách hạng thành viên (membership)."
-      );
+      const msg =
+        err?.message ||
+        "Không tải được danh sách hạng thành viên (membership).";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -153,6 +157,7 @@ export default function AdminMembershipPage() {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
+      toast.error(validationError);
       return;
     }
 
@@ -182,22 +187,23 @@ export default function AdminMembershipPage() {
               : t
           )
         );
-        setSuccess("Cập nhật hạng thành viên thành công.");
+        toast.success("Cập nhật hạng thành viên thành công.");
       } else {
         // ✅ createMembershipTier từ AdminUserService
         const created = await AdminUserService.createMembershipTier(payload);
         const createdTier = created?.data || created;
         setTiers((prev) => [...prev, createdTier]);
-        setSuccess("Tạo hạng thành viên mới thành công.");
+        toast.success("Tạo hạng thành viên mới thành công.");
       }
 
       setIsFormOpen(false);
       setTimeout(() => resetForm(), 200);
     } catch (err) {
       console.error("save membership tier error:", err);
-      setError(
-        err?.message || "Lưu hạng thành viên thất bại. Vui lòng thử lại."
-      );
+      const msg =
+        err?.message || "Lưu hạng thành viên thất bại. Vui lòng thử lại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -215,10 +221,12 @@ export default function AdminMembershipPage() {
         setTiers((prev) =>
           prev.filter((t) => t.membershipTierId !== tier.membershipTierId)
         );
-        setSuccess("Xóa hạng thành viên thành công.");
+        toast.success("Xóa hạng thành viên thành công.");
       } catch (err) {
         console.error("delete membership tier error:", err);
-        setError(err?.message || "Xóa hạng thành viên thất bại.");
+        const msg = err?.message || "Xóa hạng thành viên thất bại.";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
