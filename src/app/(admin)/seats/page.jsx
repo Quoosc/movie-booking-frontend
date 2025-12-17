@@ -1,7 +1,7 @@
 // src/app/(admin)/seats/page.jsx
 import { useEffect, useMemo, useState } from "react";
 import { AdminCinemaService } from "@/api/adminservice";
-
+import { toast } from "react-toastify";
 const SEAT_TYPES = ["NORMAL", "VIP", "COUPLE"];
 
 // Helper parse "A,B,C" → ["A","B","C"]
@@ -15,6 +15,9 @@ export default function AdminSeatsPage() {
   const [cinemas, setCinemas] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [seats, setSeats] = useState([]);
+
+  const toastErr = (err, fallback) => toast.error(err?.message || fallback);
+  const toastOk = (msg) => toast.success(msg);
 
   const [selectedCinemaId, setSelectedCinemaId] = useState("");
   const [selectedRoomId, setSelectedRoomId] = useState("");
@@ -93,10 +96,11 @@ export default function AdminSeatsPage() {
       }
     } catch (err) {
       console.error("Load cinemas/rooms error:", err);
-      setError(
+      const msg =
         err?.message ||
-          "Không tải được danh sách rạp và phòng chiếu. Vui lòng thử lại."
-      );
+        "Không tải được danh sách rạp và phòng chiếu. Vui lòng thử lại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoadingInit(false);
     }
@@ -165,7 +169,9 @@ export default function AdminSeatsPage() {
       setFocusedSeatId(null);
     } catch (err) {
       console.error("Load seats error:", err);
-      setError(err?.message || "Không tải được danh sách ghế cho phòng này.");
+      const msg = err?.message || "Không tải được danh sách ghế cho phòng này.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoadingSeats(false);
     }
@@ -239,14 +245,15 @@ export default function AdminSeatsPage() {
       };
 
       await AdminCinemaService.createSeat(payload);
+      toast.success("Thêm ghế mới thành công.");
 
-      setSuccess("Thêm ghế mới thành công.");
       setCreateForm({ rowLabel: "", seatNumber: "", seatType: "NORMAL" });
-
       await loadSeatsByRoom(selectedRoomId);
     } catch (err) {
       console.error("Create seat error:", err);
-      setError(err?.message || "Thêm ghế thất bại.");
+      const msg = err?.message || "Thêm ghế thất bại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setCreatingSeat(false);
     }
@@ -323,14 +330,15 @@ export default function AdminSeatsPage() {
       setPreviewLayout(preview);
       setFocusedSeatId(null);
 
-      setSuccess(
-        "Đã preview sơ đồ ghế. Hàng VIP / COUPLE sẽ áp dụng đúng khi bấm 'Sinh sơ đồ ghế'."
+      toast.success(
+        "Preview sơ đồ ghế thành công."
       );
     } catch (err) {
       console.error("Preview seat layout error:", err);
-      setError(
-        err?.message || "Không preview được sơ đồ ghế. Vui lòng thử lại."
-      );
+      const msg =
+        err?.message || "Không preview được sơ đồ ghế. Vui lòng thử lại.";
+      setError(msg);
+      toast.error(msg);
       setPreviewLayout([]);
     } finally {
       setPreviewingLayout(false);
@@ -373,7 +381,7 @@ export default function AdminSeatsPage() {
       const result = await AdminCinemaService.generateSeats(payload);
       const total = result?.totalSeatsCreated ?? 0;
 
-      setSuccess(
+      toast.success(
         `Đã sinh sơ đồ ghế thành công. Tổng số ghế tạo: ${total || "N/A"}.`
       );
 
@@ -384,7 +392,9 @@ export default function AdminSeatsPage() {
       await loadSeatsByRoom(selectedRoomId);
     } catch (err) {
       console.error("Generate seats error:", err);
-      setError(err?.message || "Sinh sơ đồ ghế thất bại.");
+      const msg = err?.message || "Sinh sơ đồ ghế thất bại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setGeneratingSeats(false);
     }
@@ -423,10 +433,12 @@ export default function AdminSeatsPage() {
         },
       }));
 
-      setSuccess("Cập nhật ghế thành công.");
+      toast.success("Cập nhật ghế thành công.");
     } catch (err) {
       console.error("Update seat error:", err);
-      setError(err?.message || "Cập nhật ghế thất bại.");
+      const msg = err?.message || "Cập nhật ghế thất bại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSavingSeatId(null);
     }
@@ -444,7 +456,7 @@ export default function AdminSeatsPage() {
 
         // Nếu BE cho xóa được thì remove ở FE
         setSeats((prev) => prev.filter((s) => s.seatId !== seatId));
-        setSuccess("Xóa ghế thành công.");
+        toast.success("Xóa ghế thành công.");
       } catch (err) {
         console.error("Delete seat error:", err);
         const msg = err?.message || "";
@@ -452,12 +464,15 @@ export default function AdminSeatsPage() {
         if (
           msg.includes("Cannot delete seat that is being used in showtimes")
         ) {
-          setError(
+          const friendly =
             "Không thể xoá ghế này vì đang được sử dụng trong các suất chiếu.\n" +
-              "Bạn phải xoá / chỉnh sửa các suất chiếu đang dùng ghế này trước (hoặc chỉ sửa thông tin ghế, không xoá)."
-          );
+            "Bạn phải xoá / chỉnh sửa các suất chiếu đang dùng ghế này trước (hoặc chỉ sửa thông tin ghế, không xoá).";
+          setError(friendly);
+          toast.error("Không thể xoá: ghế đang được dùng trong suất chiếu.");
         } else {
-          setError(msg || "Xóa ghế thất bại.");
+          const fallback = msg || "Xóa ghế thất bại.";
+          setError(fallback);
+          toast.error(fallback);
         }
       } finally {
         setDeletingSeatId(null);

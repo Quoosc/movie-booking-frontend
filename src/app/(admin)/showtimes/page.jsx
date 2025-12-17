@@ -1,9 +1,10 @@
 // src/app/(admin)/showtimes/page.jsx
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import {
   AdminMovieService,
   AdminCinemaService,
-  AdminPricingService, // ⬅️ THÊM
+  AdminPricingService,
 } from "@/api/adminservice";
 
 const STATUS_FILTERS = ["ALL", "UPCOMING", "PAST"];
@@ -14,7 +15,7 @@ export default function AdminShowtimesPage() {
   const [cinemas, setCinemas] = useState([]);
   const [rooms, setRooms] = useState([]);
 
-  // ⬅️ THÊM: ticket types cho admin
+  // ticket types
   const [adminTicketTypes, setAdminTicketTypes] = useState([]);
   const [selectedTicketTypeIds, setSelectedTicketTypeIds] = useState([]);
 
@@ -41,8 +42,28 @@ export default function AdminShowtimesPage() {
     cinemaId: "",
     roomId: "",
     format: "",
-    startDateTime: "",
+    startDateTime: "", // datetime-local
   });
+
+  // confirm modal (delete)
+  const [confirm, setConfirm] = useState({
+    open: false,
+    title: "Lưu ý!",
+    message: "",
+    onConfirm: null,
+  });
+
+  const showConfirm = (message, title = "Lưu ý!", onConfirm = null) => {
+    setConfirm({
+      open: true,
+      title: title || "Lưu ý!",
+      message: message || "Bạn chắc chắn muốn thực hiện thao tác này?",
+      onConfirm,
+    });
+  };
+
+  const closeConfirm = () =>
+    setConfirm((prev) => ({ ...prev, open: false, onConfirm: null }));
 
   /* ===================== LOAD DATA ===================== */
 
@@ -58,13 +79,13 @@ export default function AdminShowtimesPage() {
           AdminMovieService.getMovies({}),
           AdminCinemaService.getCinemas(),
           AdminCinemaService.getRooms(),
-          AdminPricingService.getAdminTicketTypes(), // ⬅️ THÊM
+          AdminPricingService.getAdminTicketTypes(),
         ]);
 
-      setShowtimes(Array.isArray(stRes) ? stRes : []);
-      setMovies(Array.isArray(moviesRes) ? moviesRes : []);
-      setCinemas(Array.isArray(cinemasRes) ? cinemasRes : []);
-      setRooms(Array.isArray(roomsRes) ? roomsRes : []);
+      setShowtimes(Array.isArray(stRes) ? stRes : stRes?.data || []);
+      setMovies(Array.isArray(moviesRes) ? moviesRes : moviesRes?.data || []);
+      setCinemas(Array.isArray(cinemasRes) ? cinemasRes : cinemasRes?.data || []);
+      setRooms(Array.isArray(roomsRes) ? roomsRes : roomsRes?.data || []);
 
       const tt = Array.isArray(ticketTypesRes?.data)
         ? ticketTypesRes.data
@@ -75,6 +96,7 @@ export default function AdminShowtimesPage() {
     } catch (err) {
       console.error("Load showtimes error:", err);
       setError(err?.message || "Không tải được danh sách suất chiếu.");
+      toast.error(err?.message || "Không tải được danh sách suất chiếu.");
     } finally {
       setLoading(false);
     }
@@ -110,7 +132,7 @@ export default function AdminShowtimesPage() {
     return map;
   }, [movies]);
 
-  // ⬅️ THÊM: chỉ lấy ticket type đang active để chọn cho showtime
+  // ticket type active
   const activeTicketTypes = useMemo(
     () => adminTicketTypes.filter((t) => t.active !== false),
     [adminTicketTypes]
@@ -126,31 +148,37 @@ export default function AdminShowtimesPage() {
     const yyyy = d.getFullYear();
     const hh = String(d.getHours()).padStart(2, "0");
     const min = String(d.getMinutes()).padStart(2, "0");
-
     const weekday = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][d.getDay()];
 
     return `${weekday}, ${dd}/${mm}/${yyyy} • ${hh}:${min}`;
   };
 
+  // ISO (UTC) -> datetime-local (LOCAL)
   const toDateTimeInputValue = (isoString) => {
     if (!isoString) return "";
     const d = new Date(isoString);
     if (Number.isNaN(d.getTime())) return "";
+
     const pad = (n) => String(n).padStart(2, "0");
     const yyyy = d.getFullYear();
     const mm = pad(d.getMonth() + 1);
     const dd = pad(d.getDate());
     const hh = pad(d.getHours());
     const min = pad(d.getMinutes());
+
     return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
   };
 
-  const fromDateTimeInputToIso = (value) => {
+  // ✅ FIX +7h: datetime-local (LOCAL) -> ISO UTC "....Z"
+  const fromLocalDateTimeInputToUtcIso = (value) => {
     if (!value) return null;
-    if (value.length === 16) {
-      return `${value}:00`; // "2025-12-01T20:00:00"
-    }
-    return value;
+    // value: "YYYY-MM-DDTHH:mm"
+    const d = new Date(value); // parse as local time
+    if (Number.isNaN(d.getTime())) return null;
+
+    // toISOString() => UTC with Z
+    // trim milliseconds cho gọn (optional)
+    return d.toISOString().replace(/\.\d{3}Z$/, "Z");
   };
 
   const isUpcoming = (isoString) => {
@@ -169,29 +197,24 @@ export default function AdminShowtimesPage() {
       const room = st.room || roomMap[st.roomId];
       const cinema = cinemaMap[room?.cinemaId];
 
-      // Filter by movie
       if (movieFilter !== "ALL") {
         if ((movie?.movieId || st.movieId) !== movieFilter) return false;
       }
 
-      // Filter by cinema
       if (cinemaFilter !== "ALL") {
         if (!cinema || cinema.cinemaId !== cinemaFilter) return false;
       }
 
-      // Filter by room
       if (roomFilter !== "ALL") {
         if (!room || room.roomId !== roomFilter) return false;
       }
 
-      // Status filter: upcoming / past
       if (statusFilter !== "ALL") {
         const up = isUpcoming(st.startTime);
         if (statusFilter === "UPCOMING" && !up) return false;
         if (statusFilter === "PAST" && up) return false;
       }
 
-      // Date range
       if (st.startTime) {
         const start = new Date(st.startTime);
         if (!Number.isNaN(start.getTime())) {
@@ -246,7 +269,6 @@ export default function AdminShowtimesPage() {
       startDateTime: "",
     });
 
-    // ⬅️ MẶC ĐỊNH: chọn tất cả ticket type đang active cho suất mới
     setSelectedTicketTypeIds(activeTicketTypes.map((t) => t.ticketTypeId));
 
     setError(null);
@@ -254,7 +276,6 @@ export default function AdminShowtimesPage() {
     setModalOpen(true);
   };
 
-  // ⬅️ async để load ticket types đã gán cho showtime
   const openEditModal = async (st) => {
     const movieId = st.movie?.movieId || st.movieId || "";
     const roomId = st.room?.roomId || st.roomId || "";
@@ -274,16 +295,14 @@ export default function AdminShowtimesPage() {
     setModalOpen(true);
 
     try {
-      const res = await AdminPricingService.getShowtimeTicketTypes(
-        st.showtimeId
-      );
+      const res = await AdminPricingService.getShowtimeTicketTypes(st.showtimeId);
       const raw = res?.data || res;
       const ids = raw?.assignedTicketTypeIds || [];
       setSelectedTicketTypeIds(Array.isArray(ids) ? ids : []);
     } catch (err) {
       console.error("Load showtime ticket types error:", err);
-      // nếu lỗi thì cho empty (admin tự chọn lại)
       setSelectedTicketTypeIds([]);
+      toast.error("Không tải được ticket types của suất chiếu.");
     }
   };
 
@@ -291,6 +310,8 @@ export default function AdminShowtimesPage() {
     if (saving) return;
     setModalOpen(false);
     setEditingShowtime(null);
+    setError(null);
+    setSuccess(null);
   };
 
   const handleFormChange = (field) => (e) => {
@@ -298,13 +319,10 @@ export default function AdminShowtimesPage() {
     setForm((prev) => ({
       ...prev,
       [field]: value,
-      ...(field === "cinemaId"
-        ? { roomId: "" } // reset room nếu đổi cinema
-        : {}),
+      ...(field === "cinemaId" ? { roomId: "" } : {}),
     }));
   };
 
-  // ⬅️ toggle checkbox ticket type
   const handleToggleTicketType = (ticketTypeId) => {
     setSelectedTicketTypeIds((prev) =>
       prev.includes(ticketTypeId)
@@ -318,21 +336,24 @@ export default function AdminShowtimesPage() {
     setError(null);
     setSuccess(null);
 
-    const { movieId, cinemaId, roomId, format, startDateTime } = form;
+    const { movieId, roomId, format, startDateTime } = form;
 
     if (!movieId || !roomId || !format || !startDateTime) {
       setError("Vui lòng nhập đầy đủ Movie, Cinema/Room, Format và Thời gian.");
+      toast.error("Vui lòng nhập đủ thông tin.");
       return;
     }
 
     if (!selectedTicketTypeIds.length) {
       setError("Vui lòng chọn ít nhất một loại vé cho suất chiếu.");
+      toast.error("Vui lòng chọn ít nhất 1 loại vé.");
       return;
     }
 
-    const startTimeIso = fromDateTimeInputToIso(startDateTime);
+    const startTimeIso = fromLocalDateTimeInputToUtcIso(startDateTime);
     if (!startTimeIso) {
       setError("Thời gian suất chiếu không hợp lệ.");
+      toast.error("Thời gian không hợp lệ.");
       return;
     }
 
@@ -343,26 +364,26 @@ export default function AdminShowtimesPage() {
       startTime: startTimeIso,
     };
 
+   
+
     try {
       setSaving(true);
 
       let targetShowtimeId = null;
 
       if (editingShowtime) {
-        await AdminMovieService.updateShowtime(
-          editingShowtime.showtimeId,
-          payload
-        );
+        await AdminMovieService.updateShowtime(editingShowtime.showtimeId, payload);
         targetShowtimeId = editingShowtime.showtimeId;
-        setSuccess("Cập nhật suất chiếu thành công.");
+       
+        toast.success("Cập nhật suất chiếu thành công!");
       } else {
         const created = await AdminMovieService.createShowtime(payload);
         const raw = created?.data || created;
         targetShowtimeId = raw?.showtimeId;
-        setSuccess("Tạo suất chiếu mới thành công.");
+  
+        toast.success("Tạo suất chiếu mới thành công!");
       }
 
-      // ⬅️ Sau khi có showtimeId thì gán ticket types
       if (targetShowtimeId) {
         await AdminPricingService.replaceShowtimeTicketTypes(
           targetShowtimeId,
@@ -376,27 +397,33 @@ export default function AdminShowtimesPage() {
     } catch (err) {
       console.error("Save showtime error:", err);
       setError(err?.message || "Lưu suất chiếu thất bại.");
+      toast.error(err?.message || "Lưu suất chiếu thất bại.");
     } finally {
       setSaving(false);
+      toast.dismiss(toastId);
     }
   };
 
-  const handleDeleteShowtime = async (showtimeId) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa suất chiếu này?")) return;
-    try {
-      setDeletingId(showtimeId);
-      setError(null);
-      setSuccess(null);
+  const handleDeleteShowtime = (showtimeId) => {
+    showConfirm("Bạn chắc chắn muốn xóa suất chiếu này?", "Lưu ý!", async () => {
+      try {
+        setDeletingId(showtimeId);
+        setError(null);
+        setSuccess(null);
 
-      await AdminMovieService.deleteShowtime(showtimeId);
-      setShowtimes((prev) => prev.filter((st) => st.showtimeId !== showtimeId));
-      setSuccess("Xóa suất chiếu thành công.");
-    } catch (err) {
-      console.error("Delete showtime error:", err);
-      setError(err?.message || "Xóa suất chiếu thất bại.");
-    } finally {
-      setDeletingId(null);
-    }
+        await AdminMovieService.deleteShowtime(showtimeId);
+        setShowtimes((prev) => prev.filter((st) => st.showtimeId !== showtimeId));
+        toast.success("Xóa suất chiếu thành công!");
+      } catch (err) {
+        console.error("Delete showtime error:", err);
+        setError(err?.message || "Xóa suất chiếu thất bại.");
+        toast.error(err?.message || "Xóa suất chiếu thất bại.");
+      } finally {
+        setDeletingId(null);
+        closeConfirm();
+        toast.dismiss(toastId);
+      }
+    });
   };
 
   /* ===================== OPTIONS ===================== */
@@ -545,7 +572,7 @@ export default function AdminShowtimesPage() {
               </select>
             </div>
 
-            {/* Phòng chiếu */}
+            {/* Room */}
             <div className="md:col-span-4 lg:col-span-4">
               <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
                 Phòng chiếu
@@ -633,9 +660,8 @@ export default function AdminShowtimesPage() {
             </h2>
             <p className="text-[11px] text-white/40">
               Hiển thị{" "}
-              <span className="font-semibold">{filteredShowtimes.length}</span>{" "}
-              / <span className="font-semibold">{showtimes.length}</span> suất
-              chiếu
+              <span className="font-semibold">{filteredShowtimes.length}</span> /{" "}
+              <span className="font-semibold">{showtimes.length}</span> suất chiếu
             </p>
           </div>
 
@@ -657,19 +683,13 @@ export default function AdminShowtimesPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
+                    <td colSpan={5} className="py-8 text-center text-white/60 text-sm">
                       Đang tải dữ liệu...
                     </td>
                   </tr>
                 ) : filteredShowtimes.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
+                    <td colSpan={5} className="py-8 text-center text-white/60 text-sm">
                       Không tìm thấy suất chiếu nào khớp với bộ lọc.
                     </td>
                   </tr>
@@ -734,9 +754,7 @@ export default function AdminShowtimesPage() {
                           </div>
                           <div className="text-[11px] text-white/60 mt-0.5">
                             {room
-                              ? `Phòng ${room.roomNumber} • ${
-                                  room.roomType || "Standard"
-                                }`
+                              ? `Phòng ${room.roomNumber} • ${room.roomType || "Standard"}`
                               : "—"}
                           </div>
                         </td>
@@ -776,18 +794,14 @@ export default function AdminShowtimesPage() {
                             >
                               Sửa
                             </button>
-                            {/* <button
+                            <button
                               type="button"
-                              onClick={() =>
-                                handleDeleteShowtime(st.showtimeId)
-                              }
+                              onClick={() => handleDeleteShowtime(st.showtimeId)}
                               disabled={deletingId === st.showtimeId}
                               className="rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase border border-red-500/60 bg-red-500/10 text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                             >
-                              {deletingId === st.showtimeId
-                                ? "Đang xóa..."
-                                : "Xóa"}
-                            </button> */}
+                              {deletingId === st.showtimeId ? "Đang xóa..." : "Xóa"}
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -800,6 +814,7 @@ export default function AdminShowtimesPage() {
         </div>
       </section>
 
+      {/* Create/Edit modal */}
       {modalOpen && (
         <ModalWrapper onClose={closeModal}>
           <div className="w-full max-w-xl rounded-3xl bg-gradient-to-br from-[#1a0033]/95 via-[#060013] to-black border border-white/15 shadow-2xl relative overflow-hidden">
@@ -810,9 +825,7 @@ export default function AdminShowtimesPage() {
               <div className="flex items-start justify-between mb-5">
                 <div>
                   <h3 className="text-base md:text-lg font-black tracking-[0.18em] uppercase bg-gradient-to-r from-cyan-300 to-pink-300 bg-clip-text text-transparent">
-                    {editingShowtime
-                      ? "Chỉnh sửa suất chiếu"
-                      : "Thêm suất chiếu mới"}
+                    {editingShowtime ? "Chỉnh sửa suất chiếu" : "Thêm suất chiếu mới"}
                   </h3>
                   <p className="mt-2 text-xs text-white/60 max-w-md">
                     Chọn phim, rạp, phòng và thời gian bắt đầu cho suất chiếu.
@@ -834,7 +847,7 @@ export default function AdminShowtimesPage() {
               )}
 
               <form onSubmit={handleSubmitForm} className="space-y-4">
-                {/* movie select trong modal */}
+                {/* movie */}
                 <div>
                   <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
                     Phim
@@ -880,6 +893,7 @@ export default function AdminShowtimesPage() {
                       ))}
                     </select>
                   </div>
+
                   <div>
                     <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
                       Phòng chiếu
@@ -936,14 +950,13 @@ export default function AdminShowtimesPage() {
                   </div>
                 </div>
 
-                {/* ================== BLOCK MỚI: CHỌN LOẠI VÉ ================== */}
+                {/* ticket types */}
                 <div className="pt-1">
                   <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
                     Loại vé áp dụng cho suất chiếu
                   </label>
                   <p className="text-[11px] text-white/50 mb-2">
-                    Chỉ những loại vé được tick mới được phép sử dụng ở bước đặt
-                    vé & khóa ghế.
+                    Chỉ những loại vé được tick mới được phép sử dụng ở bước đặt vé & khóa ghế.
                   </p>
 
                   {activeTicketTypes.length === 0 ? (
@@ -960,12 +973,8 @@ export default function AdminShowtimesPage() {
                         >
                           <input
                             type="checkbox"
-                            checked={selectedTicketTypeIds.includes(
-                              tt.ticketTypeId
-                            )}
-                            onChange={() =>
-                              handleToggleTicketType(tt.ticketTypeId)
-                            }
+                            checked={selectedTicketTypeIds.includes(tt.ticketTypeId)}
+                            onChange={() => handleToggleTicketType(tt.ticketTypeId)}
                             className="rounded border-white/30 bg-transparent text-cyan-400 focus:ring-cyan-400/60"
                           />
                           <span className="truncate">
@@ -977,7 +986,6 @@ export default function AdminShowtimesPage() {
                     </div>
                   )}
                 </div>
-                {/* ================== HẾT BLOCK MỚI ================== */}
 
                 <div className="flex justify-end gap-3 pt-4">
                   <button
@@ -1007,6 +1015,16 @@ export default function AdminShowtimesPage() {
           </div>
         </ModalWrapper>
       )}
+
+      {/* Confirm delete modal */}
+      {confirm.open && (
+        <ConfirmModal
+          title={confirm.title}
+          message={confirm.message}
+          onCancel={closeConfirm}
+          onConfirm={confirm.onConfirm}
+        />
+      )}
     </div>
   );
 }
@@ -1016,17 +1034,13 @@ export default function AdminShowtimesPage() {
 function StatCard({ label, value, gradient }) {
   return (
     <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#12002b]/90 via-[#090017] to-black/95 backdrop-blur-xl shadow-xl">
-      <div
-        className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20 pointer-events-none`}
-      />
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20 pointer-events-none`} />
       <div className="absolute -top-6 -right-10 w-24 h-24 rounded-full bg-white/5 blur-2xl" />
       <div className="relative px-4 py-4 md:px-5 md:py-5">
         <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-white/60">
           {label}
         </p>
-        <p className="mt-2 text-xl md:text-2xl font-black text-white">
-          {value}
-        </p>
+        <p className="mt-2 text-xl md:text-2xl font-black text-white">{value}</p>
       </div>
     </div>
   );
@@ -1034,25 +1048,43 @@ function StatCard({ label, value, gradient }) {
 
 function ModalWrapper({ children, onClose }) {
   return (
-    <div
-      className="
-        fixed inset-0 z-[80]
-        flex items-start justify-center      
-        bg-black/60 backdrop-blur-md
-        overflow-y-auto                     
-      "
-    >
+    <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 backdrop-blur-md overflow-y-auto">
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
-
-      <div
-        className="
-          relative z-[81]
-          w-full px-4 md:px-0
-          flex justify-center              
-          pt-24 pb-8                        
-        "
-      >
+      <div className="relative z-[81] w-full px-4 md:px-0 flex justify-center pt-24 pb-8">
         <div className="w-full max-w-xl">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({ title, message, onCancel, onConfirm }) {
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="w-[90%] max-w-md rounded-3xl bg-gradient-to-r from-[#4f46e5] via-[#7b5cff] to-[#ec4899] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.95)]">
+        <div className="rounded-3xl bg-[#050018]/95 px-6 py-6 text-center">
+          <h3 className="text-[13px] sm:text-[14px] font-extrabold tracking-[0.28em] text-white uppercase mb-2">
+            {title}
+          </h3>
+          <p className="text-xs sm:text-[13px] text-white/80 mb-6 leading-relaxed">
+            {message}
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={onCancel}
+              className="inline-flex items-center justify-center px-6 py-2.5 rounded-full text-[11px] sm:text-[12px] font-extrabold tracking-[0.2em] uppercase border border-white/20 text-white bg-white/5 hover:bg-white/10 transition-all"
+            >
+              Hủy
+            </button>
+            {typeof onConfirm === "function" && (
+              <button
+                onClick={onConfirm}
+                className="inline-flex items-center justify-center px-8 py-2.5 rounded-full text-[11px] sm:text-[12px] font-extrabold tracking-[0.2em] uppercase bg-gradient-to-r from-[#ffe700] to-[#facc15] text-black shadow-[0_0_18px_rgba(255,231,0,0.95)] hover:brightness-110 transition-all"
+              >
+                Xác nhận
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
