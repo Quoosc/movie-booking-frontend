@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminUserService } from "@/api/adminservice";
+import { toast } from "react-toastify";
 
 const ROLE_OPTIONS = ["ADMIN", "USER"];
 
@@ -56,7 +57,9 @@ export default function AdminUsersPage() {
       setRoleDraft(draft);
     } catch (err) {
       console.error("Fetch users error:", err);
-      setError(err?.message || "Không tải được danh sách người dùng.");
+      const msg = err?.message || "Không tải được danh sách người dùng.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -93,10 +96,12 @@ export default function AdminUsersPage() {
             : u
         )
       );
-      setSuccess(`Cập nhật quyền cho user thành công (${newRole}).`);
+      toast.success(`Cập nhật quyền thành công (${newRole}).`);
     } catch (err) {
       console.error("Update role error:", err);
-      setError(err?.message || "Cập nhật quyền thất bại.");
+      const msg = err?.message || "Cập nhật quyền thất bại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setUpdatingId(null);
     }
@@ -112,10 +117,12 @@ export default function AdminUsersPage() {
         await AdminUserService.deleteUser(userId);
 
         setUsers((prev) => prev.filter((u) => u.userId !== userId));
-        setSuccess("Xóa user thành công.");
+        toast.success("Xóa user thành công.");
       } catch (err) {
         console.error("Delete user error:", err);
-        setError(err?.message || "Xóa user thất bại.");
+        const msg = err?.message || "Xóa user thất bại.";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();

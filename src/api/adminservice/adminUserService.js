@@ -53,16 +53,27 @@ export async function deleteUser(userId) {
  * Cập nhật role cho user:
  * body là string "ADMIN" / "USER" / "GUEST"
  */
+//spring
+// export async function updateUserRole(userId, role) {
+//   const res = await apiFetch(`/users/${userId}/role`, {
+//     method: "PATCH",
+//     headers: {
+//       "Content-Type": "text/plain",
+//     },
+//     body: role, // "ADMIN" | "USER"
+//   });
+
+//   return res.data || res; // UserDataResponse
+// }
+
+//laravel
 export async function updateUserRole(userId, role) {
   const res = await apiFetch(`/users/${userId}/role`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "text/plain",
-    },
-    body: role, // "ADMIN" | "USER"
+    body: JSON.stringify({ role }),
   });
 
-  return res.data || res; // UserDataResponse
+  return res.data || res;
 }
 
 /* ===================== MEMBERSHIP TIERS (ADMIN) ===================== */
