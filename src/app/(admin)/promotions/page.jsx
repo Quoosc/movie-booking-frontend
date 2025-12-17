@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminToolsService } from "@/api/adminservice";
+import { toast } from "react-toastify";
 
 const DISCOUNT_TYPES = [
   { value: "PERCENTAGE", label: "Phần trăm (%)" },
@@ -70,25 +71,42 @@ export default function AdminPromotionsPage() {
   };
 
   const formatDateTime = (value) => {
-    const d = parseDate(value);
-    if (!d) return "—";
-    return d.toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
+    if (!value) return "—";
+    const s = String(value);
+
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return "—";
+
+    const opts = { dateStyle: "short", timeStyle: "short" };
+    if (s.endsWith("Z")) {
+      return new Intl.DateTimeFormat("vi-VN", {
+        ...opts,
+        timeZone: "UTC",
+      }).format(d);
+    }
+    return new Intl.DateTimeFormat("vi-VN", opts).format(d);
   };
 
   const toInputDateTime = (value) => {
-    const d = parseDate(value);
-    if (!d) return "";
-    const pad = (n) => n.toString().padStart(2, "0");
-    const yyyy = d.getFullYear();
-    const MM = pad(d.getMonth() + 1);
-    const dd = pad(d.getDate());
-    const hh = pad(d.getHours());
-    const mm = pad(d.getMinutes());
-    return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
-  };
+  if (!value) return "";
+  const s = String(value).trim();
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(?::\d{2}(?:\.\d+)?)?$/);
+  if (m) return `${m[1]}T${m[2]}`;
+
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "";
+
+  const pad = (n) => String(n).padStart(2, "0");
+  const useUTC = s.endsWith("Z");
+  const yyyy = useUTC ? d.getUTCFullYear() : d.getFullYear();
+  const MM = pad((useUTC ? d.getUTCMonth() : d.getMonth()) + 1);
+  const dd = pad(useUTC ? d.getUTCDate() : d.getDate());
+  const hh = pad(useUTC ? d.getUTCHours() : d.getHours());
+  const mm = pad(useUTC ? d.getUTCMinutes() : d.getMinutes());
+
+  return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+};
+
 
   const getStatus = (p) => {
     if (!p?.isActive) return "INACTIVE";
@@ -147,7 +165,9 @@ export default function AdminPromotionsPage() {
       setPromotions(list);
     } catch (err) {
       console.error("Fetch promotions error:", err);
-      setError(err?.message || "Không tải được danh sách khuyến mãi.");
+      const msg = err?.message || "Không tải được danh sách khuyến mãi.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
       setFetching(false);
@@ -287,6 +307,7 @@ export default function AdminPromotionsPage() {
     const msg = validateForm();
     if (msg) {
       setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -297,9 +318,11 @@ export default function AdminPromotionsPage() {
       if (editing) {
         await AdminToolsService.updatePromotion(editing.promotionId, payload);
         setSuccess("Cập nhật khuyến mãi thành công.");
+        toast.success("Cập nhật khuyến mãi thành công.");
       } else {
         await AdminToolsService.createPromotion(payload);
         setSuccess("Tạo khuyến mãi mới thành công.");
+        toast.success("Tạo khuyến mãi mới thành công.");
       }
 
       await fetchPromotions(filter);
@@ -307,10 +330,11 @@ export default function AdminPromotionsPage() {
       setEditing(null);
     } catch (err) {
       console.error("Save promotion error:", err);
-      setError(
+      const msg =
         err?.message ||
-          "Lưu khuyến mãi thất bại. Vui lòng kiểm tra dữ liệu và thử lại."
-      );
+        "Lưu khuyến mãi thất bại. Vui lòng kiểm tra dữ liệu và thử lại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -325,10 +349,13 @@ export default function AdminPromotionsPage() {
 
         await AdminToolsService.deactivatePromotion(promo.promotionId);
         setSuccess("Đã tắt khuyến mãi.");
+        toast.success("Đã tắt khuyến mãi.");
         await fetchPromotions(filter);
       } catch (err) {
         console.error("Deactivate promotion error:", err);
-        setError(err?.message || "Tắt khuyến mãi thất bại.");
+        const msg = err?.message || "Tắt khuyến mãi thất bại.";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setProcessingId(null);
         closeWarning();
@@ -347,10 +374,13 @@ export default function AdminPromotionsPage() {
 
         await AdminToolsService.deletePromotion(promo.promotionId);
         setSuccess("Xóa khuyến mãi thành công.");
+        toast.success("Xóa khuyến mãi thành công.");
         await fetchPromotions(filter);
       } catch (err) {
         console.error("Delete promotion error:", err);
-        setError(err?.message || "Xóa khuyến mãi thất bại.");
+        const msg = err?.message || "Xóa khuyến mãi thất bại.";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setProcessingId(null);
         closeWarning();
