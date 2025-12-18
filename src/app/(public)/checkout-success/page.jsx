@@ -46,6 +46,17 @@ function buildSeatTypeLabel(seats = []) {
   return "Nhiều loại ghế";
 }
 
+function calcSnackLineTotal(snack = {}) {
+  const quantity = Number(snack.quantity ?? snack.qty ?? 0);
+  if (Number.isFinite(snack.totalPrice)) return snack.totalPrice;
+  const unitPrice = Number(
+    snack.unitPrice ?? snack.price ?? snack.snack?.price ?? 0
+  );
+  const safeQty = Number.isFinite(quantity) ? quantity : 0;
+  const safeUnit = Number.isFinite(unitPrice) ? unitPrice : 0;
+  return safeQty * safeUnit;
+}
+
 export default function CheckoutSuccessPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -120,6 +131,18 @@ export default function CheckoutSuccessPage() {
   );
 
   const ticketCount = booking?.seats?.length || 0;
+  const snacks = useMemo(
+    () => booking?.snacks || booking?.bookingSnacks || [],
+    [booking]
+  );
+  const hasSnacks = Array.isArray(snacks) && snacks.length > 0;
+  const snackTotal = useMemo(
+    () =>
+      hasSnacks
+        ? snacks.reduce((sum, sn) => sum + calcSnackLineTotal(sn), 0)
+        : 0,
+    [hasSnacks, snacks]
+  );
 
   const headerPaymentText =
     paymentMethod === "MOMO"
@@ -287,6 +310,57 @@ export default function CheckoutSuccessPage() {
                     <span className="font-semibold text-white">Số ghế</span>
                     <span>{seatList}</span>
                   </div>
+
+                  {hasSnacks && (
+                    <div className="mt-4 rounded-2xl bg-white/10 border border-white/15 px-3 py-3 md:px-4 md:py-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <p className="font-semibold text-white">
+                          Bắp nước / Combo
+                        </p>
+                        <span className="text-sm font-semibold text-amber-200">
+                          {snackTotal.toLocaleString("vi-VN")}₫
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {snacks.map((snack, idx) => {
+                          const qty = snack.quantity ?? snack.qty ?? 0;
+                          const lineTotal = calcSnackLineTotal(snack);
+                          return (
+                            <div
+                              key={
+                                snack.snackId ||
+                                snack.bookingSnackId ||
+                                snack.id ||
+                                idx
+                              }
+                              className="flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 px-3 py-2"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                {snack.imageUrl && (
+                                  <img
+                                    src={snack.imageUrl}
+                                    alt={snack.name || snack.snackName || "Snack"}
+                                    className="w-10 h-10 rounded-lg object-cover"
+                                  />
+                                )}
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-sm md:text-base leading-tight truncate">
+                                    {snack.name || snack.snackName || "Bắp nước"}
+                                  </p>
+                                  <p className="text-[11px] text-white/70">
+                                    SL: {qty}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-sm md:text-base font-semibold text-amber-200 whitespace-nowrap">
+                                {lineTotal.toLocaleString("vi-VN")}₫
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     <span className="font-semibold text-white">Tổng tiền</span>

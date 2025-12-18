@@ -782,7 +782,7 @@ export async function getBookingById(bookingId) {
 
   const res = await apiFetch(`/bookings/${bookingId}`);
   const raw = res.data || res;
-  return raw.data || raw; // support cả kiểu bọc { data: ... } sau này nếu bạn đổi BE
+  return raw.data || raw; 
 }
 
 export async function getBookingDetail(bookingId) {

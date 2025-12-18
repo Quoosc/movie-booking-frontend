@@ -15,43 +15,43 @@ import { getSeatLayout, getSnacksByCinema } from "@/api/bookingService";
 const DAYS = 7;
 
 // mock
-const DEFAULT_TICKET_TYPES = [
-  {
-    id: "adult",
-    code: "adult",
-    ticketTypeId: null,
-    label: "NGƯỜI LỚN",
-    price: 69000,
-  },
-  {
-    id: "student",
-    code: "student",
-    ticketTypeId: null,
-    label: "HSSV/U22-GV",
-    price: 49000,
-  },
-  {
-    id: "senior",
-    code: "senior",
-    ticketTypeId: null,
-    label: "NGƯỜI CAO TUỔI",
-    price: 55000,
-  },
-  {
-    id: "member",
-    code: "member",
-    ticketTypeId: null,
-    label: "GIÁ VÉ THÀNH VIÊN",
-    price: 45000,
-  },
-  {
-    id: "double",
-    code: "double",
-    ticketTypeId: null,
-    label: "GHẾ ĐÔI (2 NGƯỜI)",
-    price: 128000,
-  },
-];
+// const DEFAULT_TICKET_TYPES = [
+//   {
+//     id: "adult",
+//     code: "adult",
+//     ticketTypeId: null,
+//     label: "NGƯỜI LỚN",
+//     price: 69000,
+//   },
+//   {
+//     id: "student",
+//     code: "student",
+//     ticketTypeId: null,
+//     label: "HSSV/U22-GV",
+//     price: 49000,
+//   },
+//   {
+//     id: "senior",
+//     code: "senior",
+//     ticketTypeId: null,
+//     label: "NGƯỜI CAO TUỔI",
+//     price: 55000,
+//   },
+//   {
+//     id: "member",
+//     code: "member",
+//     ticketTypeId: null,
+//     label: "GIÁ VÉ THÀNH VIÊN",
+//     price: 45000,
+//   },
+//   {
+//     id: "double",
+//     code: "double",
+//     ticketTypeId: null,
+//     label: "GHẾ ĐÔI (2 NGƯỜI)",
+//     price: 128000,
+//   },
+// ];
 
 export default function MovieDetailPage() {
   const { id } = useParams();
@@ -113,10 +113,10 @@ export default function MovieDetailPage() {
   /* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ – DÙNG API MỚI) ===== */
   useEffect(() => {
     // Chưa chọn suất chiếu thì reset về default
-    if (!activeShowtime?.showtimeId) {
-      setTicketTypes(DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 })));
-      return;
-    }
+    // if (!activeShowtime?.showtimeId) {
+    //   setTicketTypes(DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 })));
+    //   return;
+    // }
 
     const fetchTicketTypesPerShowtime = async () => {
       try {
