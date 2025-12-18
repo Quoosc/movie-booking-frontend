@@ -1,4 +1,4 @@
-//src/app/(protected)/account/account-history/[bookingId]/page.jsx
+// src/app/(protected)/account/account-history/[bookingId]/page.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
@@ -63,7 +63,9 @@ const PAYMENT_BADGES = {
 
 function formatCurrency(value) {
   if (value == null) return "--";
-  return value.toLocaleString("vi-VN") + "₫";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "--";
+  return n.toLocaleString("vi-VN") + "₫";
 }
 
 export default function BookingDetailPage() {
@@ -106,6 +108,10 @@ export default function BookingDetailPage() {
     hasSnacks,
     showtimeDateText,
     showtimeTimeText,
+    ticketTotalCalc,
+    snackTotalCalc,
+    discountValueCalc,
+    grandTotalCalc,
   } = useMemo(() => {
     if (!booking) {
       return {
@@ -114,8 +120,17 @@ export default function BookingDetailPage() {
         hasSnacks: false,
         showtimeDateText: "",
         showtimeTimeText: "",
+        ticketTotalCalc: 0,
+        snackTotalCalc: 0,
+        discountValueCalc: 0,
+        grandTotalCalc: 0,
       };
     }
+
+    const toNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
 
     const bookingStatus = booking.bookingStatus || booking.status;
     const status =
@@ -129,8 +144,37 @@ export default function BookingDetailPage() {
       (payStatusRaw && PAYMENT_BADGES[payStatusRaw?.toUpperCase?.()]) ||
       null;
 
+    const seatsArr = booking.seats || booking.bookingSeats || [];
     const snacksArr = booking.snacks || booking.bookingSnacks || [];
     const hasSnacks = Array.isArray(snacksArr) && snacksArr.length > 0;
+
+    // ✅ Ticket total: ưu tiên field từ BE nếu có, không có thì tự sum seats
+    const ticketTotalFromBE =
+      booking.ticketTotal ?? booking.subtotal ?? booking.ticketSubtotal;
+    const ticketTotalCalc =
+      toNum(ticketTotalFromBE) ||
+      seatsArr.reduce((sum, s) => sum + toNum(s.finalPrice ?? s.price), 0);
+
+    // ✅ Snack total: ưu tiên field từ BE nếu có, không có thì tự sum snacks
+    const snackTotalFromBE =
+      booking.snackTotal ?? booking.snacksTotal ?? booking.snackSubtotal;
+    const snackTotalCalc =
+      toNum(snackTotalFromBE) ||
+      snacksArr.reduce((sum, sn) => {
+        // BE của bạn có totalPrice ngay item snack (vd 180000)
+        const lineTotal =
+          toNum(sn.totalPrice) ||
+          toNum(sn.quantity) * toNum(sn.unitPrice ?? sn.price);
+        return sum + lineTotal;
+      }, 0);
+
+    const discountValueCalc = toNum(booking.discountValue);
+
+    // ✅ Grand total: ưu tiên finalPrice/totalPrice từ BE nếu có
+    const grandTotalFromBE = booking.finalPrice ?? booking.totalPrice;
+    const grandTotalCalc =
+      toNum(grandTotalFromBE) ||
+      Math.max(0, ticketTotalCalc + snackTotalCalc - discountValueCalc);
 
     let showtimeDateText = "";
     let showtimeTimeText = "";
@@ -154,6 +198,10 @@ export default function BookingDetailPage() {
       hasSnacks,
       showtimeDateText,
       showtimeTimeText,
+      ticketTotalCalc,
+      snackTotalCalc,
+      discountValueCalc,
+      grandTotalCalc,
     };
   }, [booking]);
 
@@ -478,33 +526,32 @@ export default function BookingDetailPage() {
                         <div className="flex justify-between">
                           <span className="text-white/70">Tiền vé</span>
                           <span className="font-bold">
-                            {formatCurrency(
-                              booking.subtotal || booking.ticketTotal
-                            )}
+                            {formatCurrency(ticketTotalCalc)}
                           </span>
                         </div>
+
                         {hasSnacks && (
                           <div className="flex justify-between">
                             <span className="text-white/70">Bắp nước</span>
                             <span className="font-bold">
-                              {formatCurrency(booking.snackTotal)}
+                              {formatCurrency(snackTotalCalc)}
                             </span>
                           </div>
                         )}
-                        {booking.discountValue > 0 && (
+
+                        {discountValueCalc > 0 && (
                           <div className="flex justify-between text-emerald-400">
                             <span>Giảm giá</span>
                             <span className="font-bold">
-                              -{formatCurrency(booking.discountValue)}
+                              -{formatCurrency(discountValueCalc)}
                             </span>
                           </div>
                         )}
+
                         <div className="pt-4 border-t border-white/20 flex justify-between text-2xl font-black">
                           <span>Tổng cộng</span>
                           <span className="text-emerald-400">
-                            {formatCurrency(
-                              booking.finalPrice || booking.totalPrice
-                            )}
+                            {formatCurrency(grandTotalCalc)}
                           </span>
                         </div>
                       </div>
