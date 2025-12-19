@@ -1,0 +1,7 @@
+Commit 1: Thay đổi thử nghiệm
+
+Mục đích: tạo commit mẫu thứ nhất theo yêu cầu.
+
+Nội dung: file này chỉ chứa ghi chú ngắn để tạo commit.
+
+-- movie-booking-frontend
