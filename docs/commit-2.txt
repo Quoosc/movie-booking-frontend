@@ -1,0 +1,7 @@
+Commit 2: Thay đổi thử nghiệm tiếp theo
+
+Mục đích: tạo commit mẫu thứ hai theo yêu cầu.
+
+Nội dung: file này cũng chỉ chứa ghi chú ngắn để tạo commit thứ hai.
+
+-- movie-booking-frontend
