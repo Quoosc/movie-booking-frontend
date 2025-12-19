@@ -1,5 +1,12 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import * as authApi from "@/api/authService";
 
 const AuthContext = createContext(null);
@@ -38,7 +45,7 @@ export function AuthProvider({ children }) {
     });
   };
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     try {
       const profile = await authApi.me();
       setUser(profile);
@@ -54,7 +61,7 @@ export function AuthProvider({ children }) {
       }
       throw err;
     }
-  };
+  }, []);
 
   useEffect(() => {
     let mounted = true;

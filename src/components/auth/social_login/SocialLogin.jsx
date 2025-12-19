@@ -2,8 +2,8 @@
 import { FcGoogle } from "react-icons/fc";
 import { BsFacebook } from "react-icons/bs";
 import { BsInstagram } from "react-icons/bs";
-import { API_BASE_URL } from "@/api/fetchConfig";
-
+//import { API_BASE_URL } from "@/api/fetchConfig";
+import { OAUTH_BASE_URL } from "@/api/fetchConfig";
 import { toast } from "react-toastify";
 
 export default function SocialLogin() {
@@ -13,13 +13,12 @@ export default function SocialLogin() {
         typeof window !== "undefined" ? window.location.origin : "";
       const redirectUri = `${origin}/oauth2/success`;
 
-      const url = `${API_BASE_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}`;
-      
-      // const url = `https://4-194-140-32.nip.io/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
+      // const url = `${API_BASE_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
       //   redirectUri
       // )}`;
+      const url = `${OAUTH_BASE_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}`;
 
       window.location.href = url;
     } catch (e) {
@@ -63,4 +62,3 @@ export default function SocialLogin() {
     </div>
   );
 }
-

@@ -1,6 +1,7 @@
 // src/api/fetchConfig.js
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+  export const OAUTH_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 export const USE_MOCK =
   String(import.meta.env.VITE_USE_MOCK || "false") === "true";
