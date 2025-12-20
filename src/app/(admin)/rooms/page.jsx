@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminCinemaService } from "@/api/adminservice";
+import { toast } from "react-toastify";
 
 const EMPTY_FORM = {
   cinemaId: "",
@@ -18,7 +19,6 @@ export default function AdminRoomsPage() {
   const [deletingId, setDeletingId] = useState(null);
 
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
 
   const [search, setSearch] = useState("");
   const [cinemaFilter, setCinemaFilter] = useState("ALL");
@@ -46,10 +46,9 @@ export default function AdminRoomsPage() {
     try {
       setLoading(true);
       setError(null);
-      setSuccess(null);
 
       const [roomsRes, cinemasRes] = await Promise.all([
-        AdminCinemaService.getRooms(), // dùng hàm rooms bên trong AdminCinemaService
+        AdminCinemaService.getRooms(), // rooms API
         AdminCinemaService.getCinemas?.(),
       ]);
 
@@ -60,7 +59,9 @@ export default function AdminRoomsPage() {
       setCinemas(unwrap(cinemasRes));
     } catch (err) {
       console.error("AdminRooms fetchData error:", err);
-      setError(err?.message || "Không tải được danh sách phòng chiếu.");
+      const msg = err?.message || "Không tải được danh sách phòng chiếu.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,6 @@ export default function AdminRoomsPage() {
     setEditingRoom(null);
     setForm(EMPTY_FORM);
     setError(null);
-    setSuccess(null);
     setIsModalOpen(true);
   };
 
@@ -104,7 +104,6 @@ export default function AdminRoomsPage() {
       roomNumber: room.roomNumber ?? "",
     });
     setError(null);
-    setSuccess(null);
     setIsModalOpen(true);
   };
 
@@ -124,18 +123,21 @@ export default function AdminRoomsPage() {
     e.preventDefault();
 
     if (!form.cinemaId && !editingRoom) {
-      setError("Vui lòng chọn rạp cho phòng chiếu.");
-      setSuccess(null);
+      const msg = "Vui lòng chọn rạp cho phòng chiếu.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (!form.roomType.trim()) {
-      setError("Vui lòng nhập loại phòng (STANDARD, IMAX...)");
-      setSuccess(null);
+      const msg = "Vui lòng nhập loại phòng (STANDARD, IMAX...)";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (!form.roomNumber || Number(form.roomNumber) <= 0) {
-      setError("Số phòng phải là số nguyên dương.");
-      setSuccess(null);
+      const msg = "Số phòng phải là số nguyên dương.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -148,28 +150,33 @@ export default function AdminRoomsPage() {
     try {
       setSaving(true);
       setError(null);
-      setSuccess(null);
 
       if (editingRoom) {
         const roomId = editingRoom.roomId;
         const updated = await AdminCinemaService.updateRoom(roomId, payload);
+        const updatedRoom = updated?.data ?? updated ?? payload;
 
         setRooms((prev) =>
           prev.map((r) =>
-            r.roomId === roomId ? { ...r, ...(updated || payload) } : r
+            r.roomId === roomId ? { ...r, ...updatedRoom } : r
           )
         );
-        setSuccess("Cập nhật phòng chiếu thành công.");
+
+        toast.success("Cập nhật phòng chiếu thành công.");
       } else {
         const created = await AdminCinemaService.createRoom(payload);
-        setRooms((prev) => [created || payload, ...prev]);
-        setSuccess("Thêm phòng chiếu mới thành công.");
+        const createdRoom = created?.data ?? created ?? payload;
+
+        setRooms((prev) => [createdRoom, ...prev]);
+        toast.success("Thêm phòng chiếu mới thành công.");
       }
 
       closeModal();
     } catch (err) {
       console.error("Save room error:", err);
-      setError(err?.message || "Lưu thông tin phòng chiếu thất bại.");
+      const msg = err?.message || "Lưu thông tin phòng chiếu thất bại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -186,15 +193,16 @@ export default function AdminRoomsPage() {
       try {
         setDeletingId(roomId);
         setError(null);
-        setSuccess(null);
 
         await AdminCinemaService.deleteRoom(roomId);
 
         setRooms((prev) => prev.filter((r) => r.roomId !== roomId));
-        setSuccess("Xóa phòng chiếu thành công.");
+        toast.success("Xóa phòng chiếu thành công.");
       } catch (err) {
         console.error("Delete room error:", err);
-        setError(err?.message || "Xóa phòng chiếu thất bại.");
+        const msg = err?.message || "Xóa phòng chiếu thất bại.";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
@@ -259,6 +267,7 @@ export default function AdminRoomsPage() {
         onCancel={closeWarning}
         onConfirm={warning.onConfirm}
       />
+
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
@@ -270,8 +279,7 @@ export default function AdminRoomsPage() {
           </span>
         </h1>
         <p className="text-xs md:text-sm text-white/60 max-w-2xl">
-          Thêm mới, chỉnh sửa và quản lý phòng chiếu cho từng rạp trong
-          CinesVerse.
+          Thêm mới, chỉnh sửa và quản lý phòng chiếu cho từng rạp trong CinesVerse.
         </p>
       </header>
 
@@ -302,7 +310,21 @@ export default function AdminRoomsPage() {
         <div className="relative p-4 md:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 items-end">
             {/* LEFT: Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Search */}
+              <div>
+                <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
+                  Tìm kiếm
+                </label>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm theo rạp, mã rạp, loại phòng, số phòng..."
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                />
+              </div>
+
               {/* Filter by cinema */}
               <div>
                 <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
@@ -312,10 +334,10 @@ export default function AdminRoomsPage() {
                   value={cinemaFilter}
                   onChange={(e) => setCinemaFilter(e.target.value)}
                   className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
-            border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
-            shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
-            focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
-            transition-all"
+                    border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+                    shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+                    focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+                    transition-all"
                 >
                   <option value="ALL">Tất cả rạp</option>
                   {cinemas.map((c) => (
@@ -337,10 +359,10 @@ export default function AdminRoomsPage() {
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
                   className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
-            border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
-            shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
-            focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
-            transition-all"
+                    border border-cyan-400/60 px-4 py-2.5 text-xs md:text-sm font-semibold text-white
+                    shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
+                    focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
+                    transition-all"
                 >
                   <option value="ALL">Tất cả</option>
                   {roomTypeOptions.map((t) => (
@@ -366,7 +388,7 @@ export default function AdminRoomsPage() {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-400 text-black shadow-lg shadow-purple-500/40 hover:brightness-110 transition-all"
               >
                 + Thêm phòng
               </button>
@@ -375,19 +397,12 @@ export default function AdminRoomsPage() {
         </div>
       </section>
 
-      {/* Alerts */}
-      {(error || success) && (
+      {/* Error Alert only */}
+      {error && (
         <section className="space-y-3">
-          {error && (
-            <div className="rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="rounded-2xl border border-emerald-500/60 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-              {success}
-            </div>
-          )}
+          <div className="rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+            {error}
+          </div>
         </section>
       )}
 
@@ -576,10 +591,10 @@ function RoomModal({
     <div
       className="
         fixed inset-0 z-40
-        flex items-start justify-center      
+        flex items-start justify-center
         px-4
         bg-black/70 backdrop-blur-sm
-        overflow-y-auto                     
+        overflow-y-auto
       "
     >
       {/* overlay */}
@@ -589,7 +604,7 @@ function RoomModal({
         className="
           relative z-50
           w-full max-w-lg
-          mt-24 mb-10                        
+          mt-24 mb-10
           rounded-3xl bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/95
           border border-white/15 shadow-2xl overflow-hidden
         "
@@ -604,13 +619,14 @@ function RoomModal({
                 {isEdit ? "CHỈNH SỬA PHÒNG" : "THÊM PHÒNG MỚI"}
               </p>
               <h2 className="text-xl md:text-2xl font-black tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-300 bg-clip-text text-transparent">
-                {isEdit ? "Thông tin phòng chiếu" : "Thông tin phòng chiếu"}
+                Thông tin phòng chiếu
               </h2>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full bg-white/5 hover:bg-white/10 border border-white/20 w-8 h-8 flex items-center justify-center text-white/70 text-sm transition-all"
+              disabled={saving}
+              className="rounded-full bg-white/5 hover:bg-white/10 border border-white/20 w-8 h-8 flex items-center justify-center text-white/70 text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               ✕
             </button>
