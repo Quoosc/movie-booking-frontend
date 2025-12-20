@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminPricingService } from "@/api/adminservice";
+import { toast } from "react-toastify";
 
 const CONDITION_TYPES = [
   "SEAT_TYPE", // COUPLE
@@ -20,7 +21,6 @@ export default function AdminPricingPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
 
   const getBaseId = (b) =>
     b?.priceBaseId || b?.id || b?.price_base_id || b?.priceBaseID;
@@ -85,7 +85,6 @@ export default function AdminPricingPage() {
     try {
       setLoading(true);
       setError(null);
-      setSuccess(null);
 
       const [baseRes, modRes, ticketRes] = await Promise.all([
         AdminPricingService.getPriceBases(),
@@ -101,7 +100,8 @@ export default function AdminPricingPage() {
       setTicketTypes(unwrap(ticketRes));
     } catch (err) {
       console.error("AdminPricing loadAll error:", err);
-      setError(err?.message || "Không tải được dữ liệu pricing.");
+      const msg = err?.message || "Không tải được dữ liệu pricing.";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -141,14 +141,12 @@ export default function AdminPricingPage() {
     });
 
     setError(null);
-    setSuccess(null);
     setShowBaseForm(true);
   };
 
   const openCreateBase = () => {
     resetBaseForm();
     setError(null);
-    setSuccess(null);
     setShowBaseForm(true);
   };
 
@@ -156,7 +154,8 @@ export default function AdminPricingPage() {
     e.preventDefault();
 
     if (!baseForm.name.trim()) {
-      setError("Vui lòng nhập tên base price.");
+      const msg = "Vui lòng nhập tên base price.";
+      toast.error(msg);
       return;
     }
 
@@ -165,14 +164,14 @@ export default function AdminPricingPage() {
       !editingBaseId &&
       (!baseForm.basePrice || Number(baseForm.basePrice) <= 0)
     ) {
-      setError("Vui lòng nhập giá base > 0.");
+      const msg = "Vui lòng nhập giá base > 0.";
+      toast.error(msg);
       return;
     }
 
     try {
       setSavingSection("base");
       setError(null);
-      setSuccess(null);
 
       if (editingBaseId) {
         // UPDATE
@@ -189,17 +188,18 @@ export default function AdminPricingPage() {
 
         setPriceBases((prev) =>
           prev.map((b) => {
-            const bid = b?.priceBaseId || b?.id || b?.price_base_id;
+            const bid = getBaseId(b);
             if (bid !== editingBaseId) return b;
             return {
               ...b,
               ...updated,
               priceBaseId: updated?.priceBaseId || bid,
+              id: updated?.id ?? b?.id,
             };
           })
         );
 
-        setSuccess("Cập nhật base price thành công.");
+        toast.success("Cập nhật base price thành công.");
       } else {
         // CREATE
         const payload = {
@@ -211,37 +211,37 @@ export default function AdminPricingPage() {
         const created = res?.data || res;
 
         setPriceBases((prev) => [created, ...prev]);
-        setSuccess("Thêm base price thành công.");
+        toast.success("Thêm base price thành công.");
       }
 
       resetBaseForm();
       setShowBaseForm(false);
     } catch (err) {
       console.error("Save base price error:", err);
-      setError(err?.message || "Lưu base price thất bại.");
+      const msg = err?.message || "Lưu base price thất bại.";
+      toast.error(msg);
     } finally {
       setSavingSection(null);
     }
   }
 
-  // NEW: delete base price
+  // delete base price
   async function handleDeleteBase(id) {
     const confirmDelete = async () => {
       try {
         setDeletingId(id);
         setError(null);
-        setSuccess(null);
 
         await AdminPricingService.deletePriceBase(id);
 
-        setPriceBases((prev) => prev.filter((b) => b.priceBaseId !== id));
-        setSuccess("Xóa base price thành công.");
+        setPriceBases((prev) => prev.filter((b) => getBaseId(b) !== id));
+        toast.success("Xóa base price thành công.");
       } catch (err) {
         console.error("Delete base price error:", err);
-        setError(
+        const msg =
           err?.message ||
-            "Xóa base price thất bại. Có thể base price đang được sử dụng."
-        );
+          "Xóa base price thất bại. Có thể base price đang được sử dụng.";
+        toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
@@ -287,25 +287,26 @@ export default function AdminPricingPage() {
       isActive: m.isActive ?? true,
     });
     setError(null);
-    setSuccess(null);
     setShowModifierForm(true);
   };
 
   async function handleSaveModifier(e) {
     e.preventDefault();
+
     if (!modifierForm.name.trim()) {
-      setError("Vui lòng nhập tên modifier.");
+      const msg = "Vui lòng nhập tên modifier.";
+      toast.error(msg);
       return;
     }
     if (!editingModifierId && !modifierForm.conditionValue.trim()) {
-      setError("Vui lòng nhập condition value khi tạo modifier mới.");
+      const msg = "Vui lòng nhập condition value khi tạo modifier mới.";
+      toast.error(msg);
       return;
     }
 
     try {
       setSavingSection("modifier");
       setError(null);
-      setSuccess(null);
 
       if (editingModifierId) {
         // UPDATE
@@ -318,12 +319,14 @@ export default function AdminPricingPage() {
           payload
         );
         const updated = res?.data || res;
+
         setModifiers((prev) =>
           prev.map((m) =>
             m.priceModifierId === updated.priceModifierId ? updated : m
           )
         );
-        setSuccess("Cập nhật price modifier thành công.");
+
+        toast.success("Cập nhật price modifier thành công.");
       } else {
         // CREATE
         const payload = {
@@ -336,16 +339,17 @@ export default function AdminPricingPage() {
         };
         const res = await AdminPricingService.createPriceModifier(payload);
         const created = res?.data || res;
+
         setModifiers((prev) => [created, ...prev]);
-        setSuccess("Thêm price modifier thành công.");
+        toast.success("Thêm price modifier thành công.");
       }
 
-      // Auto-close on success
       resetModifierForm();
       setShowModifierForm(false);
     } catch (err) {
       console.error("Save modifier error:", err);
-      setError(err?.message || "Lưu price modifier thất bại.");
+      const msg = err?.message || "Lưu price modifier thất bại.";
+      toast.error(msg);
     } finally {
       setSavingSection(null);
     }
@@ -356,18 +360,21 @@ export default function AdminPricingPage() {
       try {
         setDeletingId(id);
         setError(null);
-        setSuccess(null);
+
         await AdminPricingService.deletePriceModifier(id);
         setModifiers((prev) => prev.filter((m) => m.priceModifierId !== id));
-        setSuccess("Xóa modifier thành công.");
+
+        toast.success("Xóa modifier thành công.");
       } catch (err) {
         console.error("Delete modifier error:", err);
-        setError(err?.message || "Xóa modifier thất bại.");
+        const msg = err?.message || "Xóa modifier thất bại.";
+        toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
       }
     };
+
     showWarning("Xóa modifier này?", "Lưu ý!", confirmDelete);
   }
 
@@ -403,25 +410,26 @@ export default function AdminPricingPage() {
       sortOrder: t.sortOrder ?? 0,
     });
     setError(null);
-    setSuccess(null);
     setShowTicketForm(true);
   };
 
   async function handleSaveTicketType(e) {
     e.preventDefault();
+
     if (!ticketTypeForm.code.trim() && !editingTicketTypeId) {
-      setError("Vui lòng nhập code cho ticket type.");
+      const msg = "Vui lòng nhập code cho ticket type.";
+      toast.error(msg);
       return;
     }
     if (!ticketTypeForm.label.trim()) {
-      setError("Vui lòng nhập label cho ticket type.");
+      const msg = "Vui lòng nhập label cho ticket type.";
+      toast.error(msg);
       return;
     }
 
     try {
       setSavingSection("ticket");
       setError(null);
-      setSuccess(null);
 
       if (editingTicketTypeId) {
         // UPDATE
@@ -437,12 +445,14 @@ export default function AdminPricingPage() {
           payload
         );
         const updated = res?.data || res;
+
         setTicketTypes((prev) =>
           prev.map((t) =>
             t.ticketTypeId === updated.ticketTypeId ? updated : t
           )
         );
-        setSuccess("Cập nhật ticket type thành công.");
+
+        toast.success("Cập nhật ticket type thành công.");
       } else {
         // CREATE
         const payload = {
@@ -458,15 +468,15 @@ export default function AdminPricingPage() {
         const created = res?.data || res;
 
         setTicketTypes((prev) => [...prev, created]);
-        setSuccess("Thêm ticket type thành công.");
+        toast.success("Thêm ticket type thành công.");
       }
 
-      // Auto-close on success
       resetTicketTypeForm();
       setShowTicketForm(false);
     } catch (err) {
       console.error("Save ticket type error:", err);
-      setError(err?.message || "Lưu ticket type thất bại.");
+      const msg = err?.message || "Lưu ticket type thất bại.";
+      toast.error(msg);
     } finally {
       setSavingSection(null);
     }
@@ -477,18 +487,21 @@ export default function AdminPricingPage() {
       try {
         setDeletingId(id);
         setError(null);
-        setSuccess(null);
+
         await AdminPricingService.deleteTicketType(id);
         setTicketTypes((prev) => prev.filter((t) => t.ticketTypeId !== id));
-        setSuccess("Xóa ticket type thành công.");
+
+        toast.success("Xóa ticket type thành công.");
       } catch (err) {
         console.error("Delete ticket type error:", err);
-        setError(err?.message || "Xóa ticket type thất bại.");
+        const msg = err?.message || "Xóa ticket type thất bại.";
+        toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
       }
     };
+
     showWarning("Xóa ticket type này?", "Lưu ý!", confirmDelete);
   }
 
@@ -524,11 +537,6 @@ export default function AdminPricingPage() {
       {error && (
         <div className="rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100">
           {error}
-        </div>
-      )}
-      {success && (
-        <div className="rounded-2xl border border-emerald-500/60 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-          {success}
         </div>
       )}
 
@@ -603,7 +611,7 @@ export default function AdminPricingPage() {
                           handleBaseChange("basePrice", e.target.value)
                         }
                         placeholder="80000"
-                        disabled={!!editingBaseId} // update không đổi basePrice theo swagger
+                        disabled={!!editingBaseId}
                         className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-xs text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     </div>
@@ -652,7 +660,7 @@ export default function AdminPricingPage() {
                 </form>
               )}
 
-              {/* List base price: chiếm phần còn lại */}
+              {/* List base price */}
               <div className="mt-2 flex-1 overflow-y-auto">
                 {loading ? (
                   <p className="text-[11px] text-white/60">
@@ -664,45 +672,46 @@ export default function AdminPricingPage() {
                   </p>
                 ) : (
                   <ul className="space-y-1 text-[11px] text-white/70">
-                    {priceBases.map((b) => (
-                      <li
-                        key={b.priceBaseId}
-                        className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2 border border-white/10 gap-3"
-                      >
-                        <div>
-                          <p className="font-semibold flex items-center gap-2">
-                            {b.name}
-                            {b.isActive && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/60 text-emerald-300 font-semibold">
-                                ACTIVE
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-white/50">
-                            {b.basePrice?.toLocaleString("vi-VN")}₫
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleEditBase(b)}
-                            className="text-[10px] rounded-2xl border border-white/30 bg-white/5 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-white hover:bg-white/10 transition-all"
-                          >
-                            Sửa
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteBase(b.priceBaseId)}
-                            disabled={deletingId === b.priceBaseId}
-                            className="text-[10px] rounded-2xl border border-red-500/60 bg-red-500/10 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-                          >
-                            {deletingId === b.priceBaseId
-                              ? "Đang xóa..."
-                              : "Xóa"}
-                          </button>
-                        </div>
-                      </li>
-                    ))}
+                    {priceBases.map((b) => {
+                      const bid = getBaseId(b);
+                      return (
+                        <li
+                          key={bid}
+                          className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2 border border-white/10 gap-3"
+                        >
+                          <div>
+                            <p className="font-semibold flex items-center gap-2">
+                              {b.name}
+                              {b.isActive && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/60 text-emerald-300 font-semibold">
+                                  ACTIVE
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-white/50">
+                              {b.basePrice?.toLocaleString("vi-VN")}₫
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleEditBase(b)}
+                              className="text-[10px] rounded-2xl border border-white/30 bg-white/5 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-white hover:bg-white/10 transition-all"
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteBase(bid)}
+                              disabled={deletingId === bid}
+                              className="text-[10px] rounded-2xl border border-red-500/60 bg-red-500/10 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                            >
+                              {deletingId === bid ? "Đang xóa..." : "Xóa"}
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>
@@ -751,7 +760,7 @@ export default function AdminPricingPage() {
                           handleTicketTypeChange("code", e.target.value)
                         }
                         placeholder="adult"
-                        disabled={!!editingTicketTypeId} // code không update qua PUT
+                        disabled={!!editingTicketTypeId}
                         className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2.5 text-xs text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     </div>
@@ -980,7 +989,7 @@ export default function AdminPricingPage() {
                       onChange={(e) =>
                         handleModifierChange("conditionType", e.target.value)
                       }
-                      disabled={!!editingModifierId} // update không cho đổi condition theo swagger
+                      disabled={!!editingModifierId}
                       className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012]
                       border border-cyan-400/60 px-3 py-2.5 text-xs md:text-sm font-semibold text-white
                       shadow-[0_0_0_1px_rgba(15,23,42,0.9)]
@@ -1092,7 +1101,7 @@ export default function AdminPricingPage() {
               </form>
             )}
 
-            {/* Modifiers list: chiếm phần còn lại */}
+            {/* Modifiers list */}
             <div className="mt-3 flex-1 overflow-y-auto">
               {loading ? (
                 <p className="text-[11px] text-white/60">
@@ -1136,9 +1145,7 @@ export default function AdminPricingPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() =>
-                            handleDeleteModifier(m.priceModifierId)
-                          }
+                          onClick={() => handleDeleteModifier(m.priceModifierId)}
                           disabled={deletingId === m.priceModifierId}
                           className="text-[10px] rounded-2xl border border-red-500/60 bg-red-500/10 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                         >
