@@ -2,13 +2,14 @@
 import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminCinemaService } from "@/api/adminservice";
+import { toast } from "react-toastify";
 
 const STATUS_FILTERS = ["ALL", "ACTIVE", "INACTIVE"];
 
 const EMPTY_FORM = {
   name: "",
   address: "",
-  city: "",
+  hotline: "",
   isActive: true,
 };
 
@@ -19,7 +20,6 @@ export default function AdminCinemasPage() {
   const [deletingId, setDeletingId] = useState(null);
 
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -47,7 +47,6 @@ export default function AdminCinemasPage() {
     try {
       setLoading(true);
       setError(null);
-      setSuccess(null);
 
       const data = await AdminCinemaService.getCinemas();
       const list = Array.isArray(data)
@@ -58,7 +57,9 @@ export default function AdminCinemasPage() {
       setCinemas(list);
     } catch (err) {
       console.error("Fetch cinemas error:", err);
-      setError(err?.message || "Không tải được danh sách rạp.");
+      const msg = err?.message || "Không tải được danh sách rạp.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -74,7 +75,6 @@ export default function AdminCinemasPage() {
     setEditingCinema(null);
     setForm(EMPTY_FORM);
     setError(null);
-    setSuccess(null);
     setModalOpen(true);
   };
 
@@ -87,7 +87,6 @@ export default function AdminCinemasPage() {
       isActive: cinema.isActive ?? cinema.active ?? true,
     });
     setError(null);
-    setSuccess(null);
     setModalOpen(true);
   };
 
@@ -107,17 +106,12 @@ export default function AdminCinemasPage() {
     e.preventDefault();
 
     if (!form.name.trim()) {
-      setError("Vui lòng nhập tên rạp.");
-      setSuccess(null);
+      const msg = "Vui lòng nhập tên rạp.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
-    // const payload = {
-    //   name: form.name.trim(),
-    //   address: form.address.trim() || null,
-    //   hotline: form.hotline.trim() || null,
-    //   isActive: !!form.isActive,
-    // };
     const payload = {
       name: form.name.trim(),
       address: form.address.trim() || null,
@@ -128,7 +122,6 @@ export default function AdminCinemasPage() {
     try {
       setSaving(true);
       setError(null);
-      setSuccess(null);
 
       if (editingCinema) {
         const id = editingCinema.cinemaId || editingCinema.id;
@@ -142,19 +135,22 @@ export default function AdminCinemasPage() {
               : c
           )
         );
-        setSuccess("Cập nhật rạp thành công.");
+
+        toast.success("Cập nhật rạp thành công.");
       } else {
         const created = await AdminCinemaService.createCinema(payload);
         const createdCinema = created?.data ?? created;
 
         setCinemas((prev) => [createdCinema, ...prev]);
-        setSuccess("Thêm rạp mới thành công.");
+        toast.success("Thêm rạp mới thành công.");
       }
 
       closeModal();
     } catch (err) {
       console.error("Save cinema error:", err);
-      setError(err?.message || "Lưu thông tin rạp thất bại.");
+      const msg = err?.message || "Lưu thông tin rạp thất bại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -168,15 +164,16 @@ export default function AdminCinemasPage() {
       try {
         setDeletingId(id);
         setError(null);
-        setSuccess(null);
 
         await AdminCinemaService.deleteCinema(id);
 
         setCinemas((prev) => prev.filter((c) => (c.cinemaId || c.id) !== id));
-        setSuccess("Xóa rạp thành công.");
+        toast.success("Xóa rạp thành công.");
       } catch (err) {
         console.error("Delete cinema error:", err);
-        setError(err?.message || "Xóa rạp thất bại.");
+        const msg = err?.message || "Xóa rạp thất bại.";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
@@ -197,12 +194,14 @@ export default function AdminCinemasPage() {
       const name = c.name || c.cinemaName || "";
       const address = c.address || "";
       const hotline = c.hotline || c.phone || "";
+      const code = c.code || c.cinemaCode || "";
+      const city = c.city || "";
+      const district = c.district || "";
       const isActive = c.isActive ?? c.active ?? true;
 
       const q = search.trim().toLowerCase();
       if (q) {
-        const haystack =
-          `${name} ${code} ${address} ${city} ${district} ${hotline}`.toLowerCase();
+        const haystack = `${name} ${code} ${address} ${city} ${district} ${hotline}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
 
@@ -243,6 +242,7 @@ export default function AdminCinemasPage() {
         onCancel={closeWarning}
         onConfirm={warning.onConfirm}
       />
+
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
@@ -311,9 +311,15 @@ export default function AdminCinemasPage() {
                focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent
                transition-all"
               >
-                <option value="ALL">Tất cả</option>
-                <option value="ACTIVE">Đang hoạt động</option>
-                <option value="INACTIVE">Tạm ngưng</option>
+                {STATUS_FILTERS.map((x) => (
+                  <option key={x} value={x}>
+                    {x === "ALL"
+                      ? "Tất cả"
+                      : x === "ACTIVE"
+                      ? "Đang hoạt động"
+                      : "Tạm ngưng"}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -338,19 +344,12 @@ export default function AdminCinemasPage() {
         </div>
       </section>
 
-      {/* Alerts */}
-      {(error || success) && (
+      {/* Error Alert only */}
+      {error && (
         <section className="space-y-3">
-          {error && (
-            <div className="rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="rounded-2xl border border-emerald-500/60 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-              {success}
-            </div>
-          )}
+          <div className="rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+            {error}
+          </div>
         </section>
       )}
 
@@ -539,10 +538,10 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
     <div
       className="
         fixed inset-0 z-40
-        flex items-start justify-center        /* canh TRÊN */
+        flex items-start justify-center
         px-4
         bg-black/70 backdrop-blur-sm
-        overflow-y-auto                        /* scroll toàn màn hình */
+        overflow-y-auto
       "
     >
       {/* overlay */}
@@ -552,7 +551,7 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
         className="
           relative z-50
           w-full max-w-xl
-          mt-24 mb-10                           /* cách top/bottom một đoạn */
+          mt-24 mb-10
           rounded-3xl bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/95
           border border-white/15 shadow-2xl overflow-hidden
         "
@@ -575,7 +574,8 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
             <button
               type="button"
               onClick={onClose}
-              className="ml-4 rounded-full bg-white/5 hover:bg-white/15 border border-white/20 p-1.5 text-white/70 hover:text-white transition-all"
+              disabled={saving}
+              className="ml-4 rounded-full bg-white/5 hover:bg-white/15 border border-white/20 p-1.5 text-white/70 hover:text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               ✕
             </button>
@@ -595,7 +595,7 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
                   placeholder="CinesVerse Vincom Center..."
                 />
               </div>
-              <div></div>
+              <div />
             </div>
 
             <div>
