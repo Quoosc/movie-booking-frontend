@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminMovieService } from "@/api/adminservice";
 import { uploadPoster } from "@/api/cloudinaryService";
+import { toast } from "react-toastify";
 
 const STATUS_OPTIONS = ["SHOWING", "UPCOMING"];
 
@@ -83,7 +84,9 @@ export default function AdminMoviesPage() {
       setMovies(Array.from(map.values()));
     } catch (err) {
       console.error("Fetch movies error:", err);
-      setError(err?.message || "Không tải được danh sách phim.");
+      const msg = err?.message || "Không tải được danh sách phim.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -136,42 +139,55 @@ export default function AdminMoviesPage() {
     setError(null);
     setSuccess(null);
 
+    // ===== Validate + toast like Promotions page =====
     if (!form.genre.trim()) {
-      setError("Vui lòng nhập thể loại phim.");
+      const msg = "Vui lòng nhập thể loại phim.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (!form.description.trim()) {
-      setError("Vui lòng nhập mô tả phim.");
+      const msg = "Vui lòng nhập mô tả phim.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (!form.director.trim()) {
-      setError("Vui lòng nhập tên đạo diễn.");
+      const msg = "Vui lòng nhập tên đạo diễn.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (!form.actors.trim()) {
-      setError("Vui lòng nhập danh sách diễn viên.");
+      const msg = "Vui lòng nhập danh sách diễn viên.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (!form.trailerUrl.trim()) {
-      setError("Vui lòng nhập Trailer URL.");
+      const msg = "Vui lòng nhập Trailer URL.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (!form.language.trim()) {
-      setError("Vui lòng nhập ngôn ngữ.");
+      const msg = "Vui lòng nhập ngôn ngữ.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
-    // 2) Payload KHÔNG để null các field bắt buộc
+    // Payload
     const payload = {
       title: form.title.trim(),
       genre: form.genre.trim(),
       description: form.description.trim(),
       duration: Number(form.duration),
-      minimumAge: form.minimumAge ? Number(form.minimumAge) : 0, // ok vì min 0
+      minimumAge: form.minimumAge ? Number(form.minimumAge) : 0,
       director: form.director.trim(),
       actors: form.actors.trim(),
-      posterUrl: form.posterUrl || null, // field này optional, để null được
-      posterCloudinaryId: form.posterCloudinaryId || null, // optional
+      posterUrl: form.posterUrl || null,
+      posterCloudinaryId: form.posterCloudinaryId || null,
       trailerUrl: form.trailerUrl.trim(),
       status: form.status || "UPCOMING",
       language: form.language.trim(),
@@ -193,13 +209,17 @@ export default function AdminMoviesPage() {
             m.movieId === editingMovie.movieId ? { ...m, ...updated } : m
           )
         );
-        setSuccess("Cập nhật thông tin phim thành công.");
+
+        const msg = "Cập nhật thông tin phim thành công.";
+        toast.success(msg);
       } else {
         // CREATE
         const res = await AdminMovieService.createMovie?.(payload);
         const created = res?.data || res || payload;
         setMovies((prev) => [created, ...prev]);
-        setSuccess("Thêm phim mới thành công.");
+
+        const msg = "Thêm phim mới thành công.";
+        toast.success(msg);
       }
 
       setIsModalOpen(false);
@@ -207,7 +227,9 @@ export default function AdminMoviesPage() {
       setForm(EMPTY_FORM);
     } catch (err) {
       console.error("Save movie error:", err);
-      setError(err?.message || "Lưu thông tin phim thất bại.");
+      const msg = err?.message || "Lưu thông tin phim thất bại.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -223,10 +245,14 @@ export default function AdminMoviesPage() {
         await AdminMovieService.deleteMovie?.(movieId);
 
         setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
-        setSuccess("Xóa phim thành công.");
+
+        const msg = "Xóa phim thành công.";
+        toast.success(msg);
       } catch (err) {
         console.error("Delete movie error:", err);
-        setError(err?.message || "Xóa phim thất bại.");
+        const msg = err?.message || "Xóa phim thất bại.";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
@@ -270,6 +296,7 @@ export default function AdminMoviesPage() {
 
     return { total, showing, upcoming };
   }, [movies]);
+
   // ================= CLOUDINARY =================
   const handlePosterFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -284,13 +311,18 @@ export default function AdminMoviesPage() {
         posterUrl,
         posterCloudinaryId,
       }));
+
+      toast.success("Upload poster thành công!");
     } catch (err) {
-      console.error(err);
-      alert(err.message || "Upload poster thất bại");
+      console.error("Upload poster error:", err);
+      const msg = err?.message || "Upload poster thất bại.";
+      toast.error(msg);
+      setError(msg);
     } finally {
       setUploadingPoster(false);
     }
   };
+
   // ================= RENDER =================
 
   return (
@@ -307,6 +339,7 @@ export default function AdminMoviesPage() {
         onCancel={closeWarning}
         onConfirm={warning.onConfirm}
       />
+
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
@@ -485,7 +518,6 @@ export default function AdminMoviesPage() {
                               <div className="h-12 w-9 rounded-xl bg-gradient-to-br from-violet-400 via-fuchsia-500 to-emerald-400 p-[1px] overflow-hidden">
                                 <div className="h-full w-full rounded-[10px] bg-[#050012] flex items-center justify-center text-[10px] font-bold text-white/70">
                                   {m.posterUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                       src={m.posterUrl}
                                       alt={m.title}
@@ -684,7 +716,8 @@ function MovieModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full bg-white/5 hover:bg-white/10 border border-white/20 w-8 h-8 flex items-center justify-center text-white/70 text-sm transition-all"
+              disabled={saving}
+              className="rounded-full bg-white/5 hover:bg-white/10 border border-white/20 w-8 h-8 flex items-center justify-center text-white/70 text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               ✕
             </button>
@@ -762,6 +795,7 @@ function MovieModal({
                   placeholder="English, Tiếng Việt..."
                 />
               </div>
+
               <div>
                 <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
                   Đạo diễn
@@ -878,7 +912,7 @@ function MovieModal({
                 value={form.description}
                 onChange={handleChange("description")}
                 rows={3}
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg:white/10 transition-all resize-none"
+                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all resize-none"
                 placeholder="Tóm tắt nội dung phim..."
               />
             </div>

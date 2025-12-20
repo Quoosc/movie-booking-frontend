@@ -1144,7 +1144,7 @@ function BookingPanel({
 
         {snacks.length === 0 ? (
           <p className="text-center text-sm md:text-base text-white/50">
-            Hiện chưa có dữ liệu bắp nước (mock).
+            Hiện chưa có dữ liệu bắp nước.
           </p>
         ) : (
           <div className="space-y-12">
