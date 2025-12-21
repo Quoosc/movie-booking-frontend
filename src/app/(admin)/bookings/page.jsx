@@ -2,6 +2,8 @@
 import { useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminOrderService } from "@/api/adminservice";
+import { toast } from "react-toastify";
+import QRCode from "react-qr-code";
 
 const STATUS_COLORS = {
   PENDING: "bg-amber-400/10 text-amber-200 border-amber-400/40",
@@ -27,12 +29,13 @@ export default function AdminBookingsPage() {
   const [booking, setBooking] = useState(null);
 
   const [loading, setLoading] = useState(false);
-  const [qrSaving, setQrSaving] = useState(false);
-  const [qrDraft, setQrDraft] = useState("");
+
+  const [qrPayloadDraft, setQrPayloadDraft] = useState("");
+
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Warning modal state (Seats-style)
+  // Warning modal state
   const [warning, setWarning] = useState({
     open: false,
     title: "",
@@ -50,7 +53,10 @@ export default function AdminBookingsPage() {
   const handleSearch = async (e) => {
     e?.preventDefault();
     const id = searchId.trim();
-    if (!id) return;
+    if (!id) {
+      toast.info("Nhập bookingId để tìm.");
+      return;
+    }
 
     setError(null);
     setSuccess(null);
@@ -58,58 +64,54 @@ export default function AdminBookingsPage() {
 
     try {
       setLoading(true);
+
       const res = await AdminOrderService.getBookingById(id);
       const data = res?.data ?? res ?? null;
+
       if (!data) {
-        setError("Không tìm thấy dữ liệu booking.");
+        const msg = "Không tìm thấy dữ liệu booking.";
+        setError(msg);
+        toast.error(msg);
         return;
       }
+
       setBooking(data);
-      setQrDraft(data.qrCodeUrl || "");
+
+      // BE: qrPayload
+      setQrPayloadDraft(data.qrPayload ?? "");
+
+      toast.success("Tải booking thành công.");
     } catch (err) {
       console.error("getBookingById error:", err);
-      setError(
-        err?.message || "Không tìm thấy booking. Vui lòng kiểm tra lại ID."
-      );
+      const msg =
+        err?.message || "Không tìm thấy booking. Vui lòng kiểm tra lại ID.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveQr = async () => {
-    if (!booking?.bookingId) return;
-
-    const confirmSave = async () => {
-      try {
-        setQrSaving(true);
-        setError(null);
-        setSuccess(null);
-
-        const updated = await AdminOrderService.updateBookingQr(
-          booking.bookingId,
-          qrDraft.trim() || null
-        );
-
-        setBooking((prev) => ({
-          ...(prev || {}),
-          ...(updated || {}),
-          qrCodeUrl: qrDraft.trim() || null,
-        }));
-
-        setSuccess("Cập nhật QR code cho booking thành công.");
-      } catch (err) {
-        console.error("updateBookingQr error:", err);
-        setError(err?.message || "Cập nhật QR code thất bại.");
-      } finally {
-        setQrSaving(false);
-        closeWarning();
-      }
-    };
+  // Payload 
+  const handleApplyQrPayload = () => {
+    const next = qrPayloadDraft.trim();
+    if (!next) {
+      toast.info("qrPayload đang trống.");
+      return;
+    }
 
     showWarning(
-      "Bạn có chắc muốn lưu QR cho booking này?",
+      "Áp dụng qrPayload để render QR ở màn hình này? (KHÔNG lưu về backend)",
       "Lưu ý!",
-      confirmSave
+      () => {
+        setBooking((prev) => ({
+          ...(prev || {}),
+          qrPayload: next,
+        }));
+        setSuccess("Đã áp dụng qrPayload để render QR (local).");
+        toast.success("Đã render QR từ qrPayload.");
+        closeWarning();
+      }
     );
   };
 
@@ -117,10 +119,13 @@ export default function AdminBookingsPage() {
 
   const moneySummary = useMemo(() => {
     if (!booking) return null;
-    const subtotal = booking.subtotal ?? booking.totalAmount ?? 0;
-    const discount = booking.discount ?? booking.totalDiscount ?? 0;
-    const finalTotal =
-      booking.total ?? booking.finalAmount ?? subtotal - discount;
+
+    const subtotal = Number(booking.totalPrice ?? 0);
+    const discount = Number(booking.discountValue ?? 0);
+    const finalTotal = Number(
+      booking.finalPrice ?? Math.max(0, subtotal - discount)
+    );
+
     return { subtotal, discount, finalTotal };
   }, [booking]);
 
@@ -129,29 +134,33 @@ export default function AdminBookingsPage() {
     "bg-slate-500/10 text-slate-200 border-slate-500/40";
 
   const paymentBadgeClass =
-    PAYMENT_COLORS[(booking?.paymentStatus || "").toUpperCase()] ||
+    PAYMENT_COLORS[(booking?.payment?.status || "").toUpperCase()] ||
     "bg-slate-500/10 text-slate-200 border-slate-500/40";
 
-  const createdAt =
-    booking?.createdAt && !Number.isNaN(Date.parse(booking.createdAt))
-      ? new Date(booking.createdAt)
+  const bookedAt =
+    booking?.bookedAt && !Number.isNaN(Date.parse(booking.bookedAt))
+      ? new Date(booking.bookedAt)
       : null;
 
   const showtimeStart =
-    booking?.showtime?.startTime &&
-    !Number.isNaN(Date.parse(booking.showtime.startTime))
-      ? new Date(booking.showtime.startTime)
+    booking?.showtimeStartTime &&
+    !Number.isNaN(Date.parse(booking.showtimeStartTime))
+      ? new Date(booking.showtimeStartTime)
       : null;
 
-  const customer =
-    booking?.user || booking?.customer || booking?.guestInfo || booking?.guest;
+  const paymentExpiresAt =
+    booking?.paymentExpiresAt &&
+    !Number.isNaN(Date.parse(booking.paymentExpiresAt))
+      ? new Date(booking.paymentExpiresAt)
+      : null;
 
-  const seats = booking?.seats || booking?.bookingSeats || [];
-  const snacks = booking?.snacks || booking?.bookingSnacks || [];
+  const seats = Array.isArray(booking?.seats) ? booking.seats : [];
+  const snacks = Array.isArray(booking?.snacks) ? booking.snacks : [];
 
-  const primaryPayment =
-    booking?.payment ||
-    (Array.isArray(booking?.payments) ? booking.payments[0] : null);
+  const customer = booking?.customer || null;
+  const payment = booking?.payment || null;
+
+  const qrPayload = booking?.qrPayload ?? "";
 
   // ==== render ====
 
@@ -165,6 +174,7 @@ export default function AdminBookingsPage() {
         onCancel={closeWarning}
         onConfirm={warning.onConfirm}
       />
+
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
@@ -176,8 +186,8 @@ export default function AdminBookingsPage() {
           </span>
         </h1>
         <p className="text-xs md:text-sm text-white/60 max-w-2xl">
-          Nhập mã booking để xem chi tiết ghế, bắp nước, trạng thái thanh toán
-          và quản lý QR code check-in.
+          Nhập mã booking để xem chi tiết ghế, bắp nước, thanh toán và quản lý
+          QR code check-in.
         </p>
       </header>
 
@@ -185,6 +195,7 @@ export default function AdminBookingsPage() {
       <section className="relative rounded-3xl bg-gradient-to-br from-[#160033]/85 via-[#090019]/95 to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400" />
+
         <form
           onSubmit={handleSearch}
           className="relative p-4 md:p-6 flex flex-col md:flex-row gap-4 md:items-end justify-between"
@@ -212,16 +223,16 @@ export default function AdminBookingsPage() {
         </form>
       </section>
 
-      {/* Alerts */}
+      {/* Alerts (optional – vẫn giữ nếu bạn muốn) */}
       {(error || success) && (
         <section className="space-y-3">
           {error && (
-            <div className="rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+            <div className="rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100 break-words">
               {error}
             </div>
           )}
           {success && (
-            <div className="rounded-2xl border border-emerald-500/60 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+            <div className="rounded-2xl border border-emerald-500/60 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 break-words">
               {success}
             </div>
           )}
@@ -245,13 +256,14 @@ export default function AdminBookingsPage() {
               value={booking.status || "UNKNOWN"}
               badgeClass={statusBadgeClass}
             />
+
             <SummaryCard
-              label="Trạng thái thanh toán"
-              value={
-                booking.paymentStatus || primaryPayment?.status || "UNKNOWN"
-              }
-              badgeClass={paymentBadgeClass}
+              label="Thanh toán"
+              value={payment?.status || "—"}
+              badgeClass={payment?.status ? paymentBadgeClass : null}
+              sub={payment?.method ? `Method: ${payment.method}` : ""}
             />
+
             <SummaryCard
               label="Tổng tiền"
               value={
@@ -265,14 +277,18 @@ export default function AdminBookingsPage() {
                   : ""
               }
             />
+
             <SummaryCard
-              label="Ngày tạo"
-              value={
-                createdAt
-                  ? createdAt.toLocaleString("vi-VN")
-                  : booking.createdAt || "—"
+              label="Booking ID"
+              value={booking.bookingId || "—"}
+              monoValue
+              sub={
+                bookedAt
+                  ? `BookedAt: ${bookedAt.toLocaleString("vi-VN")}`
+                  : booking.bookedAt
+                  ? `BookedAt: ${booking.bookedAt}`
+                  : ""
               }
-              sub={booking.bookingId?.slice(0, 8) + "…"}
             />
           </section>
 
@@ -280,118 +296,90 @@ export default function AdminBookingsPage() {
           <section className="grid lg:grid-cols-3 gap-6">
             {/* Customer info */}
             <Panel title="Thông tin khách / thành viên">
-              {customer ? (
+              {!customer ? (
+                <EmptyText text="Không có dữ liệu khách hàng." />
+              ) : (
                 <div className="space-y-2 text-xs text-white/80">
-                  <InfoRow label="Tên">
-                    {customer.username || customer.fullName || "—"}
-                  </InfoRow>
+                  <InfoRow label="Loại">{customer.type || "—"}</InfoRow>
+                  <InfoRow label="User ID">{customer.userId || "—"}</InfoRow>
+                  <InfoRow label="Username">{customer.username || "—"}</InfoRow>
+                  <InfoRow label="Họ tên">{customer.fullName || "—"}</InfoRow>
                   <InfoRow label="Email">{customer.email || "—"}</InfoRow>
-                  <InfoRow label="Số điện thoại">
-                    {customer.phoneNumber || customer.phone || "—"}
-                  </InfoRow>
-                  {booking.membershipTier && (
+                  <InfoRow label="SĐT">{customer.phoneNumber || "—"}</InfoRow>
+
+                  {customer.membershipTier ? (
                     <InfoRow label="Membership">
                       <span className="text-emerald-300 font-semibold">
-                        {booking.membershipTier.name}{" "}
-                      </span>
+                        {customer.membershipTier.name}
+                      </span>{" "}
                       <span className="text-white/60">
-                        ({booking.membershipTier.discountValue}
-                        {booking.membershipTier.discountType === "PERCENTAGE"
+                        ({customer.membershipTier.discountValue}
+                        {customer.membershipTier.discountType === "PERCENTAGE"
                           ? "%"
-                          : "đ"}{" "}
-                        off)
+                          : "đ"}
+                        )
                       </span>
                     </InfoRow>
-                  )}
-                  {typeof booking.loyaltyPointsEarned === "number" && (
-                    <InfoRow label="Điểm cộng thêm">
-                      <span className="text-emerald-200 font-semibold">
-                        {booking.loyaltyPointsEarned}
-                      </span>
-                    </InfoRow>
+                  ) : (
+                    <InfoRow label="Membership">—</InfoRow>
                   )}
                 </div>
-              ) : (
-                <EmptyText />
               )}
             </Panel>
 
             {/* Showtime info */}
             <Panel title="Thông tin suất chiếu">
-              {booking.showtime ? (
-                <div className="space-y-2 text-xs text-white/80">
-                  <InfoRow label="Phim">
-                    {booking.showtime.movie?.title || "—"}
+              <div className="space-y-2 text-xs text-white/80">
+                <InfoRow label="Phim">{booking.movieTitle || "—"}</InfoRow>
+                <InfoRow label="Rạp">{booking.cinemaName || "—"}</InfoRow>
+                <InfoRow label="Phòng">{booking.roomName ?? "—"}</InfoRow>
+                <InfoRow label="Format">{booking.format || "—"}</InfoRow>
+                <InfoRow label="Giờ chiếu">
+                  {showtimeStart
+                    ? showtimeStart.toLocaleString("vi-VN")
+                    : booking.showtimeStartTime || "—"}
+                </InfoRow>
+
+                {paymentExpiresAt && (
+                  <InfoRow label="Hết hạn TT">
+                    {paymentExpiresAt.toLocaleString("vi-VN")}
                   </InfoRow>
-                  <InfoRow label="Rạp">
-                    {booking.showtime.cinema?.name ||
-                      booking.showtime.cinemaName ||
-                      "—"}
-                  </InfoRow>
-                  <InfoRow label="Phòng">
-                    {booking.showtime.room?.roomNumber ||
-                      booking.showtime.roomNumber ||
-                      "—"}
-                  </InfoRow>
-                  <InfoRow label="Định dạng">
-                    {booking.showtime.format || "—"}
-                  </InfoRow>
-                  <InfoRow label="Giờ chiếu">
-                    {showtimeStart
-                      ? showtimeStart.toLocaleString("vi-VN")
-                      : booking.showtime.startTime || "—"}
-                  </InfoRow>
-                </div>
-              ) : (
-                <EmptyText />
-              )}
+                )}
+
+                {booking.posterUrl && (
+                  <div className="pt-2">
+                    <div className="text-[11px] text-white/50 uppercase tracking-[0.16em] mb-2">
+                      Poster
+                    </div>
+                    <img
+                      src={booking.posterUrl}
+                      alt={booking.movieTitle || "poster"}
+                      className="w-24 h-32 object-cover rounded-2xl border border-white/10"
+                    />
+                  </div>
+                )}
+              </div>
             </Panel>
 
-            {/* QR code management */}
+            {/* QR code: render from qrPayload */}
             <Panel title="QR check-in / vé điện tử">
               <div className="space-y-4 text-xs text-white/80">
-                <p className="text-white/70">
-                  Admin có thể dán URL ảnh QR (Cloudinary, S3, ...) để dùng cho
-                  quầy check-in hoặc gửi lại cho khách.
-                </p>
-
                 <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-white/60 uppercase tracking-[0.18em]">
-                    QR Code URL
-                  </label>
-                  <input
-                    type="text"
-                    value={qrDraft}
-                    onChange={(e) => setQrDraft(e.target.value)}
-                    placeholder="https://cdn.example.com/qr/booking-xxx.png"
-                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-3 py-2.5 text-xs text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                  />
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <span className="text-[11px] text-white/50">
-                      Giá trị hiện tại:{" "}
-                      {booking.qrCodeUrl ? (
-                        <a
-                          href={booking.qrCodeUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
-                        >
-                          Mở QR
-                        </a>
-                      ) : (
-                        <span className="text-white/40">chưa thiết lập</span>
-                      )}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleSaveQr}
-                      disabled={qrSaving}
-                      className="rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 text-black shadow-md shadow-purple-500/40 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-                    >
-                      {qrSaving ? "Đang lưu..." : "Lưu QR"}
-                    </button>
-                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-1"></div>
                 </div>
+
+                {/* QR preview */}
+                {!qrPayload ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5/5 p-4 text-white/60 text-xs">
+                    Không có qrPayload để render QR.
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-white/10 bg-white/5/5 p-4">
+                    <div className="rounded-2xl bg-white p-3 shadow-lg">
+                      <QRCode value={qrPayload} size={170} />
+                    </div>
+                  </div>
+                )}
               </div>
             </Panel>
           </section>
@@ -414,30 +402,23 @@ export default function AdminBookingsPage() {
                     </thead>
                     <tbody>
                       {seats.map((s, idx) => {
-                        const row = s.rowLabel || s.row || "?";
-                        const num = s.seatNumber || s.number || s.seatNo || "?";
-                        const type = s.seatType || s.type || "NORMAL";
-
-                        const price =
-                          s.price ??
-                          s.finalPrice ??
-                          s.priceBreakdown?.finalPrice ??
-                          0;
+                        const row = s.rowLabel ?? "?";
+                        const num = s.seatNumber ?? "?";
+                        const type = (s.seatType ?? "NORMAL").toUpperCase();
+                        const price = s.price ?? null;
 
                         return (
                           <tr
-                            key={s.showtimeSeatId || s.seatId || idx}
+                            key={`${row}-${num}-${idx}`}
                             className="border-b border-white/5"
                           >
-                            <td className="py-2 px-2 whitespace-nowrap text-white">
+                            <td className="py-2 px-2 whitespace-nowrap text-white font-mono">
                               {row}
                               {num}
                             </td>
-                            <td className="py-2 px-2 text-white/70">
-                              {type.toUpperCase()}
-                            </td>
+                            <td className="py-2 px-2 text-white/70">{type}</td>
                             <td className="py-2 px-2 text-right text-emerald-200">
-                              {formatCurrency(price)}
+                              {price == null ? "—" : formatCurrency(price)}
                             </td>
                           </tr>
                         );
@@ -459,29 +440,30 @@ export default function AdminBookingsPage() {
                       <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
                         <th className="py-2 px-2 text-left">Sản phẩm</th>
                         <th className="py-2 px-2 text-right">SL</th>
-                        <th className="py-2 px-2 text-right">Thành tiền</th>
+                        <th className="py-2 px-2 text-right">Đơn giá</th>
                       </tr>
                     </thead>
                     <tbody>
                       {snacks.map((sn, idx) => {
-                        const name = sn.name || sn.snack?.name || "Không rõ";
-                        const qty = sn.quantity ?? sn.qty ?? 1;
-                        const unitPrice =
-                          sn.price ?? sn.unitPrice ?? sn.snack?.price ?? 0;
-                        const total = unitPrice * qty;
+                        const name = sn.name || "Không rõ";
+                        const qty = sn.quantity ?? 1;
+                        const unitPrice = sn.unitPrice ?? null;
+
                         return (
                           <tr
-                            key={sn.bookingSnackId || sn.snackId || idx}
+                            key={sn.snackId || idx}
                             className="border-b border-white/5"
                           >
-                            <td className="py-2 px-2 text-white line-clamp-2">
+                            <td className="py-2 px-2 text-white break-words">
                               {name}
                             </td>
-                            <td className="py-2 px-2 text-right text-white/80">
+                            <td className="py-2 px-2 text-right text-white/80 font-mono">
                               {qty}
                             </td>
                             <td className="py-2 px-2 text-right text-emerald-200">
-                              {formatCurrency(total)}
+                              {unitPrice == null
+                                ? "—"
+                                : formatCurrency(unitPrice)}
                             </td>
                           </tr>
                         );
@@ -493,61 +475,50 @@ export default function AdminBookingsPage() {
             </Panel>
           </section>
 
-          {/* Payment detail (đọc từ booking.payment / payments[0] nếu có) */}
+          {/* Payment detail */}
           <section>
             <Panel title="Chi tiết thanh toán (primary)">
-              {primaryPayment ? (
+              {!payment ? (
+                <EmptyText text="Booking chưa có thông tin thanh toán." />
+              ) : (
                 <div className="grid md:grid-cols-2 gap-4 text-xs text-white/80">
                   <div className="space-y-2">
                     <InfoRow label="Payment ID">
-                      {primaryPayment.paymentId || primaryPayment.id || "—"}
+                      {payment.paymentId || "—"}
                     </InfoRow>
-                    <InfoRow label="Gateway transaction">
-                      {primaryPayment.transactionId ||
-                        primaryPayment.momoTransId ||
-                        primaryPayment.paypalOrderId ||
-                        "—"}
+                    <InfoRow label="Transaction ID">
+                      {payment.transactionId || "—"}
                     </InfoRow>
-                    <InfoRow label="Phương thức">
-                      {primaryPayment.method ||
-                        primaryPayment.paymentMethod ||
-                        "—"}
-                    </InfoRow>
+                    <InfoRow label="Method">{payment.method || "—"}</InfoRow>
                   </div>
+
                   <div className="space-y-2">
-                    <InfoRow label="Trạng thái">
+                    <InfoRow label="Status">
                       <span
                         className={`inline-flex items-center rounded-full px-3 py-1 border text-[11px] font-semibold uppercase ${
                           PAYMENT_COLORS[
-                            (primaryPayment.status || "").toUpperCase()
+                            (payment.status || "").toUpperCase()
                           ] ||
                           "bg-slate-500/10 text-slate-200 border-slate-500/40"
                         }`}
                       >
-                        {primaryPayment.status || "UNKNOWN"}
+                        {payment.status || "UNKNOWN"}
                       </span>
                     </InfoRow>
-                    <InfoRow label="Số tiền">
+
+                    <InfoRow label="Amount">
                       <span className="text-emerald-200 font-semibold">
-                        {formatCurrency(
-                          primaryPayment.amount ||
-                            primaryPayment.totalAmount ||
-                            moneySummary?.finalTotal ||
-                            0
-                        )}
+                        {formatCurrency(payment.amount ?? 0)}
                       </span>
                     </InfoRow>
-                    {primaryPayment.paidAt && (
-                      <InfoRow label="Thời gian thanh toán">
-                        {new Date(primaryPayment.paidAt).toLocaleString(
-                          "vi-VN"
-                        )}
-                      </InfoRow>
-                    )}
+
+                    <InfoRow label="Paid At">
+                      {payment.paidAt
+                        ? new Date(payment.paidAt).toLocaleString("vi-VN")
+                        : "—"}
+                    </InfoRow>
                   </div>
                 </div>
-              ) : (
-                <EmptyText text="Booking chưa có thông tin thanh toán (hoặc thanh toán thất bại / chưa khởi tạo)." />
               )}
             </Panel>
           </section>
@@ -559,7 +530,7 @@ export default function AdminBookingsPage() {
 
 /* ==== sub components ==== */
 
-function SummaryCard({ label, value, sub, badgeClass }) {
+function SummaryCard({ label, value, sub, badgeClass, monoValue = false }) {
   const content =
     badgeClass != null ? (
       <span
@@ -568,7 +539,13 @@ function SummaryCard({ label, value, sub, badgeClass }) {
         {value}
       </span>
     ) : (
-      <span className="text-xl md:text-2xl font-black text-white">{value}</span>
+      <span
+        className={`text-sm md:text-base font-black text-white break-all ${
+          monoValue ? "font-mono" : ""
+        }`}
+      >
+        {value}
+      </span>
     );
 
   return (
@@ -580,7 +557,11 @@ function SummaryCard({ label, value, sub, badgeClass }) {
           {label}
         </p>
         {content}
-        {sub && <p className="text-[11px] text-white/55 leading-snug">{sub}</p>}
+        {sub ? (
+          <p className="text-[11px] text-white/55 leading-snug break-all">
+            {sub}
+          </p>
+        ) : null}
       </div>
     </div>
   );
@@ -607,7 +588,9 @@ function InfoRow({ label, children }) {
       <span className="text-[11px] text-white/50 uppercase tracking-[0.16em]">
         {label}
       </span>
-      <span className="text-xs text-white/85 text-right">{children}</span>
+      <span className="text-xs text-white/85 text-right break-all">
+        {children}
+      </span>
     </div>
   );
 }
