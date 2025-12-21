@@ -8,6 +8,8 @@ import HomeButton from "@/components/shared/Buttons/HomeButton";
 import { getBookingById } from "@/api/bookingService";
 import { useAuth } from "@/context/AuthContext";
 
+import QRCode from "react-qr-code";
+
 function formatShowtime(isoString) {
   if (!isoString) return "";
   const d = new Date(isoString);
@@ -111,10 +113,6 @@ export default function CheckoutSuccessPage() {
     };
   }, [bookingId]);
 
-  // const formattedShowtime = useMemo(
-  //   () => (booking ? formatShowtime(booking.showtimeStartTime) : ""),
-  //   [booking]
-  // );
   const formattedShowtime = useMemo(() => {
     const iso = booking?.showtimeStartTime || booking?.startTime;
     return booking ? formatShowtime(iso) : "";
@@ -157,7 +155,9 @@ export default function CheckoutSuccessPage() {
     booking?.posterUrl ||
     "https://via.placeholder.com/300x450?text=Movie";
 
-  const qrImageUrl = booking?.qrCode || "";
+  // ✅ NEW: qrPayload từ BE
+  const qrPayload = booking?.qrPayload || "";
+
   const bookingCode = (booking?.bookingId || booking?.id || bookingId || "")
     .slice(0, 8)
     .toUpperCase();
@@ -251,21 +251,22 @@ export default function CheckoutSuccessPage() {
                     />
                   </div>
 
-                  {/* QR */}
                   <div className="md:w-1/2 flex items-center justify-center p-4 md:p-6">
                     <div className="w-full h-full flex items-center justify-center">
-                      <div className="w-40 md:w-52 aspect-square bg-white flex items-center justify-center">
-                        {qrImageUrl ? (
-                          <img
-                            src={qrImageUrl}
-                            alt="QR code vé xem phim"
-                            className="w-full h-full object-contain"
-                          />
+                      {/* tăng khung QR lên to bự */}
+                      <div className="w-64 md:w-80 lg:w-96 aspect-square bg-white flex items-center justify-center rounded-2xl shadow-lg">
+                        {qrPayload ? (
+                          <div className="w-full h-full p-3 md:p-4">
+                            <QRCode
+                              value={qrPayload}
+                              style={{ height: "100%", width: "100%" }}
+                            />
+                          </div>
                         ) : (
-                          <div className="w-4/5 h-4/5 border-4 border-black/80 border-dashed flex items-center justify-center text-[11px] font-semibold text-black/70 text-center px-2">
+                          <div className="w-[90%] h-[90%] border-4 border-black/80 border-dashed flex items-center justify-center text-sm font-semibold text-black/70 text-center px-2">
                             QR CODE
                             <br />
-                            (chưa cấu hình)
+                            (chưa có qrPayload)
                           </div>
                         )}
                       </div>
@@ -273,7 +274,6 @@ export default function CheckoutSuccessPage() {
                   </div>
                 </div>
 
-                {/* BOTTOM: THANH INFO MÀU XANH + CHỮ VÀNG */}
                 {/* BOTTOM: THANH INFO DÙNG GRADIENT TÍM ĐẬM NHƯ YÊU CẦU */}
                 <div className="bg-gradient-to-b from-[#791dce] via-[#050018]/95 to-[#050038]/90 px-4 py-4 md:px-6 md:py-5 text-xs md:text-sm text-[#fff59d]">
                   {/* Tên phim */}
@@ -339,13 +339,17 @@ export default function CheckoutSuccessPage() {
                                 {snack.imageUrl && (
                                   <img
                                     src={snack.imageUrl}
-                                    alt={snack.name || snack.snackName || "Snack"}
+                                    alt={
+                                      snack.name || snack.snackName || "Snack"
+                                    }
                                     className="w-10 h-10 rounded-lg object-cover"
                                   />
                                 )}
                                 <div className="min-w-0">
                                   <p className="font-semibold text-sm md:text-base leading-tight truncate">
-                                    {snack.name || snack.snackName || "Bắp nước"}
+                                    {snack.name ||
+                                      snack.snackName ||
+                                      "Bắp nước"}
                                   </p>
                                   <p className="text-[11px] text-white/70">
                                     SL: {qty}
