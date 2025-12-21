@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminOrderService } from "@/api/adminservice";
+import { toast } from "react-toastify";
 
 const PAYMENT_STATUS_OPTIONS = [
   "PENDING",
@@ -17,9 +18,6 @@ const PAYMENT_METHOD_OPTIONS = ["MOMO", "PAYPAL"];
 export default function AdminOrdersPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
 
   // filters
   const [bookingIdFilter, setBookingIdFilter] = useState("");
@@ -54,6 +52,8 @@ export default function AdminOrdersPage() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [bookingDetail, setBookingDetail] = useState(null);
 
+  const modalOpen = refundModalOpen || detailModalOpen || warning.open;
+
   // ================= API =================
 
   const buildSearchParams = () => {
@@ -70,8 +70,6 @@ export default function AdminOrdersPage() {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      setError(null);
-      setSuccess(null);
 
       const filters = buildSearchParams();
       const data = await AdminOrderService.searchPayments(filters);
@@ -80,10 +78,11 @@ export default function AdminOrdersPage() {
         : Array.isArray(data?.data)
         ? data.data
         : [];
+
       setPayments(list);
     } catch (err) {
       console.error("searchPayments error:", err);
-      setError(
+      toast.error(
         err?.message || "Không tải được danh sách đơn hàng / thanh toán."
       );
     } finally {
@@ -92,7 +91,6 @@ export default function AdminOrdersPage() {
   };
 
   useEffect(() => {
-    // load lần đầu
     fetchPayments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -104,21 +102,20 @@ export default function AdminOrdersPage() {
     setMethodFilter("ALL");
     setStartDateFilter("");
     setEndDateFilter("");
+    toast.info("Đã xóa bộ lọc.");
   };
 
   // ===== Booking detail =====
 
   const openDetailModal = async (payment) => {
     if (!payment?.bookingId) {
-      setError("Payment này không gắn với bookingId.");
+      toast.error("Payment này không gắn với bookingId.");
       return;
     }
     setSelectedPayment(payment);
     setDetailModalOpen(true);
     setBookingDetail(null);
     setDetailLoading(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       const res = await AdminOrderService.getBookingById(payment.bookingId);
@@ -126,7 +123,7 @@ export default function AdminOrdersPage() {
       setBookingDetail(detail);
     } catch (err) {
       console.error("getBookingById error:", err);
-      setError(err?.message || "Không tải được chi tiết booking.");
+      toast.error(err?.message || "Không tải được chi tiết booking.");
     } finally {
       setDetailLoading(false);
     }
@@ -144,8 +141,6 @@ export default function AdminOrdersPage() {
     setRefundPayment(payment);
     setRefundReason("");
     setRefundModalOpen(true);
-    setError(null);
-    setSuccess(null);
   };
 
   const closeRefundModal = () => {
@@ -158,23 +153,23 @@ export default function AdminOrdersPage() {
   const handleSubmitRefund = async (e) => {
     e.preventDefault();
     if (!refundPayment?.paymentId) return;
+
     if (!refundReason.trim()) {
-      setError("Vui lòng nhập lý do hoàn tiền.");
+      toast.error("Vui lòng nhập lý do hoàn tiền.");
       return;
     }
 
     const confirmRefund = async () => {
       try {
         setRefundSubmitting(true);
-        setError(null);
-        setSuccess(null);
 
         await AdminOrderService.requestRefund(
           refundPayment.paymentId,
           refundReason.trim()
         );
 
-        setSuccess("Đã gửi yêu cầu hoàn tiền (REFUND) cho giao dịch này.");
+        toast.success("Đã gửi yêu cầu hoàn tiền (REFUND) cho giao dịch này.");
+
         setPayments((prev) =>
           prev.map((p) =>
             p.paymentId === refundPayment.paymentId
@@ -182,10 +177,11 @@ export default function AdminOrdersPage() {
               : p
           )
         );
+
         closeRefundModal();
       } catch (err) {
         console.error("requestRefund error:", err);
-        setError(err?.message || "Gửi yêu cầu hoàn tiền thất bại.");
+        toast.error(err?.message || "Gửi yêu cầu hoàn tiền thất bại.");
       } finally {
         setRefundSubmitting(false);
         closeWarning();
@@ -219,10 +215,7 @@ export default function AdminOrdersPage() {
     return { total, success, pending, refunded, failed };
   }, [payments]);
 
-  const filteredPayments = useMemo(() => {
-    // Vì search đã gửi lên BE rồi, ở đây chỉ lọc nhẹ nếu cần
-    return payments;
-  }, [payments]);
+  const filteredPayments = useMemo(() => payments, [payments]);
 
   // ================= HELPERS =================
 
@@ -242,15 +235,16 @@ export default function AdminOrdersPage() {
     return d.toLocaleString("vi-VN");
   };
 
-  const canRefund = (p) => {
-    const st = displayStatus(p);
-    return st === "SUCCESS";
-  };
+  const canRefund = (p) => displayStatus(p) === "SUCCESS";
 
   // ================= RENDER =================
 
   return (
-    <div className="space-y-8 lg:space-y-10">
+    <div
+      className={`space-y-8 lg:space-y-10 ${
+        modalOpen ? "h-screen overflow-hidden" : ""
+      }`}
+    >
       {/* Shared warning modal */}
       <WarningModal
         open={warning.open}
@@ -259,6 +253,7 @@ export default function AdminOrdersPage() {
         onCancel={closeWarning}
         onConfirm={warning.onConfirm}
       />
+
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
@@ -432,22 +427,6 @@ export default function AdminOrdersPage() {
         </div>
       </section>
 
-      {/* Alerts */}
-      {(error || success) && (
-        <section className="space-y-3">
-          {error && (
-            <div className="rounded-2xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="rounded-2xl border border-emerald-500/60 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-              {success}
-            </div>
-          )}
-        </section>
-      )}
-
       {/* Table */}
       <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a0033]/90 via-[#0b001f] to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-600/15 via-transparent to-cyan-500/15 pointer-events-none" />
@@ -521,19 +500,17 @@ export default function AdminOrdersPage() {
                         {/* Booking/User */}
                         <td className="py-3 px-4 align-top hidden md:table-cell">
                           {p.bookingId && (
-                            <div className="text-[11px] text-white/70 font-mono">
+                            <div className="text-[11px] text-white/70 font-mono break-all">
                               Booking:{" "}
                               <span className="text-white/90">
-                                {p.bookingId.slice(0, 8)}…
+                                {p.bookingId}
                               </span>
                             </div>
                           )}
                           {p.userId && (
-                            <div className="text-[11px] text-white/60 mt-0.5 font-mono">
+                            <div className="text-[11px] text-white/60 mt-0.5 font-mono break-all">
                               User:{" "}
-                              <span className="text-white/80">
-                                {p.userId.slice(0, 8)}…
-                              </span>
+                              <span className="text-white/80">{p.userId}</span>
                             </div>
                           )}
                         </td>
@@ -683,6 +660,11 @@ function MethodBadge({ method }) {
   return <span className={cls}>{label}</span>;
 }
 
+/**
+ * ✅ FIX: modal canh "trên" giống Movies page
+ * - items-start thay vì items-center
+ * - container có max-h + overflow-y-auto để tự scroll nội dung khi dài
+ */
 function RefundModal({
   payment,
   reason,
@@ -696,7 +678,7 @@ function RefundModal({
   if (!payment) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 py-8 bg-black/70 backdrop-blur-xl overflow-y-auto">
       <div className="relative w-full max-w-md rounded-3xl overflow-hidden bg-gradient-to-br from-[#160033]/95 via-[#080017] to-black border border-white/15 shadow-[0_0_50px_rgba(123,66,255,0.6)]">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-amber-400 via-pink-400 to-red-400" />
@@ -779,6 +761,12 @@ function RefundModal({
   );
 }
 
+/**
+ * ✅ FIX: modal canh "trên" giống Movies page
+ * - items-start thay vì items-center
+ * - overlay cho phép scroll nếu nội dung quá dài
+ * - container tự scroll nội dung
+ */
 function BookingDetailModal({
   onClose,
   payment,
@@ -789,12 +777,12 @@ function BookingDetailModal({
   displayDateTime,
 }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 py-8 bg-black/70 backdrop-blur-xl overflow-y-auto">
       <div className="relative w-full max-w-3xl rounded-3xl overflow-hidden bg-gradient-to-br from-[#160033]/95 via-[#080017] to-black border border-white/15 shadow-[0_0_60px_rgba(123,66,255,0.7)]">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
 
-        <div className="relative p-6 md:p-8 max-h-[80vh] overflow-y-auto">
+        <div className="relative p-6 md:p-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-cyan-300/80 mb-1">
