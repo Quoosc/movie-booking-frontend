@@ -85,43 +85,53 @@ export default function AccountMemberPage() {
     fetchData();
   }, []);
 
-  const { currentTier, nextTier, progressPercent } = useMemo(() => {
-    if (!loyalty || !tiers.length) {
-      return { currentTier: null, nextTier: null, progressPercent: 0 };
-    }
+  const { currentTier, nextTier, progressPercent, remainingToNext } =
+    useMemo(() => {
+      const points = Number(loyalty?.loyaltyPoints ?? 0);
 
-    const current = loyalty.membershipTier || null;
-    let currentMin = current?.minPoints ?? 0;
+      if (!Array.isArray(tiers) || tiers.length === 0) {
+        return {
+          currentTier:
+            loyalty?.membershipTier || currentUser?.membershipTier || null,
+          nextTier: null,
+          progressPercent: 0,
+          remainingToNext: 0,
+        };
+      }
 
-    const sorted = [...tiers].sort(
-      (a, b) => (a.minPoints ?? 0) - (b.minPoints ?? 0)
-    );
+      const sorted = [...tiers].sort(
+        (a, b) => Number(a.minPoints ?? 0) - Number(b.minPoints ?? 0)
+      );
 
-    // nếu backend trả tier object khác với trong danh sách, map theo id hoặc name
-    const currentFromList =
-      sorted.find((t) => t.membershipTierId === current?.membershipTierId) ||
-      sorted.find((t) => t.name === current?.name) ||
-      current;
+      let current = sorted[0];
+      for (const t of sorted) {
+        const min = Number(t.minPoints ?? 0);
+        if (min <= points) current = t;
+        else break;
+      }
 
-    currentMin = currentFromList?.minPoints ?? 0;
+      const next =
+        sorted.find((t) => Number(t.minPoints ?? 0) > points) || null;
 
-    const next = sorted.find((t) => (t.minPoints ?? 0) > currentMin) || null;
+      const currentMin = Number(current?.minPoints ?? 0);
+      const nextMin = Number(next?.minPoints ?? 0);
 
-    const points = loyalty.loyaltyPoints ?? 0;
+      let progress = 100;
+      if (next) {
+        const range = Math.max(1, nextMin - currentMin);
+        progress = ((points - currentMin) / range) * 100;
+        progress = Math.max(0, Math.min(100, progress));
+      }
 
-    let progress = 100;
-    if (next) {
-      const range = (next.minPoints ?? 0) - currentMin || 1;
-      progress = ((points - currentMin) / range) * 100;
-      progress = Math.max(0, Math.min(100, progress));
-    }
+      const remaining = next ? Math.max(0, nextMin - points) : 0;
 
-    return {
-      currentTier: currentFromList,
-      nextTier: next,
-      progressPercent: progress,
-    };
-  }, [loyalty, tiers]);
+      return {
+        currentTier: current || null,
+        nextTier: next,
+        progressPercent: progress,
+        remainingToNext: remaining,
+      };
+    }, [loyalty, tiers, currentUser]);
 
   return (
     <div

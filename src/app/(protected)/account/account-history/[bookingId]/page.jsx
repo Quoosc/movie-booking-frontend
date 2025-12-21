@@ -6,6 +6,7 @@ import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { getBookingDetail } from "@/api/bookingService";
+import QRCode from "react-qr-code";
 
 const STATUS_BADGES = {
   PENDING_PAYMENT: {
@@ -138,7 +139,8 @@ export default function BookingDetailPage() {
       STATUS_BADGES[bookingStatus?.toUpperCase?.()] ||
       null;
 
-    const payStatusRaw = booking.paymentStatus;
+    // ✅ FIX: ưu tiên payment.status từ BE mới
+    const payStatusRaw = booking?.payment?.status || booking.paymentStatus;
     const payment =
       (payStatusRaw && PAYMENT_BADGES[payStatusRaw]) ||
       (payStatusRaw && PAYMENT_BADGES[payStatusRaw?.toUpperCase?.()]) ||
@@ -161,7 +163,6 @@ export default function BookingDetailPage() {
     const snackTotalCalc =
       toNum(snackTotalFromBE) ||
       snacksArr.reduce((sum, sn) => {
-        // BE của bạn có totalPrice ngay item snack (vd 180000)
         const lineTotal =
           toNum(sn.totalPrice) ||
           toNum(sn.quantity) * toNum(sn.unitPrice ?? sn.price);
@@ -237,6 +238,9 @@ export default function BookingDetailPage() {
       </div>
     );
   }
+
+  // ✅ QR payload từ BE
+  const qrPayload = booking?.qrPayload || "";
 
   return (
     <div
@@ -475,6 +479,45 @@ export default function BookingDetailPage() {
                     </div>
                   </section>
 
+                  {/* ✅ QR CODE SECTION */}
+                  <section className="rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a0033]/90 via-[#0f001f] to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl">
+                    <div className="p-8 md:p-10">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                        <div>
+                          <h3 className="text-xl md:text-2xl font-black">
+                            <span className="bg-gradient-to-r from-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">
+                              Vé điện tử / QR check-in
+                            </span>
+                          </h3>
+                          <p className="mt-2 text-sm text-white/60">
+                            Xuất trình QR này tại quầy để check-in nhanh.
+                          </p>
+                        </div>
+
+                        <div className="w-full md:w-[420px]">
+                          <div className="rounded-3xl bg-white p-4 md:p-5 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+                            {qrPayload ? (
+                              <div className="w-full aspect-square">
+                                <QRCode
+                                  value={qrPayload}
+                                  style={{ width: "100%", height: "100%" }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-full aspect-square border-4 border-black/70 border-dashed rounded-2xl flex items-center justify-center text-black/70 font-bold text-sm text-center px-3">
+                                QR CODE
+                                <br />
+                                (chưa có qrPayload)
+                              </div>
+                            )}
+                          </div>
+
+                      
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
                   {/* Ghế + Tổng tiền */}
                   <div className="grid md:grid-cols-2 gap-8">
                     {/* Ghế */}
@@ -492,6 +535,8 @@ export default function BookingDetailPage() {
                               `${s.rowLabel || s.row}${
                                 s.seatNumber || s.number
                               }`;
+                            const seatPrice = s.price ?? s.finalPrice;
+
                             return (
                               <div
                                 key={i}
@@ -506,7 +551,9 @@ export default function BookingDetailPage() {
                                   </p>
                                 </div>
                                 <p className="text-xl font-bold text-emerald-400">
-                                  {formatCurrency(s.price || s.finalPrice)}
+                                  {seatPrice == null
+                                    ? "--"
+                                    : formatCurrency(seatPrice)}
                                 </p>
                               </div>
                             );
