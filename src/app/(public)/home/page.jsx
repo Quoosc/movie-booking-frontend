@@ -9,10 +9,40 @@ import MovieCarousel from "@/components/movies/MovieCarousel";
 import { getShowingMovies, getUpcomingMovies } from "@/api/movieService";
 import Footer from "@/components/common/Footer";
 import MembershipHighlight from "@/components/membership/MembershipHighlight";
-import MembershipDetail from "@/components/membership/MembershipDetail";
 import ContactSection from "@/components/contact/ContactSection";
 import PromoHighlight from "@/components/promotions/PromoHighlight";
 import HeroSlider from "@/components/home/HeroSlider";
+
+// ✅ unwrap đúng dạng response: { code, message, data }
+function unwrapMovies(res) {
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res)) return res;
+  return [];
+}
+
+// ✅ "mới thêm" = sort theo createdAt/created_at (KHÔNG dùng updatedAt)
+function sortMoviesByCreatedDesc(list) {
+  const toTime = (x) => {
+    const v =
+      x?.createdAt ||
+      x?.created_at ||
+      x?.createdDate ||
+      x?.created_date ||
+      x?.created; // fallback hiếm
+    const t = v ? new Date(v).getTime() : NaN;
+    return Number.isFinite(t) ? t : 0;
+  };
+
+  return [...list].sort((a, b) => {
+    const diff = toTime(b) - toTime(a);
+    if (diff !== 0) return diff;
+
+    // tie-breaker ổn định nếu createdAt trùng nhau
+    const ida = String(a?.movieId || a?.id || "");
+    const idb = String(b?.movieId || b?.id || "");
+    return idb.localeCompare(ida); // desc
+  });
+}
 
 export default function HomePage() {
   const [showingMovies, setShowingMovies] = useState([]);
@@ -25,10 +55,31 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const showing = await getShowingMovies();
-      const upcoming = await getUpcomingMovies();
-      setShowingMovies(showing || []);
-      setUpcomingMovies(upcoming || []);
+      try {
+        const [showingRes, upcomingRes] = await Promise.all([
+          getShowingMovies(),
+          getUpcomingMovies(),
+        ]);
+
+        const showingArr = unwrapMovies(showingRes);
+        const upcomingArr = unwrapMovies(upcomingRes);
+
+        setShowingMovies(sortMoviesByCreatedDesc(showingArr));
+        setUpcomingMovies(sortMoviesByCreatedDesc(upcomingArr));
+
+        // DEBUG nếu vẫn thấy "chưa đảo"
+        // console.table(
+        //   sortMoviesByCreatedDesc(showingArr).map((x) => ({
+        //     title: x.title,
+        //     createdAt: x.createdAt || x.created_at,
+        //     updatedAt: x.updatedAt || x.updated_at,
+        //   }))
+        // );
+      } catch (e) {
+        console.error("HomePage fetch movies error:", e);
+        setShowingMovies([]);
+        setUpcomingMovies([]);
+      }
     };
     fetchData();
   }, []);
@@ -58,104 +109,20 @@ export default function HomePage() {
   };
 
   return (
-    //nền chung
-    <div
-      className="
-        min-h-screen
-        bg-gradient-to-b
-        from-[#050024] via-[#0b0630] to-[#020015]
-        text-white
-        relative overflow-hidden
-      "
-    >
-      {/* nền neon này nào rảnh thì vô chỉnh cho nó khớp với mấy chỗ khác */}
+    <div className=" min-h-screen bg-gradient-to-b from-[#050024] via-[#0b0630] to-[#020015] text-white relative overflow-hidden ">
+      {" "}
       <div className="pointer-events-none absolute inset-0">
-        {/* Spotlight chính (tím) */}
-        <div
-          className="
-      absolute left-1/2 top-[16%] -translate-x-1/2 -translate-y-1/2
-      w-[165vw] h-[95vh]
-      md:w-[115vw] md:h-[80vh]
-      bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)]
-      blur-[110px]
-      opacity-100
-    "
-        />
-
-        {/* Hồng nhẹ */}
-        <div
-          className="
-      absolute left-1/2 top-[18%] -translate-x-1/2 -translate-y-1/2
-      w-[130vw] h-[85vh]
-      md:w-[105vw] md:h-[70vh]
-      bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)]
-      blur-[135px]
-      opacity-80
-    "
-        />
-      </div>
-
-      <div
-        className="
-      absolute left-1/2 top-[22%] -translate-x-1/2 -translate-y-1/2
-      w-[165vw] h-[95vh]
-      md:w-[115vw] md:h-[80vh]
-      bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)]
-      blur-[110px]
-      opacity-100
-    "
-      />
-
-      {/* Hồng nhẹ */}
-      <div
-        className="
-      absolute left-1/2 top-[24%] -translate-x-1/2 -translate-y-1/2
-      w-[130vw] h-[85vh]
-      md:w-[105vw] md:h-[70vh]
-      bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)]
-      blur-[135px]
-      opacity-80
-    "
-      />
-
-      {/* Halo cyan phụ */}
-      <div
-        className="
-      absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2
-      w-[165vw] h-[90vh]
-      md:w-[110vw] md:h-[75vh]
-      bg-[radial-gradient(ellipse_at_center,#43e1ff66,transparent_50%)]
-      blur-[120px]
-      opacity-90
-    "
-      />
-
-      <div
-        className="
-      absolute left-1/2 top-[36%] -translate-x-1/2 -translate-y-1/2
-      w-[165vw] h-[95vh]
-      md:w-[115vw] md:h-[80vh]
-      bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)]
-      blur-[110px]
-      opacity-100
-    "
-      />
-
-      {/* Hồng nhẹ */}
-      <div
-        className="
-      absolute left-1/2 top-[32%] -translate-x-1/2 -translate-y-1/2
-      w-[130vw] h-[85vh]
-      md:w-[105vw] md:h-[70vh]
-      bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)]
-      blur-[135px]
-      opacity-80
-    "
-      />
-
+        {" "}
+        <div className=" absolute left-1/2 top-[16%] -translate-x-1/2 -translate-y-1/2 w-[165vw] h-[95vh] md:w-[115vw] md:h-[80vh] bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)] blur-[110px] opacity-100 " />{" "}
+        <div className=" absolute left-1/2 top-[18%] -translate-x-1/2 -translate-y-1/2 w-[130vw] h-[85vh] md:w-[105vw] md:h-[70vh] bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)] blur-[135px] opacity-80 " />{" "}
+      </div>{" "}
+      <div className=" absolute left-1/2 top-[22%] -translate-x-1/2 -translate-y-1/2 w-[165vw] h-[95vh] md:w-[115vw] md:h-[80vh] bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)] blur-[110px] opacity-100 " />{" "}
+      <div className=" absolute left-1/2 top-[24%] -translate-x-1/2 -translate-y-1/2 w-[130vw] h-[85vh] md:w-[105vw] md:h-[70vh] bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)] blur-[135px] opacity-80 " />{" "}
+      <div className=" absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-[165vw] h-[90vh] md:w-[110vw] md:h-[75vh] bg-[radial-gradient(ellipse_at_center,#43e1ff66,transparent_50%)] blur-[120px] opacity-90 " />{" "}
+      <div className=" absolute left-1/2 top-[36%] -translate-x-1/2 -translate-y-1/2 w-[165vw] h-[95vh] md:w-[115vw] md:h-[80vh] bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)] blur-[110px] opacity-100 " />{" "}
+      <div className=" absolute left-1/2 top-[32%] -translate-x-1/2 -translate-y-1/2 w-[130vw] h-[85vh] md:w-[105vw] md:h-[70vh] bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)] blur-[135px] opacity-80 " />
       {/* đến đây */}
       <Navbar />
-
       {/* MAIN */}
       <main className="relative z-10 flex-1">
         {/* Hero */}
@@ -163,7 +130,7 @@ export default function HomePage() {
           <HeroSlider />
         </div>
 
-        {/* PHIM ĐANG CHIẾU */}
+        {/* ✅ PHIM ĐANG CHIẾU: đã sort sẵn trong state */}
         <div className="mt-8">
           <MovieCarousel
             title="PHIM ĐANG CHIẾU"
@@ -176,7 +143,7 @@ export default function HomePage() {
           />
         </div>
 
-        {/* PHIM SẮP CHIẾU */}
+        {/* ✅ PHIM SẮP CHIẾU */}
         <div className="mt-10">
           <MovieCarousel
             title="PHIM SẮP CHIẾU"
@@ -209,7 +176,6 @@ export default function HomePage() {
           <ContactSection />
         </div>
       </main>
-
       {/* FOOTER */}
       <Footer />
     </div>
