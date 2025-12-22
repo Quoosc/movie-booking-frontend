@@ -316,7 +316,7 @@ export default function AdminDashboardPage() {
           </span>
         </h1>
         <p className="text-xs md:text-sm text-white/60 max-w-2xl">
-          Thống kê nhanh theo dữ liệu payments (API /payments/search) trong 14
+          Thống kê nhanh theo dữ liệu trong 14
           ngày gần nhất.
         </p>
       </header>

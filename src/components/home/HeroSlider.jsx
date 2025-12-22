@@ -9,21 +9,27 @@ const slides = [
     image:
       "https://media.lottecinemavn.com/Media/WebAdmin/5b652a8e06284aa79ab4be8663074fc3.jpg",
     alt: "PREDATOR",
-  },
+  }, 
   {
     id: 2,
     image:
-      "https://media.lottecinemavn.com/Media/WebAdmin/26384bcf544142be9ea619a0395de25d.jpg",
+      "https://lh3.googleusercontent.com/rd-gg-dl/ABS2GSmSqeKixZVicBQ5XB_bLgsHdNGkkE9cngwZD_eWb269EisEsyqNL8QLWhm92SMjjj0dySbjWx-WLMuv0XT7fdfaYMpCzHbYeH61PkIn0OhZpjpyNR3I-rD1m45kltTfkvRvK19Sc-Ol5h_uLMHh3F6-EAS7813mZ-lEcxLAN6OAw94MERDKVewS8FlUC-PUVDhYQEGVtsTIDbgKSuNbvQ83-Yxumet2I122H70PcSU4How--h9Sex9fjwao7nL2Uulp2YnOF_nPC6Fr8Y0BlA4CKk8WOWJ0_6iN17u5oSde1fIDuIXU_73MJ4cG-pTJ9pwPuC9q6PEtMvqE1FQ2QUooesIAK730EHOH6pt7HsGYqnZRG_KVWjq5juCioYLYDfHm0SBM7TOohnLAqNeKqUY-nje0536k0Cd2SxVF-Z4HqjkhViZUC6R5M_bnbmK78c0JrqcwMtdqSs_H52vtgE8ImGcg5PknJecc69RJU8shSZoNTv4R4XQTezpoev34YpN-HMEyetqH3_KyHYHqALCmynHkbYkYH1V9B-lfzzNmuurBtv4LOFR_5yYtk27m9R2dvBlV8wG6cYQJQllSKcEEJXmupbZ51BbIbKx892az5-3fwSoRAlgfPkY5FwtG2btlvXel38pg40HMrhJngEzHlwMwGouLGlh0D3L4ITE9jJng9Rfq2nPxDvYe4fdNFaXCcmS4zYchsfK0bdlZidyZGT3xVlq5t6luXmPe4Hu2XpRGr11JhYUs4PHSAv4bm8zkH_KZJfjKb_GM6DImzc2J_FEa4lvhkp4lRc2mB2naUQfX1CPNhcrCSwxhcXry8D8mBUmWE0ZYtiGsa9ble5ZZmjmVpatiwpl9YmhsHYBSG39r8kl8g9k0DFVcCS3ajJzh5xAN-D-TK1ORDQ9TVRG-L6c5rYxUrmKlUoWH7ICGJYTTjjDKTn8lxqyq0PopMPFEY0WZUrflcSKyv8Nlr6HRmxWpsjR8lgrFF44vs7TRUah-DNpWTBs70nNhgW23QtVXrKCOK5Gc3giJD1ZLs5jgd3UM6FR13yOyUzBuEYVvBMNTXB8LZvxZDnQ2-53Zi9ifwVrJ-YiH_EM93WyNH_PBfjkiXmM_5o9x-dMw_AfpM6BV4yzaRCl4-Y7K9p6zENOoBlwis1vivymlEe-g39S1PnPmqCsm_ID3SW6q6r3miet0unjdk0RDWA_6rGdE9ScnMWAYlmffUhjYJkIigs2t5AI=s1024-rj",
     alt: "TÌNH NGƯỜI DUYÊN MA",
   },
   {
     id: 3,
     image:
+      "https://media.lottecinemavn.com/Media/WebAdmin/26384bcf544142be9ea619a0395de25d.jpg",
+    alt: "TÌNH NGƯỜI DUYÊN MA",
+  },
+  {
+    id: 4,
+    image:
       "https://media.lottecinemavn.com/Media/WebAdmin/363767d1580e44b38de01266a7c9b8a8.png",
     alt: "TRÁI TIM QUÈ QUẶT",
   },
   {
-    id: 4,
+    id: 5,
     image:
       "https://media.lottecinemavn.com/Media/WebAdmin/e6f1837b83b245d4a6f28ca77e192255.jpg",
     alt: "PREDATOR 2",

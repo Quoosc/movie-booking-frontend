@@ -319,19 +319,7 @@ export default function AdminOrdersPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
-                User ID
-              </label>
-              <input
-                type="text"
-                value={userIdFilter}
-                onChange={(e) => setUserIdFilter(e.target.value)}
-                placeholder="Nhập userId..."
-                className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-              />
-            </div>
-
+          
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
