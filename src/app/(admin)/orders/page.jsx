@@ -319,7 +319,6 @@ export default function AdminOrdersPage() {
               />
             </div>
 
-          
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-white/60 mb-2 uppercase tracking-[0.18em]">
@@ -366,7 +365,6 @@ export default function AdminOrdersPage() {
               </div>
             </div>
           </div>
-
           <div className="grid md:grid-cols-[2fr,auto] gap-4 md:items-end">
             <div className="grid grid-cols-2 gap-4">
               <div>
