@@ -20,7 +20,7 @@ export default function AdminPromotionsPage() {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
 
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [success, setSuccess] = useState(null);
 
   const [search, setSearch] = useState("");
@@ -154,8 +154,7 @@ export default function AdminPromotionsPage() {
   const fetchPromotions = async (filterValue = filter) => {
     try {
       setFetching(true);
-      setError(null);
-      setSuccess(null);
+setSuccess(null);
 
       const apiFilter =
         filterValue === "ALL" ? undefined : filterValue.toLowerCase();
@@ -166,8 +165,7 @@ export default function AdminPromotionsPage() {
     } catch (err) {
       console.error("Fetch promotions error:", err);
       const msg = err?.message || "Không tải được danh sách khuyến mãi.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setLoading(false);
       setFetching(false);
@@ -221,8 +219,7 @@ export default function AdminPromotionsPage() {
     setEditing(null);
     setForm(getEmptyForm());
     setShowForm(true);
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
   };
 
   const openEdit = (promo) => {
@@ -249,8 +246,7 @@ export default function AdminPromotionsPage() {
       isActive: promo.isActive ?? true,
     });
     setShowForm(true);
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
   };
 
   const closeForm = () => {
@@ -301,13 +297,11 @@ export default function AdminPromotionsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
 
     const msg = validateForm();
     if (msg) {
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
 
@@ -333,8 +327,7 @@ export default function AdminPromotionsPage() {
       const msg =
         err?.message ||
         "Lưu khuyến mãi thất bại. Vui lòng kiểm tra dữ liệu và thử lại.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -344,8 +337,7 @@ export default function AdminPromotionsPage() {
     const confirmDeactivate = async () => {
       try {
         setProcessingId(promo.promotionId);
-        setError(null);
-        setSuccess(null);
+setSuccess(null);
 
         await AdminToolsService.deactivatePromotion(promo.promotionId);
         setSuccess("Đã tắt khuyến mãi.");
@@ -354,8 +346,7 @@ export default function AdminPromotionsPage() {
       } catch (err) {
         console.error("Deactivate promotion error:", err);
         const msg = err?.message || "Tắt khuyến mãi thất bại.";
-        setError(msg);
-        toast.error(msg);
+toast.error(msg);
       } finally {
         setProcessingId(null);
         closeWarning();
@@ -369,8 +360,7 @@ export default function AdminPromotionsPage() {
     const confirmDelete = async () => {
       try {
         setProcessingId(promo.promotionId);
-        setError(null);
-        setSuccess(null);
+setSuccess(null);
 
         await AdminToolsService.deletePromotion(promo.promotionId);
         setSuccess("Xóa khuyến mãi thành công.");
@@ -379,8 +369,7 @@ export default function AdminPromotionsPage() {
       } catch (err) {
         console.error("Delete promotion error:", err);
         const msg = err?.message || "Xóa khuyến mãi thất bại.";
-        setError(msg);
-        toast.error(msg);
+toast.error(msg);
       } finally {
         setProcessingId(null);
         closeWarning();

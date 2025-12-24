@@ -29,7 +29,7 @@ export default function AdminMoviesPage() {
   const [deletingId, setDeletingId] = useState(null);
   const [uploadingPoster, setUploadingPoster] = useState(false);
 
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [success, setSuccess] = useState(null);
 
   const [search, setSearch] = useState("");
@@ -65,8 +65,7 @@ export default function AdminMoviesPage() {
   const fetchMovies = async () => {
     try {
       setLoading(true);
-      setError(null);
-      setSuccess(null);
+setSuccess(null);
 
       // Gọi 2 API: SHOWING + UPCOMING rồi gộp lại
       const [showingRes, upcomingRes] = await Promise.all([
@@ -92,8 +91,7 @@ export default function AdminMoviesPage() {
     } catch (err) {
       console.error("Fetch movies error:", err);
       const msg = err?.message || "Không tải được danh sách phim.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -106,8 +104,7 @@ export default function AdminMoviesPage() {
   const handleOpenCreateModal = () => {
     setEditingMovie(null);
     setForm(EMPTY_FORM);
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
     setIsModalOpen(true);
   };
 
@@ -127,8 +124,7 @@ export default function AdminMoviesPage() {
       status: movie?.status || "SHOWING",
       language: movie?.language || "",
     });
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
     setIsModalOpen(true);
   };
 
@@ -143,44 +139,37 @@ export default function AdminMoviesPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
 
     // ===== Validate + toast like Promotions page =====
     if (!form.genre.trim()) {
       const msg = "Vui lòng nhập thể loại phim.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
     if (!form.description.trim()) {
       const msg = "Vui lòng nhập mô tả phim.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
     if (!form.director.trim()) {
       const msg = "Vui lòng nhập tên đạo diễn.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
     if (!form.actors.trim()) {
       const msg = "Vui lòng nhập danh sách diễn viên.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
     if (!form.trailerUrl.trim()) {
       const msg = "Vui lòng nhập Trailer URL.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
     if (!form.language.trim()) {
       const msg = "Vui lòng nhập ngôn ngữ.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
 
@@ -235,8 +224,7 @@ export default function AdminMoviesPage() {
     } catch (err) {
       console.error("Save movie error:", err);
       const msg = err?.message || "Lưu thông tin phim thất bại.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -246,8 +234,7 @@ export default function AdminMoviesPage() {
     const confirmDelete = async () => {
       try {
         setDeletingId(movieId);
-        setError(null);
-        setSuccess(null);
+setSuccess(null);
 
         await AdminMovieService.deleteMovie?.(movieId);
 
@@ -258,8 +245,7 @@ export default function AdminMoviesPage() {
       } catch (err) {
         console.error("Delete movie error:", err);
         const msg = err?.message || "Xóa phim thất bại.";
-        setError(msg);
-        toast.error(msg);
+toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
@@ -328,8 +314,7 @@ export default function AdminMoviesPage() {
       console.error("Upload poster error:", err);
       const msg = err?.message || "Upload poster thất bại.";
       toast.error(msg);
-      setError(msg);
-    } finally {
+} finally {
       setUploadingPoster(false);
     }
   };
