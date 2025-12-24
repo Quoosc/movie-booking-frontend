@@ -112,8 +112,44 @@ export default function HomePage() {
     <div className=" min-h-screen bg-gradient-to-b from-[#050024] via-[#0b0630] to-[#020015] text-white relative overflow-hidden ">
       {" "}
       <div className="pointer-events-none absolute inset-0">
+        {/* DECOR GIF 2 BÊN (NHỎ) */}
+        <div className="pointer-events-none fixed inset-0 z-0">
+          <img
+            src="https://iguov8nhvyobj.vcdn.cloud/media/wysiwyg/2025/112025/floating_left_1.gif"
+            alt=""
+            loading="lazy"
+            className="
+      hidden xl:block
+      absolute left-16 top-1/2 -translate-y-1/2
+      w-[120px] 2xl:w-[140px]
+      opacity-70 mix-blend-screen
+    "
+          />
+
+          <img
+            src="https://iguov8nhvyobj.vcdn.cloud/media/wysiwyg/2025/112025/floating_left_1.gif"
+            alt=""
+            loading="lazy"
+            className="
+      hidden xl:block
+      absolute right-16 top-1/2 -translate-y-1/2
+      w-[120px] 2xl:w-[140px]
+      opacity-70 mix-blend-screen
+    "
+          />
+        </div>{" "}
+        <div
+          className=" absolute left-1/2 top-[6%] -translate-x-1/2 -translate-y-1/2 w-[220vw] h-[95vh]
+ md:w-[115vw] md:h-[80vh] bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)] blur-[110px] opacity-100 "
+        />{" "}
+        <div className=" absolute left-1/2 top-[6%] -translate-x-1/2 -translate-y-1/2 w-[165vw] h-[95vh] md:w-[115vw] md:h-[80vh] bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)] blur-[110px] opacity-100 " />{" "}
+        <div className=" absolute left-1/2 top-[8%] -translate-x-1/2 -translate-y-1/2 w-[130vw] h-[85vh] md:w-[105vw] md:h-[70vh] bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)] blur-[135px] opacity-80 " />{" "}
+      </div>{" "}
+      <div className=" absolute left-1/2 top-[12%] -translate-x-1/2 -translate-y-1/2 w-[165vw] h-[95vh] md:w-[115vw] md:h-[80vh] bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)] blur-[110px] opacity-100 " />{" "}
+      <div className=" absolute left-1/2 top-[12%] -translate-x-1/2 -translate-y-1/2 w-[130vw] h-[85vh] md:w-[105vw] md:h-[70vh] bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)] blur-[135px] opacity-80 " />{" "}
+      <div className="pointer-events-none absolute inset-0">
         {" "}
-        <div className=" absolute left-1/2 top-[16%] -translate-x-1/2 -translate-y-1/2 w-[165vw] h-[95vh] md:w-[115vw] md:h-[80vh] bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)] blur-[110px] opacity-100 " />{" "}
+        <div className=" absolute left-1/2 top-[16%] -translate-x-1/2 -translate-y-1/2 w-[380vw] h-[95vh] md:w-[115vw] md:h-[80vh] bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)] blur-[110px] opacity-100 " />{" "}
         <div className=" absolute left-1/2 top-[18%] -translate-x-1/2 -translate-y-1/2 w-[130vw] h-[85vh] md:w-[105vw] md:h-[70vh] bg-[radial-gradient(ellipse_at_center,#ff7af64d,transparent_55%)] blur-[135px] opacity-80 " />{" "}
       </div>{" "}
       <div className=" absolute left-1/2 top-[22%] -translate-x-1/2 -translate-y-1/2 w-[165vw] h-[95vh] md:w-[115vw] md:h-[80vh] bg-[radial-gradient(ellipse_at_center,#7b5cff9a,transparent_45%)] blur-[110px] opacity-100 " />{" "}
@@ -144,7 +180,7 @@ export default function HomePage() {
         </div>
 
         {/* ✅ PHIM SẮP CHIẾU */}
-        <div className="mt-10">
+        <div className="mt-1">
           <MovieCarousel
             title="PHIM SẮP CHIẾU"
             movies={upcomingMovies}
