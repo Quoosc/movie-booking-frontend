@@ -23,7 +23,7 @@ export default function AdminShowtimesPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [success, setSuccess] = useState(null);
 
   // filters
@@ -70,8 +70,7 @@ export default function AdminShowtimesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      setError(null);
-      setSuccess(null);
+setSuccess(null);
 
       const [stRes, moviesRes, cinemasRes, roomsRes, ticketTypesRes] =
         await Promise.all([
@@ -269,9 +268,7 @@ export default function AdminShowtimesPage() {
     });
 
     setSelectedTicketTypeIds(activeTicketTypes.map((t) => t.ticketTypeId));
-
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
     setModalOpen(true);
   };
 
@@ -289,8 +286,7 @@ export default function AdminShowtimesPage() {
       format: st.format || "",
       startDateTime: toDateTimeInputValue(st.startTime),
     });
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
     setModalOpen(true);
 
     try {
@@ -309,8 +305,7 @@ export default function AdminShowtimesPage() {
     if (saving) return;
     setModalOpen(false);
     setEditingShowtime(null);
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
   };
 
   const handleFormChange = (field) => (e) => {
@@ -332,8 +327,7 @@ export default function AdminShowtimesPage() {
 
   const handleSubmitForm = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
 
     const { movieId, roomId, format, startDateTime } = form;
 
@@ -406,8 +400,7 @@ export default function AdminShowtimesPage() {
     showConfirm("Bạn chắc chắn muốn xóa suất chiếu này?", "Lưu ý!", async () => {
       try {
         setDeletingId(showtimeId);
-        setError(null);
-        setSuccess(null);
+setSuccess(null);
 
         await AdminMovieService.deleteShowtime(showtimeId);
         setShowtimes((prev) => prev.filter((st) => st.showtimeId !== showtimeId));
