@@ -47,12 +47,19 @@ export default function AdminMoviesPage() {
     message: "",
     onConfirm: null,
   });
-  const showWarning = (message, title = "Lưu ý!", onConfirm = null) => {
+  const [warningAnchor, setWarningAnchor] = useState(null);
+  const showWarning = (message, title = "Lưu ý!", onConfirm = null, e) => {
+    const nextAnchor =
+      e && typeof e.clientX === "number" && typeof e.clientY === "number"
+        ? { x: e.clientX, y: e.clientY }
+        : null;
+    setWarningAnchor(nextAnchor);
     setWarning({ open: true, title, message, onConfirm });
   };
-  const closeWarning = () =>
+  const closeWarning = () => {
+    setWarningAnchor(null);
     setWarning({ open: false, title: "", message: "", onConfirm: null });
-
+  };
   // ================= API =================
 
   const fetchMovies = async () => {
@@ -235,7 +242,7 @@ export default function AdminMoviesPage() {
     }
   };
 
-  const handleDeleteMovie = async (movieId) => {
+  const handleDeleteMovie = async (movieId, e) => {
     const confirmDelete = async () => {
       try {
         setDeletingId(movieId);
@@ -258,8 +265,12 @@ export default function AdminMoviesPage() {
         closeWarning();
       }
     };
-
-    showWarning("Bạn chắc chắn muốn xóa phim này?", "Lưu ý!", confirmDelete);
+    showWarning(
+      "Bạn chắc chắn muốn xóa phim này?",
+      "Lưu ý!",
+      confirmDelete,
+      e
+    );
   };
 
   // ================= DERIVED DATA =================
@@ -338,6 +349,7 @@ export default function AdminMoviesPage() {
         message={warning.message}
         onCancel={closeWarning}
         onConfirm={warning.onConfirm}
+        anchor={warningAnchor}
       />
 
       {/* Header */}
@@ -582,7 +594,7 @@ export default function AdminMoviesPage() {
 
                             <button
                               type="button"
-                              onClick={() => handleDeleteMovie(m.movieId)}
+                              onClick={(e) => handleDeleteMovie(m.movieId, e)}
                               disabled={deletingId === m.movieId}
                               className="rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase border border-red-500/60 bg-red-500/10 text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                             >
