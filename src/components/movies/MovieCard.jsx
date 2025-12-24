@@ -1,4 +1,4 @@
-// // src/components/movies/MovieCard.jsx
+// src/components/movies/MovieCard.jsx
 import { Link, useNavigate } from "react-router-dom";
 
 export default function MovieCard({ m }) {
@@ -22,7 +22,7 @@ export default function MovieCard({ m }) {
       className="group relative rounded-xl overflow-hidden bg-[#0f1626] border border-white/10 transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.12)] hover:-translate-y-1"
     >
       {/* Poster */}
-      <div className="aspect-[3/4] bg-black/30 overflow-hidden relative">
+      <div className="aspect-[3/4] bg-black/30 overflow-hidden relative rounded-t-2xl">
         <img
           src={m.posterUrl}
           alt={m.title}
@@ -47,21 +47,33 @@ export default function MovieCard({ m }) {
       </div>
 
       {/* Info */}
-      <div className="p-3 flex flex-col gap-1.5">
-        <h4 className="text-white font-bold text-sm leading-snug line-clamp-2 min-h-[38px]">
-          {m.title}
+      <div className="p-3 bg-black/85 backdrop-blur-sm border-t border-white/10 h-[104px] flex flex-col rounded-b-2xl">
+        <h4 className="text-white font-bold text-sm leading-[19px] h-[38px] line-clamp-2">
+          {m.title || "\u00A0"}
         </h4>
-        <p className="text-[10px] text-[#9ca3ff] uppercase tracking-wide">
-          {m.genre}
+
+        <p className="text-[10px] text-[#9ca3ff] uppercase tracking-wide leading-[14px] h-[14px] line-clamp-1">
+          {m.genre || "\u00A0"}
         </p>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-white/55">
-          {m.minimumAge && (
+
+        <div className="mt-1 flex items-center gap-1.5 text-[10px] text-white/55 leading-[14px] h-[14px] overflow-hidden">
+          {m.minimumAge ? (
             <span className="px-1.5 py-0.5 rounded-sm bg-[#ff4b4b] text-[9px] font-extrabold text-white">
               T{m.minimumAge}
             </span>
+          ) : (
+            <span className="px-1.5 py-0.5 rounded-sm opacity-0 text-[9px] font-extrabold">
+              T00
+            </span>
           )}
-          {m.duration && <span>{m.duration} phút</span>}
-          {m.language && <span>• {m.language}</span>}
+
+          <span className="truncate">
+            {m.duration ? `${m.duration} phút` : "\u00A0"}
+          </span>
+
+          <span className="truncate">
+            {m.language ? `• ${m.language}` : "\u00A0"}
+          </span>
         </div>
       </div>
     </Link>

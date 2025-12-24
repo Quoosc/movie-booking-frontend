@@ -9,23 +9,17 @@ export default function MovieCarousel({ title, movies = [], onShowAll }) {
   const [startIndex, setStartIndex] = useState(0);
   const [direction, setDirection] = useState(0); // -1 trái, 1 phải
 
-  // ✅ key ổn định cho Movie (ưu tiên movieId)
   const getMovieKey = (m) => m?.movieId || m?.id;
 
   const maxStart = Math.max(0, movies.length - VISIBLE);
 
-  // ✅ Khi list movies thay đổi (đặc biệt là sort theo createdAt), reset về trang đầu
-  // để luôn thấy "mới nhất ở đầu"
   useEffect(() => {
     setStartIndex(0);
     setDirection(0);
   }, [movies]);
 
-  // tránh out-of-range khi list thay đổi
   useEffect(() => {
-    if (startIndex > maxStart) {
-      setStartIndex(maxStart);
-    }
+    if (startIndex > maxStart) setStartIndex(maxStart);
   }, [maxStart, startIndex]);
 
   const currentMovies = useMemo(
@@ -139,10 +133,18 @@ export default function MovieCarousel({ title, movies = [], onShowAll }) {
               initial="initial"
               animate="animate"
               className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-6"
+ 
               style={{ direction: "rtl" }}
             >
               {currentMovies.map((m) => (
-                <MovieCard key={getMovieKey(m)} m={m} />
+            
+                <div
+                  key={getMovieKey(m)}
+                  style={{ direction: "ltr" }}
+                  className="text-left"
+                >
+                  <MovieCard m={m} />
+                </div>
               ))}
             </motion.div>
           </div>
