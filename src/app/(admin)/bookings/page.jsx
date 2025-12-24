@@ -32,7 +32,7 @@ export default function AdminBookingsPage() {
 
   const [qrPayloadDraft, setQrPayloadDraft] = useState("");
 
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [success, setSuccess] = useState(null);
 
   // Warning modal state
@@ -57,9 +57,7 @@ export default function AdminBookingsPage() {
       toast.info("Nhập bookingId để tìm.");
       return;
     }
-
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
     setBooking(null);
 
     try {
@@ -70,8 +68,7 @@ export default function AdminBookingsPage() {
 
       if (!data) {
         const msg = "Không tìm thấy dữ liệu booking.";
-        setError(msg);
-        toast.error(msg);
+toast.error(msg);
         return;
       }
 
@@ -85,8 +82,7 @@ export default function AdminBookingsPage() {
       console.error("getBookingById error:", err);
       const msg =
         err?.message || "Không tìm thấy booking. Vui lòng kiểm tra lại ID.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setLoading(false);
     }

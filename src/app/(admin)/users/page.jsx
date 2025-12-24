@@ -72,7 +72,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [success, setSuccess] = useState(null);
 
   const [search, setSearch] = useState("");
@@ -99,8 +99,7 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      setError(null);
-      setSuccess(null);
+setSuccess(null);
 
       const res = await AdminUserService.getUsers();
       const list = unwrapList(res);
@@ -116,8 +115,7 @@ export default function AdminUsersPage() {
     } catch (err) {
       console.error("Fetch users error:", err);
       const msg = err?.message || "Không tải được danh sách người dùng.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -144,8 +142,7 @@ export default function AdminUsersPage() {
 
     try {
       setUpdatingId(userId);
-      setError(null);
-      setSuccess(null);
+setSuccess(null);
 
       // Backend của bạn: body là JSON string (ví dụ "ADMIN")
       const payload = newRole;
@@ -168,8 +165,7 @@ export default function AdminUsersPage() {
     } catch (err) {
       console.error("Update role error:", err);
       const msg = err?.message || "Cập nhật quyền thất bại.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setUpdatingId(null);
     }
@@ -179,8 +175,7 @@ export default function AdminUsersPage() {
     const confirmDelete = async () => {
       try {
         setDeletingId(userId);
-        setError(null);
-        setSuccess(null);
+setSuccess(null);
 
         await AdminUserService.deleteUser(userId);
 
@@ -189,8 +184,7 @@ export default function AdminUsersPage() {
       } catch (err) {
         console.error("Delete user error:", err);
         const msg = err?.message || "Xóa user thất bại.";
-        setError(msg);
-        toast.error(msg);
+toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
