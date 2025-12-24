@@ -16,7 +16,7 @@ export default function AdminSnacksPage() {
   const [formOpen, setFormOpen] = useState(false);
   const formRef = useRef(null);
 
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [success, setSuccess] = useState(null);
   const [warning, setWarning] = useState({
     open: false,
@@ -105,8 +105,7 @@ export default function AdminSnacksPage() {
       toast.success("Upload ảnh thành công!");
     } catch (err) {
       console.error(err);
-      setError(err?.message || "Upload snack image thất bại");
-      toast.error(err?.message || "Upload ảnh thất bại");
+toast.error(err?.message || "Upload ảnh thất bại");
     } finally {
       setUploadingSnackImage(false);
       toast.dismiss(toastId);
@@ -117,8 +116,7 @@ export default function AdminSnacksPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      setError(null);
-      setSuccess(null);
+setSuccess(null);
 
       const [snackRes, cinemaRes] = await Promise.all([
         AdminCinemaService.getSnacks(),
@@ -129,8 +127,7 @@ export default function AdminSnacksPage() {
       setCinemas(Array.isArray(cinemaRes) ? cinemaRes : cinemaRes?.data || []);
     } catch (err) {
       console.error("Load snacks/cinemas error:", err);
-      setError(err?.message || "Không tải được danh sách bắp nước / rạp.");
-    } finally {
+} finally {
       setLoading(false);
     }
   };
@@ -158,15 +155,13 @@ export default function AdminSnacksPage() {
       setSnacks(Array.isArray(snackRes) ? snackRes : snackRes?.data || []);
     } catch (err) {
       console.error("Reload snacks error:", err);
-      setError(err?.message || "Không tải được danh sách bắp nước.");
-    }
+}
   };
 
   // ====== CRUD ======
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
     const isEdit = !!editingId;
 
     const name = form.name.trim();
@@ -178,18 +173,13 @@ export default function AdminSnacksPage() {
     const cinemaId = form.cinemaId || null;
 
     if (!name) {
-      setError("Vui lòng nhập tên sản phẩm (bắp nước / combo).");
-      return;
+return;
     }
     if (Number.isNaN(priceNumber) || priceNumber <= 0) {
-      setError("Giá phải là số lớn hơn 0.");
-      return;
+return;
     }
     if (!category) {
-      setError(
-        "Vui lòng nhập loại / category (ví dụ: COMBO, POPCORN, DRINK...)."
-      );
-      return;
+return;
     }
 
     try {
@@ -228,8 +218,7 @@ export default function AdminSnacksPage() {
       setFormOpen(false);
     } catch (err) {
       console.error("Save snack error:", err);
-      setError(err?.message || "Lưu bắp nước thất bại.");
-      toast.error(err?.message || "Lưu snack thất bại");
+toast.error(err?.message || "Lưu snack thất bại");
     } finally {
       setSaving(false);
       toast.dismiss(toastId);
@@ -266,9 +255,7 @@ export default function AdminSnacksPage() {
       }
     }
     setImagePreview("");
-
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
   };
 
   const handleDeleteSnack = async (snack) => {
@@ -280,16 +267,14 @@ export default function AdminSnacksPage() {
       async () => {
         try {
           setDeletingId(id);
-          setError(null);
-          setSuccess(null);
+setSuccess(null);
 
           await AdminCinemaService.deleteSnack(id);
           setSnacks((prev) => prev.filter((s) => (s.snackId || s.id) !== id));
           toast.success("Xóa snack thành công!");
         } catch (err) {
           console.error("Delete snack error:", err);
-          setError(err?.message || "Xóa bắp nước thất bại.");
-          toast.error(err?.message || "Xóa snack thất bại");
+toast.error(err?.message || "Xóa snack thất bại");
         } finally {
           setDeletingId(null);
           closeWarning();

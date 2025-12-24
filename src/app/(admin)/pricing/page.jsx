@@ -20,7 +20,7 @@ export default function AdminPricingPage() {
   const [ticketTypes, setTicketTypes] = useState([]);
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
 
   const getBaseId = (b) =>
     b?.priceBaseId || b?.id || b?.price_base_id || b?.priceBaseID;
@@ -84,9 +84,7 @@ export default function AdminPricingPage() {
   async function loadAll() {
     try {
       setLoading(true);
-      setError(null);
-
-      const [baseRes, modRes, ticketRes] = await Promise.all([
+const [baseRes, modRes, ticketRes] = await Promise.all([
         AdminPricingService.getPriceBases(),
         AdminPricingService.getPriceModifiers(),
         AdminPricingService.getAdminTicketTypes(),
@@ -139,15 +137,12 @@ export default function AdminPricingPage() {
           : "",
       isActive: !!b.isActive,
     });
-
-    setError(null);
-    setShowBaseForm(true);
+setShowBaseForm(true);
   };
 
   const openCreateBase = () => {
     resetBaseForm();
-    setError(null);
-    setShowBaseForm(true);
+setShowBaseForm(true);
   };
 
   async function handleSaveBase(e) {
@@ -171,9 +166,7 @@ export default function AdminPricingPage() {
 
     try {
       setSavingSection("base");
-      setError(null);
-
-      if (editingBaseId) {
+if (editingBaseId) {
         // UPDATE
         const payload = {
           name: baseForm.name.trim(),
@@ -230,9 +223,7 @@ export default function AdminPricingPage() {
     const confirmDelete = async () => {
       try {
         setDeletingId(id);
-        setError(null);
-
-        await AdminPricingService.deletePriceBase(id);
+await AdminPricingService.deletePriceBase(id);
 
         setPriceBases((prev) => prev.filter((b) => getBaseId(b) !== id));
         toast.success("Xóa base price thành công.");
@@ -286,8 +277,7 @@ export default function AdminPricingPage() {
           : "",
       isActive: m.isActive ?? true,
     });
-    setError(null);
-    setShowModifierForm(true);
+setShowModifierForm(true);
   };
 
   async function handleSaveModifier(e) {
@@ -306,9 +296,7 @@ export default function AdminPricingPage() {
 
     try {
       setSavingSection("modifier");
-      setError(null);
-
-      if (editingModifierId) {
+if (editingModifierId) {
         // UPDATE
         const payload = {
           name: modifierForm.name.trim(),
@@ -359,9 +347,7 @@ export default function AdminPricingPage() {
     const confirmDelete = async () => {
       try {
         setDeletingId(id);
-        setError(null);
-
-        await AdminPricingService.deletePriceModifier(id);
+await AdminPricingService.deletePriceModifier(id);
         setModifiers((prev) => prev.filter((m) => m.priceModifierId !== id));
 
         toast.success("Xóa modifier thành công.");
@@ -409,8 +395,7 @@ export default function AdminPricingPage() {
       active: t.active ?? true,
       sortOrder: t.sortOrder ?? 0,
     });
-    setError(null);
-    setShowTicketForm(true);
+setShowTicketForm(true);
   };
 
   async function handleSaveTicketType(e) {
@@ -429,9 +414,7 @@ export default function AdminPricingPage() {
 
     try {
       setSavingSection("ticket");
-      setError(null);
-
-      if (editingTicketTypeId) {
+if (editingTicketTypeId) {
         // UPDATE
         const payload = {
           label: ticketTypeForm.label.trim(),
@@ -486,9 +469,7 @@ export default function AdminPricingPage() {
     const confirmDelete = async () => {
       try {
         setDeletingId(id);
-        setError(null);
-
-        await AdminPricingService.deleteTicketType(id);
+await AdminPricingService.deleteTicketType(id);
         setTicketTypes((prev) => prev.filter((t) => t.ticketTypeId !== id));
 
         toast.success("Xóa ticket type thành công.");
