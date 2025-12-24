@@ -713,7 +713,7 @@ function HeroSection({ movie }) {
         </p>
 
         {/* Title */}
-        <h1 className="mt-3 text-3xl sm:text-4xl md:text-[40px] lg:text-[44px] font-extrabold leading-snug bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_26px_rgba(123,92,255,0.9)]">
+        <h1 className="mt-3 mb-5 py-1 text-3xl sm:text-4xl md:text-[40px] lg:text-[44px] font-extrabold leading-tight bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] bg-clip-text text-transparent drop-shadow-[0_0_26px_rgba(123,92,255,0.9)]">
           {movie?.title || "..."}
         </h1>
 
@@ -1176,7 +1176,7 @@ function BookingPanel({
                     flex flex-col items-center text-center
                     px-4 pt-4 pb-3
                     rounded-3xl
-                    bg-[#0b0a26]/85
+                    bg-[#0b0a26]/85Movie Detail
                     border border-white/12
                     shadow-[0_16px_40px_rgba(0,0,0,0.85)]
                     hover:bg-[#18163d]/95
