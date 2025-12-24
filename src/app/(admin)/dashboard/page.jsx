@@ -167,7 +167,7 @@ export default function AdminDashboardPage() {
   const [payments, setPayments] = useState([]);
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -177,9 +177,7 @@ export default function AdminDashboardPage() {
   async function loadData() {
     try {
       setLoading(true);
-      setError(null);
-
-      // 14 ngày gần nhất (tính theo local)
+// 14 ngày gần nhất (tính theo local)
       const now = new Date();
       const end = endOfDayLocal(now);
       const start = startOfDayLocal(new Date(now));
@@ -202,8 +200,7 @@ export default function AdminDashboardPage() {
       setPayments(unwrapList(paymentsRes));
     } catch (err) {
       console.error("AdminDashboard loadData error:", err);
-      setError(err?.message || "Không tải được dữ liệu dashboard.");
-    } finally {
+} finally {
       setLoading(false);
     }
   }

@@ -15,7 +15,7 @@ export default function AdminMembershipPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [success, setSuccess] = useState(null);
 
   // filter + search
@@ -53,8 +53,7 @@ export default function AdminMembershipPage() {
   const fetchTiers = async () => {
     try {
       setLoading(true);
-      setError(null);
-      setSuccess(null);
+setSuccess(null);
 
       // ✅ DÙNG AdminUserService.getMembershipTiers()
       const data = await AdminUserService.getMembershipTiers();
@@ -70,8 +69,7 @@ export default function AdminMembershipPage() {
       const msg =
         err?.message ||
         "Không tải được danh sách hạng thành viên (membership).";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -151,13 +149,11 @@ export default function AdminMembershipPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
+setSuccess(null);
 
     const validationError = validateForm();
     if (validationError) {
-      setError(validationError);
-      toast.error(validationError);
+toast.error(validationError);
       return;
     }
 
@@ -202,8 +198,7 @@ export default function AdminMembershipPage() {
       console.error("save membership tier error:", err);
       const msg =
         err?.message || "Lưu hạng thành viên thất bại. Vui lòng thử lại.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -213,8 +208,7 @@ export default function AdminMembershipPage() {
     const confirmDelete = async () => {
       try {
         setDeletingId(tier.membershipTierId);
-        setError(null);
-        setSuccess(null);
+setSuccess(null);
 
         await AdminUserService.deleteMembershipTier(tier.membershipTierId);
 
@@ -225,8 +219,7 @@ export default function AdminMembershipPage() {
       } catch (err) {
         console.error("delete membership tier error:", err);
         const msg = err?.message || "Xóa hạng thành viên thất bại.";
-        setError(msg);
-        toast.error(msg);
+toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
