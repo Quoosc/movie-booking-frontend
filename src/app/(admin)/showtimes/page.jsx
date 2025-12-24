@@ -95,7 +95,6 @@ export default function AdminShowtimesPage() {
       setAdminTicketTypes(tt);
     } catch (err) {
       console.error("Load showtimes error:", err);
-      setError(err?.message || "Không tải được danh sách suất chiếu.");
       toast.error(err?.message || "Không tải được danh sách suất chiếu.");
     } finally {
       setLoading(false);
@@ -339,20 +338,20 @@ export default function AdminShowtimesPage() {
     const { movieId, roomId, format, startDateTime } = form;
 
     if (!movieId || !roomId || !format || !startDateTime) {
-      setError("Vui lòng nhập đầy đủ Movie, Cinema/Room, Format và Thời gian.");
+
       toast.error("Vui lòng nhập đủ thông tin.");
       return;
     }
 
     if (!selectedTicketTypeIds.length) {
-      setError("Vui lòng chọn ít nhất một loại vé cho suất chiếu.");
+  
       toast.error("Vui lòng chọn ít nhất 1 loại vé.");
       return;
     }
 
     const startTimeIso = fromLocalDateTimeInputToUtcIso(startDateTime);
     if (!startTimeIso) {
-      setError("Thời gian suất chiếu không hợp lệ.");
+   
       toast.error("Thời gian không hợp lệ.");
       return;
     }
@@ -396,7 +395,6 @@ export default function AdminShowtimesPage() {
       setEditingShowtime(null);
     } catch (err) {
       console.error("Save showtime error:", err);
-      setError(err?.message || "Lưu suất chiếu thất bại.");
       toast.error(err?.message || "Lưu suất chiếu thất bại.");
     } finally {
       setSaving(false);
@@ -416,7 +414,6 @@ export default function AdminShowtimesPage() {
         toast.success("Xóa suất chiếu thành công!");
       } catch (err) {
         console.error("Delete showtime error:", err);
-        setError(err?.message || "Xóa suất chiếu thất bại.");
         toast.error(err?.message || "Xóa suất chiếu thất bại.");
       } finally {
         setDeletingId(null);
