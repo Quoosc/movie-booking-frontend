@@ -19,7 +19,7 @@ export default function AdminCinemasPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -46,9 +46,7 @@ export default function AdminCinemasPage() {
   const fetchCinemas = async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      const data = await AdminCinemaService.getCinemas();
+const data = await AdminCinemaService.getCinemas();
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data?.data)
@@ -58,8 +56,7 @@ export default function AdminCinemasPage() {
     } catch (err) {
       console.error("Fetch cinemas error:", err);
       const msg = err?.message || "Không tải được danh sách rạp.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -74,8 +71,7 @@ export default function AdminCinemasPage() {
   const openCreateModal = () => {
     setEditingCinema(null);
     setForm(EMPTY_FORM);
-    setError(null);
-    setModalOpen(true);
+setModalOpen(true);
   };
 
   const openEditModal = (cinema) => {
@@ -86,8 +82,7 @@ export default function AdminCinemasPage() {
       hotline: cinema.hotline || cinema.phone || "",
       isActive: cinema.isActive ?? cinema.active ?? true,
     });
-    setError(null);
-    setModalOpen(true);
+setModalOpen(true);
   };
 
   const closeModal = () => {
@@ -107,8 +102,7 @@ export default function AdminCinemasPage() {
 
     if (!form.name.trim()) {
       const msg = "Vui lòng nhập tên rạp.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
 
@@ -121,9 +115,7 @@ export default function AdminCinemasPage() {
 
     try {
       setSaving(true);
-      setError(null);
-
-      if (editingCinema) {
+if (editingCinema) {
         const id = editingCinema.cinemaId || editingCinema.id;
         const updated = await AdminCinemaService.updateCinema(id, payload);
         const updatedCinema = updated?.data ?? updated;
@@ -149,8 +141,7 @@ export default function AdminCinemasPage() {
     } catch (err) {
       console.error("Save cinema error:", err);
       const msg = err?.message || "Lưu thông tin rạp thất bại.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -163,17 +154,14 @@ export default function AdminCinemasPage() {
     const confirmDelete = async () => {
       try {
         setDeletingId(id);
-        setError(null);
-
-        await AdminCinemaService.deleteCinema(id);
+await AdminCinemaService.deleteCinema(id);
 
         setCinemas((prev) => prev.filter((c) => (c.cinemaId || c.id) !== id));
         toast.success("Xóa rạp thành công.");
       } catch (err) {
         console.error("Delete cinema error:", err);
         const msg = err?.message || "Xóa rạp thất bại.";
-        setError(msg);
-        toast.error(msg);
+toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();

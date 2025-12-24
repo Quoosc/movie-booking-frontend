@@ -18,7 +18,7 @@ export default function AdminRoomsPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
 
   const [search, setSearch] = useState("");
   const [cinemaFilter, setCinemaFilter] = useState("ALL");
@@ -45,9 +45,7 @@ export default function AdminRoomsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      const [roomsRes, cinemasRes] = await Promise.all([
+const [roomsRes, cinemasRes] = await Promise.all([
         AdminCinemaService.getRooms(), // rooms API
         AdminCinemaService.getCinemas?.(),
       ]);
@@ -60,8 +58,7 @@ export default function AdminRoomsPage() {
     } catch (err) {
       console.error("AdminRooms fetchData error:", err);
       const msg = err?.message || "Không tải được danh sách phòng chiếu.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -92,8 +89,7 @@ export default function AdminRoomsPage() {
   const openCreateModal = () => {
     setEditingRoom(null);
     setForm(EMPTY_FORM);
-    setError(null);
-    setIsModalOpen(true);
+setIsModalOpen(true);
   };
 
   const openEditModal = (room) => {
@@ -103,8 +99,7 @@ export default function AdminRoomsPage() {
       roomType: room.roomType || "",
       roomNumber: room.roomNumber ?? "",
     });
-    setError(null);
-    setIsModalOpen(true);
+setIsModalOpen(true);
   };
 
   const closeModal = () => {
@@ -124,20 +119,17 @@ export default function AdminRoomsPage() {
 
     if (!form.cinemaId && !editingRoom) {
       const msg = "Vui lòng chọn rạp cho phòng chiếu.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
     if (!form.roomType.trim()) {
       const msg = "Vui lòng nhập loại phòng (STANDARD, IMAX...)";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
     if (!form.roomNumber || Number(form.roomNumber) <= 0) {
       const msg = "Số phòng phải là số nguyên dương.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
       return;
     }
 
@@ -149,9 +141,7 @@ export default function AdminRoomsPage() {
 
     try {
       setSaving(true);
-      setError(null);
-
-      if (editingRoom) {
+if (editingRoom) {
         const roomId = editingRoom.roomId;
         const updated = await AdminCinemaService.updateRoom(roomId, payload);
         const updatedRoom = updated?.data ?? updated ?? payload;
@@ -175,8 +165,7 @@ export default function AdminRoomsPage() {
     } catch (err) {
       console.error("Save room error:", err);
       const msg = err?.message || "Lưu thông tin phòng chiếu thất bại.";
-      setError(msg);
-      toast.error(msg);
+toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -192,17 +181,14 @@ export default function AdminRoomsPage() {
     const confirmDelete = async () => {
       try {
         setDeletingId(roomId);
-        setError(null);
-
-        await AdminCinemaService.deleteRoom(roomId);
+await AdminCinemaService.deleteRoom(roomId);
 
         setRooms((prev) => prev.filter((r) => r.roomId !== roomId));
         toast.success("Xóa phòng chiếu thành công.");
       } catch (err) {
         console.error("Delete room error:", err);
         const msg = err?.message || "Xóa phòng chiếu thất bại.";
-        setError(msg);
-        toast.error(msg);
+toast.error(msg);
       } finally {
         setDeletingId(null);
         closeWarning();
