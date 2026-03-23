@@ -69,9 +69,9 @@ export default function CheckoutSuccessPage() {
 
   // ✅ Lấy bookingId từ nhiều nguồn
   const bookingFromState = location.state?.booking;
-  const bookingIdFromState = 
-    location.state?.bookingId || 
-    bookingFromState?.bookingId || 
+  const bookingIdFromState =
+    location.state?.bookingId ||
+    bookingFromState?.bookingId ||
     bookingFromState?.id;
   const bookingIdFromQuery = searchParams.get("bookingId");
   const bookingId = bookingIdFromState || bookingIdFromQuery;
@@ -106,12 +106,12 @@ export default function CheckoutSuccessPage() {
         console.log("🔍 [CheckoutSuccess] Gọi API getBookingById:", bookingId);
         const data = await getBookingById(bookingId);
         console.log("✅ [CheckoutSuccess] Booking từ API:", data);
-        
+
         if (isMounted) {
           // ✅ Merge qrPayload từ state nếu API không trả về
           const finalBooking = {
             ...data,
-            qrPayload: data.qrPayload || qrPayloadFromState || ""
+            qrPayload: data.qrPayload || qrPayloadFromState || "",
           };
           setBooking(finalBooking);
         }

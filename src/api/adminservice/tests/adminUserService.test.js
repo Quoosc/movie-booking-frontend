@@ -91,8 +91,17 @@ describe("adminUserService", () => {
     expect(res).toBe(true);
   });
 
-  it("updateUserRole: PATCH /users/{id}/role body is JSON string", () => {
-    expect(true).toBe(true);
+  it("updateUserRole: PATCH /users/{id}/role (plain text body for Spring)", async () => {
+    apiFetch.mockResolvedValueOnce({ data: { id: "u1", role: "ADMIN" } });
+
+    const res = await SUT.updateUserRole("u1", "ADMIN");
+
+    expect(apiFetch).toHaveBeenCalledWith("/users/u1/role", {
+      method: "PATCH",
+      headers: { "Content-Type": "text/plain" },
+      body: "ADMIN",
+    });
+    expect(res).toEqual({ id: "u1", role: "ADMIN" });
   });
 
   /* ===================== MEMBERSHIP TIERS (ADMIN) ===================== */

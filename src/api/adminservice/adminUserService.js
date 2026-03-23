@@ -66,11 +66,14 @@ export async function deleteUser(userId) {
 //   return res.data || res; // UserDataResponse
 // }
 
-//laravel
+//spring
 export async function updateUserRole(userId, role) {
   const res = await apiFetch(`/users/${userId}/role`, {
     method: "PATCH",
-    body: JSON.stringify({ role }),
+    headers: {
+      "Content-Type": "text/plain",
+    },
+    body: role, // "ADMIN" | "USER"
   });
 
   return res.data || res;
