@@ -3,11 +3,5 @@
   "routes": [
     { "handle": "filesystem" },
     { "src": "/.*", "dest": "/index.html" }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "http://20.212.11.234:8080/:path*"
-    }
   ]
 }
