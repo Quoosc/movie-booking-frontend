@@ -1,29 +1,22 @@
 // src/api/cinemaService.js
 
-
 import { apiFetch } from "./fetchConfig";
 
 const USE_MOCK = false;
 
 function mapCinema(c) {
+  const heroImageUrl =
+    c.heroImageUrl || c.hero_image_url || c.imageUrl || c.image_url || "";
+
   return {
     id: c.cinemaId || c.cinema_id || c.id,
     name: c.name,
     address: c.address || "",
     city: c.city || "",
     district: c.district || "",
-    heroImageUrl:
-      c.heroImageUrl ||
-      c.hero_image_url ||
-      c.imageUrl ||
-      c.image_url ||
-      "/public/cinemas/default-hero.jpg",
+    heroImageUrl,
     thumbnailUrl:
-      c.thumbnailUrl ||
-      c.thumbnail_url ||
-      c.imageUrl ||
-      c.image_url ||
-      "/public/cinemas/default-thumb.jpg",
+      c.thumbnailUrl || c.thumbnail_url || heroImageUrl || c.imageUrl || "",
   };
 }
 
