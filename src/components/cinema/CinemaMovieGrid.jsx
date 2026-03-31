@@ -14,9 +14,17 @@ export default function CinemaMovieGrid({ cinema, activeTab }) {
   const [loading, setLoading] = useState(false);
 
   const isSpecial = activeTab === "special";
+  const isPricing = activeTab === "pricing";
+
+  const priceRows = [
+    { label: "Ghế thường 2D", weekday: "75.000đ", weekend: "90.000đ" },
+    { label: "Ghế VIP 2D", weekday: "95.000đ", weekend: "115.000đ" },
+    { label: "Ghế đôi 2D", weekday: "190.000đ", weekend: "230.000đ" },
+    { label: "Suất 3D", weekday: "110.000đ", weekend: "135.000đ" },
+  ];
 
   useEffect(() => {
-    if (isSpecial) {
+    if (isSpecial || isPricing) {
       setMovies([]);
       return;
     }
@@ -43,7 +51,7 @@ export default function CinemaMovieGrid({ cinema, activeTab }) {
     };
 
     load();
-  }, [cinema?.id, activeTab, isSpecial]);
+  }, [cinema?.id, activeTab, isSpecial, isPricing]);
 
   return (
     <section className="max-w-7xl mx-auto px-4 mt-8 mb-12">
@@ -63,6 +71,51 @@ export default function CinemaMovieGrid({ cinema, activeTab }) {
             </span>
             .
           </p>
+        </div>
+      ) : isPricing ? (
+        <div className="rounded-2xl border border-white/15 bg-[#0b1638]/70 overflow-hidden shadow-[0_16px_50px_rgba(0,0,0,0.7)]">
+          <div className="px-5 md:px-8 py-5 border-b border-white/10 bg-gradient-to-r from-[#2d2558] via-[#122a56] to-[#20427a]">
+            <h2 className="text-xl md:text-2xl font-extrabold uppercase text-white tracking-[0.03em]">
+              Bảng giá vé tham khảo
+            </h2>
+            <p className="text-xs md:text-sm text-white/75 mt-1">
+              Áp dụng tại {cinema?.shortName || cinema?.name}. Giá có thể thay
+              đổi theo thời điểm và chương trình ưu đãi.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[620px]">
+              <thead className="bg-white/[0.04]">
+                <tr>
+                  <th className="text-left px-5 md:px-8 py-4 text-xs uppercase tracking-[0.18em] text-white/70">
+                    Loại vé
+                  </th>
+                  <th className="text-left px-5 md:px-8 py-4 text-xs uppercase tracking-[0.18em] text-white/70">
+                    Thứ 2 - Thứ 6
+                  </th>
+                  <th className="text-left px-5 md:px-8 py-4 text-xs uppercase tracking-[0.18em] text-white/70">
+                    Thứ 7 - Chủ nhật
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {priceRows.map((row) => (
+                  <tr key={row.label} className="border-t border-white/8">
+                    <td className="px-5 md:px-8 py-4 text-sm md:text-base font-semibold text-white">
+                      {row.label}
+                    </td>
+                    <td className="px-5 md:px-8 py-4 text-sm md:text-base text-white/90">
+                      {row.weekday}
+                    </td>
+                    <td className="px-5 md:px-8 py-4 text-sm md:text-base text-white/90">
+                      {row.weekend}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : loading ? (
         <p className="text-center text-sm text-white/70">
