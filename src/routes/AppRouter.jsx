@@ -17,6 +17,7 @@ import AdminSeatsPage from "@/app/(admin)/seats/page";
 import AdminSnacksPage from "@/app/(admin)/snacks/page";
 import AdminPricingPage from "@/app/(admin)/pricing/page";
 import AdminPromotionsPage from "@/app/(admin)/promotions/page";
+import AdminHeroSlidesPage from "@/app/(admin)/heroslides/page";
 import AdminBookingsPage from "@/app/(admin)/bookings/page";
 import AdminOrdersPage from "@/app/(admin)/orders/page";
 import AdminToolsPage from "@/app/(admin)/tools/page";
@@ -132,6 +133,7 @@ export default function AppRouter() {
         <Route path="snacks" element={<AdminSnacksPage />} />
         <Route path="pricing" element={<AdminPricingPage />} />
         <Route path="promotions" element={<AdminPromotionsPage />} />
+        <Route path="heroslides" element={<AdminHeroSlidesPage />} />
         <Route path="bookings" element={<AdminBookingsPage />} />
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="tools" element={<AdminToolsPage />} />

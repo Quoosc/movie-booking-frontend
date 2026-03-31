@@ -12,6 +12,7 @@ const adminNavItems = [
   { id: "rooms", label: "Phòng chiếu", path: "/admin/rooms" },
   { id: "pricing", label: "Giá & ticket", path: "/admin/pricing" },
   { id: "promotions", label: "Khuyến mãi", path: "/admin/promotions" },
+  { id: "heroslides", label: "HeroSlide", path: "/admin/heroslides" },
   { id: "membership", label: "Membership tiers", path: "/admin/membership" },
   { id: "users", label: "Người dùng", path: "/admin/users" },
   { id: "orders", label: "Đơn / thanh toán", path: "/admin/orders" },
@@ -26,9 +27,7 @@ export default function AdminSidebar({ isMobile = false }) {
   const { user: currentUser } = useAuth() || {};
 
   const displayName =
-    currentUser?.username ||
-    currentUser?.email ||
-    "Admin CinesVerse";
+    currentUser?.username || currentUser?.email || "Admin CinesVerse";
 
   const avatarSrc = useMemo(() => {
     return (
@@ -113,7 +112,11 @@ export default function AdminSidebar({ isMobile = false }) {
 
                 {isActive && (
                   <span className="relative z-10">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"

@@ -3,10 +3,25 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
+html,
+body {
   @apply bg-gradient-to-b from-[#070018] via-[#050015] to-[#02000f] text-white;
-  select {
+}
+
+html select,
+body select {
   color-scheme: dark;
 }
+
+.cv-select-dark {
+  color-scheme: dark;
 }
- #root { height: 100%; }
+
+.cv-select-dark option {
+  background: #120426;
+  color: #f8fafc;
+}
+
+#root {
+  height: 100%;
+}

@@ -2,50 +2,99 @@
 import { useEffect, useState } from "react";
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
+import { getPublicHeroSlides } from "@/api/heroSlideService";
 
-const slides = [
+const fallbackSlides = [
   {
-    id: 1,
-    image:
+    heroSlideId: "fallback-1",
+    title: "Hero Slide 1",
+    imageUrl:
       "https://media.lottecinemavn.com/Media/WebAdmin/35faf5f79b8c43fa91450705f57b9b10.png",
-    alt: "PREDATOR",
-  }, 
+    altText: "PREDATOR",
+    sortOrder: 0,
+    isActive: true,
+  },
   {
-    id: 2,
-    image:
+    heroSlideId: "fallback-2",
+    title: "Hero Slide 2",
+    imageUrl:
       "https://media.lottecinemavn.com/Media/WebAdmin/dae8ae8187d847638637ee528362fe86.jpg",
-    alt: "TÌNH NGƯỜI DUYÊN MA",
+    altText: "TINH NGUOI DUYEN MA",
+    sortOrder: 1,
+    isActive: true,
   },
   {
-    id: 3,
-    image:
+    heroSlideId: "fallback-3",
+    title: "Hero Slide 3",
+    imageUrl:
       "https://media.lottecinemavn.com/Media/WebAdmin/b8a254a018fc4345bd7869a93a0f37b1.jpg",
-    alt: "TÌNH NGƯỜI DUYÊN MA",
+    altText: "TINH NGUOI DUYEN MA",
+    sortOrder: 2,
+    isActive: true,
   },
   {
-    id: 4,
-    image:
+    heroSlideId: "fallback-4",
+    title: "Hero Slide 4",
+    imageUrl:
       "https://media.lottecinemavn.com/Media/WebAdmin/35a10a886e16496aacef84321c63631f.jpg",
-    alt: "TRÁI TIM QUÈ QUẶT",
+    altText: "TRAI TIM QUE QUAT",
+    sortOrder: 3,
+    isActive: true,
   },
-  // {
-  //   id: 5,
-  //   image:
-  //     "https://media.lottecinemavn.com/Media/WebAdmin/35a10a886e16496aacef84321c63631f.jpg",
-  //   alt: "PREDATOR 2",
-  // },
 ];
 
 export default function HeroSlider() {
+  const [slides, setSlides] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
-
   const [baseRatio, setBaseRatio] = useState(null);
 
-  if (!slides.length) return null;
-  const current = slides[index];
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSlides = async () => {
+      try {
+        setLoading(true);
+        const data = await getPublicHeroSlides();
+        const list = (Array.isArray(data) ? data : [])
+          .filter((item) => item?.imageUrl)
+          .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+        if (!mounted) return;
+        setSlides(list.length ? list : fallbackSlides);
+      } catch (error) {
+        console.error("Load HeroSlide error:", error);
+        if (mounted) {
+          setSlides(fallbackSlides);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSlides();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setBaseRatio(null);
+    if (!slides.length) {
+      setIndex(0);
+      return;
+    }
+    if (index >= slides.length) {
+      setIndex(0);
+    }
+  }, [slides.length, index]);
 
   const goTo = (i, dir = 1) => {
+    if (!slides.length) return;
     setDirection(dir);
     setIndex((i + slides.length) % slides.length);
   };
@@ -54,10 +103,11 @@ export default function HeroSlider() {
   const prev = () => goTo(index - 1, -1);
 
   useEffect(() => {
+    if (slides.length <= 1) return undefined;
     const timer = setTimeout(() => next(), 30000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  }, [index, slides.length]);
 
   const slideVariants = {
     enter: (dir) => ({
@@ -79,15 +129,16 @@ export default function HeroSlider() {
     }),
   };
 
-  // ✅ Khi load ảnh id=1 lần đầu -> set ratio cho khung
   const handleImgLoad = (e) => {
-    if (baseRatio) return; // đã chốt ratio rồi thì thôi
-    if (current.id !== 1) return;
+    if (baseRatio) return;
 
     const w = e.currentTarget.naturalWidth;
     const h = e.currentTarget.naturalHeight;
     if (w && h) setBaseRatio(w / h);
   };
+
+  if (!slides.length) return null;
+  const current = slides[index] || slides[0];
 
   return (
     <section className="relative z-10 mt-3 md:mt-4 mb-5 md:mb-8">
@@ -99,9 +150,14 @@ export default function HeroSlider() {
           >
             <AnimatePresence custom={direction} mode="wait">
               <motion.img
-                key={current.id}
-                src={current.image}
-                alt={current.alt}
+                key={current.heroSlideId || current.id}
+                src={current.imageUrl || current.image}
+                alt={
+                  current.altText ||
+                  current.alt ||
+                  current.title ||
+                  "Hero Slide"
+                }
                 onLoad={handleImgLoad}
                 custom={direction}
                 variants={slideVariants}
@@ -131,7 +187,7 @@ export default function HeroSlider() {
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
               {slides.map((s, i) => (
                 <button
-                  key={s.id}
+                  key={s.heroSlideId || s.id || i}
                   onClick={() => goTo(i, i > index ? 1 : -1)}
                   className={`h-2.5 rounded-full transition-all duration-300 ${
                     i === index
@@ -141,6 +197,12 @@ export default function HeroSlider() {
                 />
               ))}
             </div>
+
+            {loading ? (
+              <div className="absolute top-3 right-3 text-[10px] tracking-[0.12em] uppercase rounded-full bg-black/45 border border-white/20 px-2 py-1 text-white/80">
+                syncing
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
