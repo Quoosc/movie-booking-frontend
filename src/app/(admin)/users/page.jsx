@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminUserService } from "@/api/adminservice";
 import { toast } from "react-toastify";
+import AdminPagination from "@/components/shared/AdminPagination";
+import AdminTableSkeleton from "@/components/shared/AdminTableSkeleton";
+import SortableHeader from "@/components/shared/SortableHeader";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useSortable } from "@/hooks/useSortable";
 
 // Chỉ cho đổi giữa ADMIN/USER (đúng như rule UI của project)
 const ROLE_OPTIONS_EDITABLE = ["ADMIN", "USER"];
@@ -76,7 +81,11 @@ export default function AdminUsersPage() {
   const [success, setSuccess] = useState(null);
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [roleFilter, setRoleFilter] = useState("ALL");
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // local editable role state
   const [roleDraft, setRoleDraft] = useState({}); // { userId: "ADMIN" }
@@ -196,9 +205,13 @@ toast.error(msg);
 
   // ======= DERIVED DATA =======
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, roleFilter]);
+
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      const q = search.trim().toLowerCase();
+      const q = debouncedSearch.trim().toLowerCase();
       if (q) {
         const haystack = `${u.username || ""} ${u.email || ""} ${
           u.phoneNumber || ""
@@ -213,7 +226,14 @@ toast.error(msg);
 
       return true;
     });
-  }, [users, search, roleFilter]);
+  }, [users, debouncedSearch, roleFilter]);
+
+  const { sortedItems: sortedUsers, sortKey, sortDir, toggleSort } = useSortable(filteredUsers);
+
+  const paginatedUsers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedUsers.slice(start, start + pageSize);
+  }, [sortedUsers, page, pageSize]);
 
   const stats = useMemo(() => {
     const total = users.length;
@@ -369,9 +389,16 @@ toast.error(msg);
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#0b0020]/98 backdrop-blur-sm">
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="py-3 pr-4 text-left">User</th>
+                  <SortableHeader
+                    label="User"
+                    sortKey="username"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 pr-4 text-left"
+                  />
                   <th className="py-3 px-4 text-left hidden md:table-cell">
                     Liên hệ
                   </th>
@@ -385,14 +412,7 @@ toast.error(msg);
 
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
+                  <AdminTableSkeleton columns={5} rows={8} />
                 ) : filteredUsers.length === 0 ? (
                   <tr>
                     <td
@@ -403,7 +423,7 @@ toast.error(msg);
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((u) => {
+                  paginatedUsers.map((u) => {
                     const role = getRole(u);
                     const draftRole = (
                       roleDraft[u.userId] || role
@@ -543,6 +563,13 @@ toast.error(msg);
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={page}
+            totalItems={filteredUsers.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </section>
     </div>

@@ -1,8 +1,13 @@
 // src/app/(admin)/snacks/page.jsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminCinemaService } from "@/api/adminservice";
 import { uploadSnackImage } from "@/api/cloudinaryService";
 import { toast } from "react-toastify";
+import AdminPagination from "@/components/shared/AdminPagination";
+import AdminTableSkeleton from "@/components/shared/AdminTableSkeleton";
+import SortableHeader from "@/components/shared/SortableHeader";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useSortable } from "@/hooks/useSortable";
 
 export default function AdminSnacksPage() {
   const [snacks, setSnacks] = useState([]);
@@ -13,8 +18,7 @@ export default function AdminSnacksPage() {
   const [deletingId, setDeletingId] = useState(null);
   const [uploadingSnackImage, setUploadingSnackImage] = useState(false);
 
-  const [formOpen, setFormOpen] = useState(false);
-  const formRef = useRef(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [error] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -27,7 +31,11 @@ export default function AdminSnacksPage() {
 
   // filter
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [cinemaFilter, setCinemaFilter] = useState("ALL");
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // form
   const [editingId, setEditingId] = useState(null);
@@ -108,7 +116,6 @@ export default function AdminSnacksPage() {
 toast.error(err?.message || "Upload ảnh thất bại");
     } finally {
       setUploadingSnackImage(false);
-      toast.dismiss(toastId);
     }
   };
 
@@ -173,13 +180,16 @@ setSuccess(null);
     const cinemaId = form.cinemaId || null;
 
     if (!name) {
-return;
+      toast.error("Vui lòng nhập tên sản phẩm.");
+      return;
     }
     if (Number.isNaN(priceNumber) || priceNumber <= 0) {
-return;
+      toast.error("Giá phải là số dương.");
+      return;
     }
     if (!category) {
-return;
+      toast.error("Vui lòng nhập loại sản phẩm.");
+      return;
     }
 
     try {
@@ -215,13 +225,12 @@ return;
 
       await reloadSnacks();
       resetForm();
-      setFormOpen(false);
+      setIsModalOpen(false);
     } catch (err) {
       console.error("Save snack error:", err);
-toast.error(err?.message || "Lưu snack thất bại");
+      toast.error(err?.message || "Lưu snack thất bại");
     } finally {
       setSaving(false);
-      toast.dismiss(toastId);
     }
   };
 
@@ -238,12 +247,7 @@ toast.error(err?.message || "Lưu snack thất bại");
       imageUrl: snack.imageUrl || "",
       imageCloudinaryId: snack.imageCloudinaryId || "",
     });
-    setFormOpen(true);
-    setTimeout(
-      () =>
-        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-      50
-    );
+    setIsModalOpen(true);
 
     // clear file selection when switching to edit
     setImageFile(null);
@@ -283,6 +287,10 @@ toast.error(err?.message || "Xóa snack thất bại");
     );
   };
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, cinemaFilter]);
+
   // ====== FILTERED DATA ======
   const cinemaMap = useMemo(() => {
     const map = {};
@@ -294,7 +302,7 @@ toast.error(err?.message || "Xóa snack thất bại");
 
   const filteredSnacks = useMemo(() => {
     return snacks.filter((s) => {
-      const q = search.trim().toLowerCase();
+      const q = debouncedSearch.trim().toLowerCase();
       if (q) {
         const haystack = `${s.name || ""} ${s.category || ""} ${s.type || ""} ${
           s.description || ""
@@ -308,7 +316,14 @@ toast.error(err?.message || "Xóa snack thất bại");
 
       return true;
     });
-  }, [snacks, search, cinemaFilter]);
+  }, [snacks, debouncedSearch, cinemaFilter]);
+
+  const { sortedItems: sortedSnacks, sortKey, sortDir, toggleSort } = useSortable(filteredSnacks);
+
+  const paginatedSnacks = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedSnacks.slice(start, start + pageSize);
+  }, [sortedSnacks, page, pageSize]);
 
   // stats
   const stats = useMemo(() => {
@@ -329,7 +344,7 @@ toast.error(err?.message || "Xóa snack thất bại");
 
   // ====== RENDER ======
   return (
-    <div className="space-y-8 lg:space-y-10">
+    <div className={`space-y-8 lg:space-y-10 ${isModalOpen ? "h-screen overflow-hidden" : ""}`}>
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-cyan-400/70">
@@ -417,24 +432,12 @@ toast.error(err?.message || "Xóa snack thất bại");
             <button
               type="button"
               onClick={() => {
-                if (formOpen) {
-                  setFormOpen(false);
-                } else {
-                  resetForm(); // mở form tạo mới thì reset
-                  setFormOpen(true);
-                  setTimeout(
-                    () =>
-                      formRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      }),
-                    50
-                  );
-                }
+                resetForm();
+                setIsModalOpen(true);
               }}
               className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-xs font-semibold tracking-[0.16em] uppercase bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-400 text-black shadow-lg shadow-emerald-500/30 hover:brightness-110 transition-all"
             >
-              {formOpen ? "Đóng form" : "Thêm SNACKS"}
+              + Thêm SNACKS
             </button>
           </div>
         </div>
@@ -456,63 +459,65 @@ toast.error(err?.message || "Xóa snack thất bại");
         </section>
       )}
 
-      {/* Form create / edit */}
-      {formOpen && (
-        <section
-          ref={formRef}
-          className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a0033]/90 via-[#0b001f] to-black/95 border border-white/10 backdrop-blur-xl shadow-2xl"
-        >
-          <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-600/18 via-transparent to-cyan-500/18 pointer-events-none" />
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
+      {/* Modal create / edit */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-10 pb-6 bg-black/70 backdrop-blur-xl overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-3xl overflow-hidden bg-gradient-to-br from-[#160033]/95 via-[#080017] to-black border border-white/15 shadow-[0_0_60px_rgba(123,66,255,0.6)]">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-transparent to-cyan-500/20 pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
 
-          <div className="relative p-4 md:p-6 lg:p-8 space-y-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm md:text-base font-extrabold tracking-[0.2em] uppercase text-white/80">
-                  {editingId
-                    ? "Chỉnh sửa bắp nước / combo"
-                    : "Thêm bắp nước / combo mới"}
-                </h2>
-                <p className="text-[11px] md:text-xs text-white/50 mt-1">
-                  Nhập thông tin bắp nước, chọn rạp áp dụng và giá bán.
-                </p>
-              </div>
-              {editingId && (
+            <div className="relative p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-cyan-400/70 mb-1">
+                    {editingId ? "CHỈNH SỬA SẢN PHẨM" : "THÊM SẢN PHẨM MỚI"}
+                  </p>
+                  <h2 className="text-xl md:text-2xl font-black tracking-[0.16em] uppercase bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-300 bg-clip-text text-transparent">
+                    {editingId ? "Chỉnh sửa bắp nước / combo" : "Bắp nước & Combo"}
+                  </h2>
+                </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    resetForm();
-                    setFormOpen(false);
-                  }}
-                  className="text-[11px] font-semibold tracking-[0.16em] uppercase rounded-2xl border border-white/20 px-3 py-1.5 text-white/70 hover:bg-white/10 transition-all"
+                  onClick={() => { resetForm(); setIsModalOpen(false); }}
+                  disabled={saving}
+                  className="rounded-full bg-white/5 hover:bg-white/10 border border-white/20 w-8 h-8 flex items-center justify-center text-white/70 text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Hủy chỉnh sửa
+                  ✕
                 </button>
-              )}
-            </div>
+              </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
-            >
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
-                    Tên sản phẩm
-                  </label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={handleChangeForm("name")}
-                    placeholder="Bắp rang bơ, Combo 2 vé + 2 nước..."
-                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
-                      Giá (VNĐ)
+                      Tên sản phẩm *
+                    </label>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={handleChangeForm("name")}
+                      placeholder="Bắp rang bơ, Combo 2 vé + 2 nước..."
+                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                      Loại / Category *
+                    </label>
+                    <input
+                      type="text"
+                      value={form.category}
+                      onChange={handleChangeForm("category")}
+                      placeholder="COMBO, POPCORN, DRINK..."
+                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                      Giá (VNĐ) *
                     </label>
                     <input
                       type="number"
@@ -520,166 +525,87 @@ toast.error(err?.message || "Xóa snack thất bại");
                       value={form.price}
                       onChange={handleChangeForm("price")}
                       placeholder="45000"
-                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                     />
                   </div>
-
                   <div>
                     <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
-                      Loại / Category
+                      Thuộc rạp
                     </label>
-                    <input
-                      type="text"
-                      value={form.category}
-                      onChange={handleChangeForm("category")}
-                      placeholder="COMBO, POPCORN, DRINK..."
-                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                    />
+                    <select
+                      value={form.cinemaId}
+                      onChange={handleChangeForm("cinemaId")}
+                      className="cv-select-dark w-full rounded-full bg-gradient-to-r from-[#1b0b3a] via-[#14002b] to-[#050012] border border-cyan-400/60 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_0_1px_rgba(15,23,42,0.9)] focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:border-transparent transition-all"
+                    >
+                      <option value="">— Chọn chi nhánh —</option>
+                      {cinemas.map((c) => (
+                        <option key={c.cinemaId || c.id} value={c.cinemaId || c.id}>
+                          {c.name || c.cinemaName || "Rạp không tên"}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
-                    Thuộc rạp
-                  </label>
-                  <select
-                    value={form.cinemaId}
-                    onChange={handleChangeForm("cinemaId")}
-                    className="w-full rounded-full bg-gradient-to-r from-[#0b001f] via-[#0e0127] to-[#120033] border border-cyan-400/30 px-4 py-2.5 text-sm text-white shadow-[0_0_0_1px_rgba(0,0,0,0.4)] hover:border-cyan-300/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:border-cyan-300 transition-all"
-                  >
-                    <option value="">— Chọn chi nhánh —</option>
-                    {cinemas.map((c) => (
-                      <option
-                        key={c.cinemaId || c.id}
-                        value={c.cinemaId || c.id}
-                      >
-                        {c.name || c.cinemaName || "Rạp không tên"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-4">
                 <div>
                   <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
                     Mô tả
                   </label>
                   <textarea
-                    rows={4}
+                    rows={3}
                     value={form.description}
                     onChange={handleChangeForm("description")}
                     placeholder="Ví dụ: Combo 1 bắp lớn + 2 nước ngọt 500ml..."
-                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all resize-none"
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all resize-none"
                   />
                 </div>
 
                 <div>
-                  {/* <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
-                  Ảnh minh họa
-                </label>
-                <input
-                  type="text"
-                  value={form.imageUrl}
-                  onChange={handleChangeForm("imageUrl")}
-                  placeholder="https://.../combo.png"
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                />
-                <p className="mt-2 text-[11px] text-white/45">
-                  Dùng để hiển thị hình ảnh đẹp hơn trên trang đặt vé.
-                </p> */}
-
-                  {/* Upload file */}
-                  <div className="mt-3">
-                    <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
-                      Upload ảnh
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePickImage}
-                      disabled={saving}
-                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-white/15"
-                    />
-
-                    {uploadingSnackImage && (
-                      <p className="mt-2 text-xs text-cyan-300">
-                        Đang upload ảnh snack...
-                      </p>
-                    )}
-
-                    {(imagePreview || form.imageUrl) && (
-                      <div className="mt-3 flex items-center gap-3">
-                        <img
-                          src={imagePreview || form.imageUrl}
-                          alt="snack-preview"
-                          className="h-16 w-16 rounded-2xl object-cover border border-white/10"
-                        />
-
-                        {imageFile && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setImageFile(null);
-                              if (imagePreview?.startsWith("blob:")) {
-                                try {
-                                  URL.revokeObjectURL(imagePreview);
-                                } catch {
-                                  // ignore
-                                }
-                              }
-                              setImagePreview("");
-                            }}
-                            className="rounded-2xl border border-white/20 bg-white/5 px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase text-white hover:bg-white/10 transition-all"
-                          >
-                            Bỏ ảnh đã chọn
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                    Upload ảnh
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePickImage}
+                    disabled={saving || uploadingSnackImage}
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white file:mr-4 file:rounded-xl file:border-0 file:bg-violet-500/80 file:text-black file:font-semibold file:px-3 file:py-2 hover:file:bg-violet-400"
+                  />
+                  {uploadingSnackImage && (
+                    <p className="mt-2 text-xs text-cyan-300">Đang upload ảnh...</p>
+                  )}
+                  {(imagePreview || form.imageUrl) && (
+                    <div className="mt-3 flex items-center gap-3">
+                      <img
+                        src={imagePreview || form.imageUrl}
+                        alt="preview"
+                        className="h-16 w-16 rounded-2xl object-cover border border-white/10"
+                      />
+                    </div>
+                  )}
                 </div>
-
-                {/* <div>
-                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
-                  ID Cloudinary (public_id)
-                </label>
-                <input
-                  type="text"
-                  value={form.imageCloudinaryId}
-                  onChange={handleChangeForm("imageCloudinaryId")}
-                  placeholder="folder/ten_anh_hoac_public_id"
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
-                />
-              </div> */}
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={resetForm}
+                    onClick={() => { resetForm(); setIsModalOpen(false); }}
                     disabled={saving}
-                    className="flex-1 rounded-2xl border border-white/20 bg-white/5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 hover:border-white/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="flex-1 rounded-2xl border border-white/20 bg-white/5 py-3.5 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                   >
-                    Nhập lại
+                    Hủy
                   </button>
                   <button
                     type="submit"
-                    disabled={saving}
-                    className="flex-1 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 py-2.5 text-sm font-black text-black shadow-xl shadow-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/70 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                    disabled={saving || uploadingSnackImage}
+                    className="flex-1 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-emerald-400 py-3.5 font-black text-sm text-black shadow-xl shadow-purple-500/50 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                   >
-                    {saving
-                      ? editingId
-                        ? "Đang lưu..."
-                        : "Đang tạo..."
-                      : editingId
-                      ? "Lưu thay đổi"
-                      : "Thêm sản phẩm"}
+                    {saving ? (editingId ? "Đang lưu..." : "Đang tạo...") : editingId ? "Lưu thay đổi" : "Thêm sản phẩm"}
                   </button>
                 </div>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </section>
+        </div>
       )}
 
       {/* Table */}
@@ -701,29 +627,36 @@ toast.error(err?.message || "Xóa snack thất bại");
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#0b0020]/98 backdrop-blur-sm">
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="py-3 pr-4 text-left">Sản phẩm</th>
+                  <SortableHeader
+                    label="Sản phẩm"
+                    sortKey="name"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 pr-4 text-left"
+                  />
                   <th className="py-3 px-4 text-left hidden md:table-cell">
                     Rạp áp dụng
                   </th>
                   <th className="py-3 px-4 text-left hidden lg:table-cell">
                     Loại / Category
                   </th>
-                  <th className="py-3 px-4 text-left">Giá</th>
+                  <SortableHeader
+                    label="Giá"
+                    sortKey="price"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 px-4 text-left"
+                  />
                   <th className="py-3 pl-4 pr-2 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
+                  <AdminTableSkeleton columns={5} rows={8} />
                 ) : filteredSnacks.length === 0 ? (
                   <tr>
                     <td
@@ -734,7 +667,7 @@ toast.error(err?.message || "Xóa snack thất bại");
                     </td>
                   </tr>
                 ) : (
-                  filteredSnacks.map((s) => {
+                  paginatedSnacks.map((s) => {
                     const id = s.snackId || s.id;
                     const cinema =
                       cinemaMap[s.cinemaId] || cinemaMap[s.cinema_id] || null;
@@ -842,6 +775,13 @@ toast.error(err?.message || "Xóa snack thất bại");
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={page}
+            totalItems={filteredSnacks.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </section>
 

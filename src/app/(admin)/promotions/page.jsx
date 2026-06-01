@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminToolsService } from "@/api/adminservice";
 import { toast } from "react-toastify";
+import AdminPagination from "@/components/shared/AdminPagination";
+import AdminTableSkeleton from "@/components/shared/AdminTableSkeleton";
+import SortableHeader from "@/components/shared/SortableHeader";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useSortable } from "@/hooks/useSortable";
 
 const DISCOUNT_TYPES = [
   { value: "PERCENTAGE", label: "Phần trăm (%)" },
@@ -24,6 +29,7 @@ export default function AdminPromotionsPage() {
   const [success, setSuccess] = useState(null);
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [filter, setFilter] = useState("ALL");
 
   // form / modal
@@ -34,6 +40,9 @@ export default function AdminPromotionsPage() {
   const [form, setForm] = useState(getEmptyForm());
 
   const [processingId, setProcessingId] = useState(null); // deactivate / delete
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Shared warning modal
   const [warning, setWarning] = useState({
@@ -182,9 +191,13 @@ toast.error(msg);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, filter]);
+
   // ===== Derived =====
   const filteredPromotions = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     return promotions.filter((p) => {
       if (q) {
         const haystack = `${p.code || ""} ${p.name || ""} ${
@@ -194,7 +207,14 @@ toast.error(msg);
       }
       return true;
     });
-  }, [promotions, search]);
+  }, [promotions, debouncedSearch]);
+
+  const { sortedItems: sortedPromotions, sortKey, sortDir, toggleSort } = useSortable(filteredPromotions);
+
+  const paginatedPromotions = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedPromotions.slice(start, start + pageSize);
+  }, [sortedPromotions, page, pageSize]);
 
   const stats = useMemo(() => {
     const total = promotions.length;
@@ -537,30 +557,37 @@ toast.error(msg);
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#0b0020]/98 backdrop-blur-sm">
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="py-3 pr-4 text-left">Mã / Tên</th>
+                  <SortableHeader
+                    label="Mã / Tên"
+                    sortKey="name"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 pr-4 text-left"
+                  />
                   <th className="py-3 px-4 text-left hidden md:table-cell">
                     Thời gian
                   </th>
                   <th className="py-3 px-4 text-left hidden lg:table-cell">
                     Hạn mức
                   </th>
-                  <th className="py-3 px-4 text-left">Giảm giá</th>
+                  <SortableHeader
+                    label="Giảm giá"
+                    sortKey="discountValue"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 px-4 text-left"
+                  />
                   <th className="py-3 px-4 text-left">Trạng thái</th>
                   <th className="py-3 pl-4 pr-2 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
+                  <AdminTableSkeleton columns={6} rows={8} />
                 ) : filteredPromotions.length === 0 ? (
                   <tr>
                     <td
@@ -571,7 +598,7 @@ toast.error(msg);
                     </td>
                   </tr>
                 ) : (
-                  filteredPromotions.map((p) => {
+                  paginatedPromotions.map((p) => {
                     const statusLabel = getStatusLabel(p);
                     const statusClass = getStatusClass(p);
                     const isProcessing = processingId === p.promotionId;
@@ -687,13 +714,20 @@ toast.error(msg);
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={page}
+            totalItems={filteredPromotions.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </section>
 
       {/* Modal create / edit */}
       {showForm && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-10">
-          <div className="relative w-full max-w-2xl mx-4 rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/98 border border-white/10 shadow-2xl">
+        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/60 backdrop-blur-sm px-4 pt-10 pb-6 overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/98 border border-white/10 shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-600/15 via-transparent to-cyan-500/20 pointer-events-none" />
             <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
             <div className="relative p-6 md:p-8">

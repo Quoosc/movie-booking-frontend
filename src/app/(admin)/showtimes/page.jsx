@@ -6,6 +6,11 @@ import {
   AdminCinemaService,
   AdminPricingService,
 } from "@/api/adminservice";
+import { toggleShowtimeActive } from "@/api/adminservice/adminMovieService";
+import AdminPagination from "@/components/shared/AdminPagination";
+import AdminTableSkeleton from "@/components/shared/AdminTableSkeleton";
+import { useSortable } from "@/hooks/useSortable";
+import SortableHeader from "@/components/shared/SortableHeader";
 
 const STATUS_FILTERS = ["ALL", "UPCOMING", "PAST"];
 
@@ -22,6 +27,7 @@ export default function AdminShowtimesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
 
   const [error] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -33,6 +39,9 @@ export default function AdminShowtimesPage() {
   const [roomFilter, setRoomFilter] = useState("ALL");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // modal form
   const [modalOpen, setModalOpen] = useState(false);
@@ -189,6 +198,10 @@ setSuccess(null);
 
   /* ===================== FILTERED DATA ===================== */
 
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, movieFilter, cinemaFilter, roomFilter, dateFrom, dateTo]);
+
   const filteredShowtimes = useMemo(() => {
     return showtimes.filter((st) => {
       const movie = st.movie || movieMap[st.movieId];
@@ -242,18 +255,47 @@ setSuccess(null);
     cinemaMap,
   ]);
 
+  const { sortedItems: sortedShowtimes, sortKey, sortDir, toggleSort } = useSortable(filteredShowtimes);
+
+  const paginatedShowtimes = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedShowtimes.slice(start, start + pageSize);
+  }, [sortedShowtimes, page, pageSize]);
+
   const stats = useMemo(() => {
     const total = showtimes.length;
     let upcoming = 0;
     let past = 0;
+    let inactive = 0;
 
     showtimes.forEach((st) => {
+      if (st.isActive === false) { inactive++; return; }
       if (isUpcoming(st.startTime)) upcoming++;
       else past++;
     });
 
-    return { total, upcoming, past };
+    return { total, upcoming, past, inactive };
   }, [showtimes]);
+
+  const handleToggleActive = async (st) => {
+    try {
+      setTogglingId(st.showtimeId);
+      const updated = await toggleShowtimeActive(st.showtimeId);
+      const newActive = updated?.isActive ?? !st.isActive;
+      setShowtimes((prev) =>
+        prev.map((s) =>
+          s.showtimeId === st.showtimeId ? { ...s, isActive: newActive } : s
+        )
+      );
+      toast.success(
+        newActive ? "Đã kích hoạt suất chiếu." : "Đã ẩn suất chiếu."
+      );
+    } catch (err) {
+      toast.error(err?.message || "Không thể thay đổi trạng thái suất chiếu.");
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   /* ===================== FORM / MODAL ===================== */
 
@@ -392,7 +434,6 @@ setSuccess(null);
       toast.error(err?.message || "Lưu suất chiếu thất bại.");
     } finally {
       setSaving(false);
-      toast.dismiss(toastId);
     }
   };
 
@@ -411,7 +452,6 @@ setSuccess(null);
       } finally {
         setDeletingId(null);
         closeConfirm();
-        toast.dismiss(toastId);
       }
     });
   };
@@ -445,7 +485,7 @@ setSuccess(null);
       </header>
 
       {/* Stat cards */}
-      <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           label="Tổng suất chiếu"
           value={stats.total}
@@ -460,6 +500,11 @@ setSuccess(null);
           label="Đã chiếu"
           value={stats.past}
           gradient="from-amber-400/80 via-orange-500/80 to-rose-400/80"
+        />
+        <StatCard
+          label="Đã ẩn"
+          value={stats.inactive}
+          gradient="from-slate-500/80 via-slate-600/80 to-slate-400/80"
         />
       </section>
 
@@ -657,13 +702,20 @@ setSuccess(null);
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#0b0020]/98 backdrop-blur-sm">
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
                   <th className="py-3 pr-4 text-left">Phim</th>
                   <th className="py-3 px-4 text-left hidden md:table-cell">
                     Rạp / Phòng
                   </th>
-                  <th className="py-3 px-4 text-left">Thời gian</th>
+                  <SortableHeader
+                    label="Thời gian"
+                    sortKey="startTime"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 px-4 text-left"
+                  />
                   <th className="py-3 px-4 text-left hidden lg:table-cell">
                     Format
                   </th>
@@ -672,11 +724,7 @@ setSuccess(null);
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-white/60 text-sm">
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
+                  <AdminTableSkeleton columns={5} rows={8} />
                 ) : filteredShowtimes.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-white/60 text-sm">
@@ -684,7 +732,7 @@ setSuccess(null);
                     </td>
                   </tr>
                 ) : (
-                  filteredShowtimes.map((st) => {
+                  paginatedShowtimes.map((st) => {
                     const movie = st.movie || movieMap[st.movieId];
                     const room = st.room || roomMap[st.roomId];
                     const cinema = cinemaMap[room?.cinemaId];
@@ -751,19 +799,25 @@ setSuccess(null);
 
                         {/* Time */}
                         <td className="py-3 px-4 align-top">
-                          <div className="text-xs text-white/90">
+                          <div className={`text-xs ${st.isActive === false ? "text-white/40 line-through" : "text-white/90"}`}>
                             {formatDateTimeLabel(st.startTime)}
                           </div>
-                          <div className="mt-1">
-                            <span
-                              className={`inline-flex items-center px-2 py-[2px] rounded-full text-[10px] font-semibold border ${
-                                up
-                                  ? "bg-emerald-500/10 text-emerald-200 border-emerald-400/50"
-                                  : "bg-slate-500/10 text-slate-200 border-slate-400/50"
-                              }`}
-                            >
-                              {up ? "UPCOMING" : "PAST"}
-                            </span>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {st.isActive === false ? (
+                              <span className="inline-flex items-center px-2 py-[2px] rounded-full text-[10px] font-semibold border bg-slate-700/60 text-slate-300 border-slate-500/50">
+                                ẨN
+                              </span>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center px-2 py-[2px] rounded-full text-[10px] font-semibold border ${
+                                  up
+                                    ? "bg-emerald-500/10 text-emerald-200 border-emerald-400/50"
+                                    : "bg-slate-500/10 text-slate-200 border-slate-400/50"
+                                }`}
+                              >
+                                {up ? "UPCOMING" : "PAST"}
+                              </span>
+                            )}
                           </div>
                         </td>
 
@@ -786,6 +840,22 @@ setSuccess(null);
                             </button>
                             <button
                               type="button"
+                              onClick={() => handleToggleActive(st)}
+                              disabled={togglingId === st.showtimeId}
+                              className={`rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                                st.isActive === false
+                                  ? "border border-emerald-500/60 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/20"
+                                  : "border border-amber-500/60 bg-amber-500/10 text-amber-100 hover:bg-amber-500/20"
+                              }`}
+                            >
+                              {togglingId === st.showtimeId
+                                ? "..."
+                                : st.isActive === false
+                                ? "Bật"
+                                : "Ẩn"}
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => handleDeleteShowtime(st.showtimeId)}
                               disabled={deletingId === st.showtimeId}
                               className="rounded-2xl px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase border border-red-500/60 bg-red-500/10 text-red-100 hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
@@ -801,6 +871,13 @@ setSuccess(null);
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={page}
+            totalItems={filteredShowtimes.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </section>
 
@@ -1038,10 +1115,10 @@ function StatCard({ label, value, gradient }) {
 
 function ModalWrapper({ children, onClose }) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-[80] flex items-start justify-center px-4 pt-10 pb-6 bg-black/60 backdrop-blur-md overflow-y-auto">
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
-      <div className="relative z-[81] w-full px-4 md:px-0 flex justify-center pt-24 pb-8">
-        <div className="w-full max-w-xl">{children}</div>
+      <div className="relative z-[81] w-full max-w-xl">
+        {children}
       </div>
     </div>
   );

@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminCinemaService } from "@/api/adminservice";
 import { toast } from "react-toastify";
+import AdminPagination from "@/components/shared/AdminPagination";
+import AdminTableSkeleton from "@/components/shared/AdminTableSkeleton";
+import SortableHeader from "@/components/shared/SortableHeader";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useSortable } from "@/hooks/useSortable";
 
 const EMPTY_FORM = {
   cinemaId: "",
@@ -21,8 +26,12 @@ export default function AdminRoomsPage() {
   const [error] = useState(null);
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [cinemaFilter, setCinemaFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
@@ -203,10 +212,14 @@ toast.error(msg);
   };
 
   // ====== DERIVED DATA ======
+  useEffect(() => {
+    setPage(1);
+  }, [search, cinemaFilter, typeFilter]);
+
   const filteredRooms = useMemo(() => {
     return rooms.filter((r) => {
       const cinema = cinemaMap[r.cinemaId] || {};
-      const q = search.trim().toLowerCase();
+      const q = debouncedSearch.trim().toLowerCase();
 
       if (q) {
         const haystack = `${cinema.name || cinema.cinemaName || ""} ${
@@ -226,7 +239,14 @@ toast.error(msg);
 
       return true;
     });
-  }, [rooms, cinemaMap, search, cinemaFilter, typeFilter]);
+  }, [rooms, cinemaMap, debouncedSearch, cinemaFilter, typeFilter]);
+
+  const { sortedItems: sortedRooms, sortKey, sortDir, toggleSort } = useSortable(filteredRooms);
+
+  const paginatedRooms = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedRooms.slice(start, start + pageSize);
+  }, [sortedRooms, page, pageSize]);
 
   const stats = useMemo(() => {
     const total = rooms.length;
@@ -411,9 +431,16 @@ toast.error(msg);
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#0b0020]/98 backdrop-blur-sm">
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="py-3 pr-4 text-left">Phòng</th>
+                  <SortableHeader
+                    label="Phòng"
+                    sortKey="roomNumber"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 pr-4 text-left"
+                  />
                   <th className="py-3 px-4 text-left hidden md:table-cell">
                     Rạp chiếu
                   </th>
@@ -425,14 +452,7 @@ toast.error(msg);
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
+                  <AdminTableSkeleton columns={4} rows={8} />
                 ) : filteredRooms.length === 0 ? (
                   <tr>
                     <td
@@ -443,7 +463,7 @@ toast.error(msg);
                     </td>
                   </tr>
                 ) : (
-                  filteredRooms.map((r) => {
+                  paginatedRooms.map((r) => {
                     const cinema = cinemaMap[r.cinemaId] || {};
                     const cinemaName =
                       cinema.name || cinema.cinemaName || "Không rõ rạp";
@@ -526,6 +546,13 @@ toast.error(msg);
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={page}
+            totalItems={filteredRooms.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </section>
 
@@ -578,7 +605,7 @@ function RoomModal({
       className="
         fixed inset-0 z-40
         flex items-start justify-center
-        px-4
+        px-4 pt-10 pb-6
         bg-black/70 backdrop-blur-sm
         overflow-y-auto
       "
@@ -590,7 +617,6 @@ function RoomModal({
         className="
           relative z-50
           w-full max-w-lg
-          mt-24 mb-10
           rounded-3xl bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/95
           border border-white/15 shadow-2xl overflow-hidden
         "
@@ -619,7 +645,17 @@ function RoomModal({
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
-            {!isEdit && (
+            {isEdit ? (
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
+                  Rạp chiếu
+                </label>
+                <div className="w-full rounded-2xl bg-white/[0.04] border border-white/10 px-4 py-2.5 text-sm text-white/60">
+                  {cinemas.find((c) => (c.cinemaId || c.id) === form.cinemaId)?.name || "—"}
+                  <span className="ml-2 text-[11px] text-white/30">(không thể thay đổi)</span>
+                </div>
+              </div>
+            ) : (
               <div>
                 <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
                   Rạp chiếu *
@@ -637,8 +673,7 @@ function RoomModal({
                   {cinemas.map((c) => (
                     <option key={c.cinemaId || c.id} value={c.cinemaId || c.id}>
                       {c.name || c.cinemaName || "Rạp"}{" "}
-                      {(c.code || c.cinemaCode) &&
-                        `(${c.code || c.cinemaCode})`}
+                      {(c.code || c.cinemaCode) && `(${c.code || c.cinemaCode})`}
                     </option>
                   ))}
                 </select>

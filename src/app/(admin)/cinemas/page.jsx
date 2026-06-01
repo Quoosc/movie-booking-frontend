@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminCinemaService } from "@/api/adminservice";
 import { toast } from "react-toastify";
+import AdminPagination from "@/components/shared/AdminPagination";
+import AdminTableSkeleton from "@/components/shared/AdminTableSkeleton";
+import SortableHeader from "@/components/shared/SortableHeader";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useSortable } from "@/hooks/useSortable";
 
 const STATUS_FILTERS = ["ALL", "ACTIVE", "INACTIVE"];
 
@@ -22,7 +27,11 @@ export default function AdminCinemasPage() {
   const [error] = useState(null);
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCinema, setEditingCinema] = useState(null); // null = create
@@ -177,6 +186,10 @@ toast.error(msg);
 
   // =============== DERIVED DATA ===============
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
   const filteredCinemas = useMemo(() => {
     return cinemas.filter((c) => {
       const name = c.name || c.cinemaName || "";
@@ -187,7 +200,7 @@ toast.error(msg);
       const district = c.district || "";
       const isActive = c.isActive ?? c.active ?? true;
 
-      const q = search.trim().toLowerCase();
+      const q = debouncedSearch.trim().toLowerCase();
       if (q) {
         const haystack = `${name} ${code} ${address} ${city} ${district} ${hotline}`.toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -198,7 +211,14 @@ toast.error(msg);
 
       return true;
     });
-  }, [cinemas, search, statusFilter]);
+  }, [cinemas, debouncedSearch, statusFilter]);
+
+  const { sortedItems: sortedCinemas, sortKey, sortDir, toggleSort } = useSortable(filteredCinemas);
+
+  const paginatedCinemas = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedCinemas.slice(start, start + pageSize);
+  }, [sortedCinemas, page, pageSize]);
 
   const stats = useMemo(() => {
     const total = cinemas.length;
@@ -360,9 +380,16 @@ toast.error(msg);
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#0b0020]/98 backdrop-blur-sm">
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="py-3 pr-4 text-left">Rạp</th>
+                  <SortableHeader
+                    label="Rạp"
+                    sortKey="name"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 pr-4 text-left"
+                  />
                   <th className="py-3 px-4 text-left hidden md:table-cell">
                     Địa chỉ
                   </th>
@@ -375,14 +402,7 @@ toast.error(msg);
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
+                  <AdminTableSkeleton columns={5} rows={8} />
                 ) : filteredCinemas.length === 0 ? (
                   <tr>
                     <td
@@ -393,7 +413,7 @@ toast.error(msg);
                     </td>
                   </tr>
                 ) : (
-                  filteredCinemas.map((c) => {
+                  paginatedCinemas.map((c) => {
                     const id = c.cinemaId || c.id;
                     const name = c.name || c.cinemaName || "Không rõ tên";
                     const address = c.address || "";
@@ -484,6 +504,13 @@ toast.error(msg);
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={page}
+            totalItems={filteredCinemas.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </section>
 
@@ -527,7 +554,7 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
       className="
         fixed inset-0 z-40
         flex items-start justify-center
-        px-4
+        px-4 pt-10 pb-6
         bg-black/70 backdrop-blur-sm
         overflow-y-auto
       "
@@ -539,7 +566,6 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
         className="
           relative z-50
           w-full max-w-xl
-          mt-24 mb-10
           rounded-3xl bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/95
           border border-white/15 shadow-2xl overflow-hidden
         "

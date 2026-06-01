@@ -4,6 +4,11 @@ import WarningModal from "@/components/shared/WarningModal";
 import { AdminMovieService } from "@/api/adminservice";
 import { uploadPoster } from "@/api/cloudinaryService";
 import { toast } from "react-toastify";
+import AdminPagination from "@/components/shared/AdminPagination";
+import AdminTableSkeleton from "@/components/shared/AdminTableSkeleton";
+import SortableHeader from "@/components/shared/SortableHeader";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useSortable } from "@/hooks/useSortable";
 
 const STATUS_OPTIONS = ["SHOWING", "UPCOMING"];
 
@@ -20,6 +25,7 @@ const EMPTY_FORM = {
   trailerUrl: "",
   status: "UPCOMING",
   language: "",
+  premiereDate: "",
 };
 
 export default function AdminMoviesPage() {
@@ -33,7 +39,11 @@ export default function AdminMoviesPage() {
   const [success, setSuccess] = useState(null);
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // modal + form
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -123,6 +133,7 @@ setSuccess(null);
       trailerUrl: movie?.trailerUrl || "",
       status: movie?.status || "SHOWING",
       language: movie?.language || "",
+      premiereDate: movie?.premiereDate || "",
     });
 setSuccess(null);
     setIsModalOpen(true);
@@ -187,6 +198,7 @@ toast.error(msg);
       trailerUrl: form.trailerUrl.trim(),
       status: form.status || "UPCOMING",
       language: form.language.trim(),
+      premiereDate: form.premiereDate || null,
     };
 
     try {
@@ -261,9 +273,13 @@ toast.error(msg);
 
   // ================= DERIVED DATA =================
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
   const filteredMovies = useMemo(() => {
     return movies.filter((m) => {
-      const q = search.trim().toLowerCase();
+      const q = debouncedSearch.trim().toLowerCase();
       if (q) {
         const haystack = `${m.title || ""} ${m.genre || ""} ${
           m.language || ""
@@ -278,7 +294,14 @@ toast.error(msg);
 
       return true;
     });
-  }, [movies, search, statusFilter]);
+  }, [movies, debouncedSearch, statusFilter]);
+
+  const { sortedItems: sortedMovies, sortKey, sortDir, toggleSort } = useSortable(filteredMovies);
+
+  const paginatedMovies = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedMovies.slice(start, start + pageSize);
+  }, [sortedMovies, page, pageSize]);
 
   const stats = useMemo(() => {
     const total = movies.length;
@@ -468,9 +491,16 @@ toast.error(msg);
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#0b0020]/98 backdrop-blur-sm">
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="py-3 pr-4 text-left">Phim</th>
+                  <SortableHeader
+                    label="Phim"
+                    sortKey="title"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 pr-4 text-left"
+                  />
                   <th className="py-3 px-4 text-left hidden md:table-cell">
                     Thông tin
                   </th>
@@ -482,14 +512,7 @@ toast.error(msg);
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
+                  <AdminTableSkeleton columns={4} rows={8} />
                 ) : filteredMovies.length === 0 ? (
                   <tr>
                     <td
@@ -500,7 +523,7 @@ toast.error(msg);
                     </td>
                   </tr>
                 ) : (
-                  filteredMovies.map((m) => {
+                  paginatedMovies.map((m) => {
                     const status = (m.status || "").toUpperCase();
                     return (
                       <tr
@@ -559,6 +582,14 @@ toast.error(msg);
                               {m.language || "N/A"}
                             </span>
                           </div>
+                          {m.premiereDate && (
+                            <div className="text-[11px] text-cyan-300/80 mt-0.5">
+                              Công chiếu:{" "}
+                              <span className="font-semibold">
+                                {new Date(m.premiereDate).toLocaleDateString("vi-VN")}
+                              </span>
+                            </div>
+                          )}
                         </td>
 
                         {/* Status */}
@@ -594,6 +625,13 @@ toast.error(msg);
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={page}
+            totalItems={filteredMovies.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </section>
 
@@ -680,9 +718,10 @@ function MovieModal({
     <div
       className="
         fixed inset-0 z-[60]
-        flex items-center justify-center
-        px-4 py-8
+        flex items-start justify-center
+        px-4 pt-10 pb-6
         bg-black/70 backdrop-blur-xl
+        overflow-y-auto
       "
     >
       <div
@@ -820,7 +859,7 @@ function MovieModal({
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
                   Trạng thái
@@ -840,6 +879,18 @@ function MovieModal({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-2 uppercase tracking-[0.18em]">
+                  Ngày công chiếu
+                </label>
+                <input
+                  type="date"
+                  value={form.premiereDate}
+                  onChange={handleChange("premiereDate")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all [color-scheme:dark]"
+                />
               </div>
 
               <div>

@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminUserService } from "@/api/adminservice";
 import { toast } from "react-toastify";
+import AdminPagination from "@/components/shared/AdminPagination";
+import AdminTableSkeleton from "@/components/shared/AdminTableSkeleton";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useSortable } from "@/hooks/useSortable";
+import SortableHeader from "@/components/shared/SortableHeader";
 
 const DISCOUNT_TYPE_OPTIONS = [
   { value: "PERCENTAGE", label: "Phần trăm (%)" },
@@ -20,7 +25,11 @@ export default function AdminMembershipPage() {
 
   // filter + search
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // form / modal state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -233,11 +242,15 @@ toast.error(msg);
     );
   };
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
   // ====== DERIVED DATA ======
 
   const filteredTiers = useMemo(() => {
     return (tiers || []).filter((t) => {
-      const q = search.trim().toLowerCase();
+      const q = debouncedSearch.trim().toLowerCase();
       if (q) {
         const haystack = `${t.name || ""} ${t.description || ""}`.toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -251,7 +264,14 @@ toast.error(msg);
 
       return true;
     });
-  }, [tiers, search, statusFilter]);
+  }, [tiers, debouncedSearch, statusFilter]);
+
+  const { sortedItems: sortedTiers, sortKey, sortDir, toggleSort } = useSortable(filteredTiers);
+
+  const paginatedTiers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedTiers.slice(start, start + pageSize);
+  }, [sortedTiers, page, pageSize]);
 
   const stats = useMemo(() => {
     const total = tiers.length;
@@ -413,10 +433,24 @@ toast.error(msg);
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#0b0020]/98 backdrop-blur-sm">
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="py-3 px-2 text-left">Hạng</th>
-                  <th className="py-3 px-2 text-left">Điểm tối thiểu</th>
+                  <SortableHeader
+                    label="Hạng"
+                    sortKey="name"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 px-2 text-left"
+                  />
+                  <SortableHeader
+                    label="Điểm tối thiểu"
+                    sortKey="minPoints"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 px-2 text-left"
+                  />
                   <th className="py-3 px-2 text-left">Ưu đãi</th>
                   <th className="py-3 px-2 text-left hidden md:table-cell">
                     Mô tả
@@ -426,14 +460,7 @@ toast.error(msg);
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="py-8 text-center text-white/60 text-sm"
-                    >
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
+                  <AdminTableSkeleton columns={5} rows={8} />
                 ) : filteredTiers.length === 0 ? (
                   <tr>
                     <td
@@ -444,7 +471,7 @@ toast.error(msg);
                     </td>
                   </tr>
                 ) : (
-                  filteredTiers.map((t) => (
+                  paginatedTiers.map((t) => (
                     <tr
                       key={t.membershipTierId}
                       className="border-b border-white/5 hover:bg-white/5"
@@ -529,6 +556,13 @@ toast.error(msg);
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={page}
+            totalItems={filteredTiers.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </section>
 
@@ -538,7 +572,7 @@ toast.error(msg);
           className="
       fixed inset-0 z-40
       flex items-start justify-center
-      px-4
+      px-4 pt-10 pb-6
       bg-black/70 backdrop-blur-sm
       overflow-y-auto
     "
@@ -550,7 +584,6 @@ toast.error(msg);
             className="
         relative z-50
         w-full md:max-w-lg lg:max-w-xl
-        mt-24 mb-10        /* cách top / bottom một đoạn */
         rounded-3xl
         bg-gradient-to-br from-[#1a0033]/95 via-[#0b001f] to-black/95
         border border-white/10 shadow-2xl
@@ -615,12 +648,12 @@ toast.error(msg);
                     Điểm tối thiểu
                   </label>
                   <input
-                    type="text"
-                    inputMode="numeric"
+                    type="number"
+                    min={0}
                     placeholder="Nhập số điểm tối thiểu..."
                     value={form.minPoints}
                     onChange={handleFormChange("minPoints")}
-                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all appearance-none"
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                   />
                   <p className="mt-1 text-[11px] text-white/50">
                     Khi tổng điểm loyalty của user ≥ mốc này, user sẽ được xếp
@@ -655,12 +688,13 @@ toast.error(msg);
                       Giá trị ưu đãi
                     </label>
                     <input
-                      type="text"
-                      inputMode="numeric"
+                      type="number"
+                      min={0}
+                      max={form.discountType === "PERCENTAGE" ? 100 : undefined}
                       placeholder="Nhập giá trị ưu đãi..."
                       value={form.discountValue}
                       onChange={handleFormChange("discountValue")}
-                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all appearance-none"
+                      className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                     />
                     <p className="mt-1 text-[11px] text-white/50">
                       {form.discountType === "PERCENTAGE"

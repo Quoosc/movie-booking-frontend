@@ -3,6 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import WarningModal from "@/components/shared/WarningModal";
 import { AdminOrderService } from "@/api/adminservice";
 import { toast } from "react-toastify";
+import AdminPagination from "@/components/shared/AdminPagination";
+import AdminTableSkeleton from "@/components/shared/AdminTableSkeleton";
+import { useSortable } from "@/hooks/useSortable";
+import SortableHeader from "@/components/shared/SortableHeader";
 
 const PAYMENT_STATUS_OPTIONS = [
   "PENDING",
@@ -18,6 +22,9 @@ const PAYMENT_METHOD_OPTIONS = ["MOMO", "PAYPAL"];
 export default function AdminOrdersPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // filters
   const [bookingIdFilter, setBookingIdFilter] = useState("");
@@ -195,6 +202,10 @@ export default function AdminOrdersPage() {
     );
   };
 
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter]);
+
   // ================= DERIVED DATA =================
 
   const stats = useMemo(() => {
@@ -216,6 +227,13 @@ export default function AdminOrdersPage() {
   }, [payments]);
 
   const filteredPayments = useMemo(() => payments, [payments]);
+
+  const { sortedItems: sortedPayments, sortKey, sortDir, toggleSort } = useSortable(filteredPayments);
+
+  const paginatedPayments = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedPayments.slice(start, start + pageSize);
+  }, [sortedPayments, page, pageSize]);
 
   // ================= HELPERS =================
 
@@ -432,23 +450,31 @@ export default function AdminOrdersPage() {
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#0b0020]/98 backdrop-blur-sm">
                 <tr className="text-[11px] uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="py-3 pr-4 text-left">Payment</th>
-                  <th className="py-3 px-4 text-left hidden md:table-cell">
-                    Booking / User
-                  </th>
+                  <SortableHeader
+                    label="Payment"
+                    sortKey="amount"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 pr-4 text-left"
+                  />
+                  <SortableHeader
+                    label="Booking / User"
+                    sortKey="createdAt"
+                    currentSortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                    className="py-3 px-4 text-left hidden md:table-cell"
+                  />
                   <th className="py-3 px-4 text-left">Trạng thái</th>
                   <th className="py-3 pl-4 pr-2 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-white/60">
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
+                  <AdminTableSkeleton columns={4} rows={8} />
                 ) : filteredPayments.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-white/60">
@@ -456,7 +482,7 @@ export default function AdminOrdersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredPayments.map((p) => {
+                  paginatedPayments.map((p) => {
                     const status = displayStatus(p);
                     const method = displayMethod(p);
                     const amount = displayAmount(p);
@@ -534,6 +560,13 @@ export default function AdminOrdersPage() {
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={page}
+            totalItems={filteredPayments.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </section>
 
@@ -664,12 +697,12 @@ function RefundModal({
   if (!payment) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 py-8 bg-black/70 backdrop-blur-xl overflow-y-auto">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-10 pb-6 bg-black/70 backdrop-blur-xl overflow-y-auto">
       <div className="relative w-full max-w-md rounded-3xl overflow-hidden bg-gradient-to-br from-[#160033]/95 via-[#080017] to-black border border-white/15 shadow-[0_0_50px_rgba(123,66,255,0.6)]">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-amber-400 via-pink-400 to-red-400" />
 
-        <div className="relative p-6 space-y-4">
+        <div className="relative p-6 space-y-4 max-h-[90vh] overflow-y-auto">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-amber-300/80 mb-1">
@@ -763,12 +796,12 @@ function BookingDetailModal({
   displayDateTime,
 }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 py-8 bg-black/70 backdrop-blur-xl overflow-y-auto">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-10 pb-6 bg-black/70 backdrop-blur-xl overflow-y-auto">
       <div className="relative w-full max-w-3xl rounded-3xl overflow-hidden bg-gradient-to-br from-[#160033]/95 via-[#080017] to-black border border-white/15 shadow-[0_0_60px_rgba(123,66,255,0.7)]">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-transparent to-cyan-500/20 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400" />
 
-        <div className="relative p-6 md:p-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="relative p-6 md:p-8">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-cyan-300/80 mb-1">
