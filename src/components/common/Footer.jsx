@@ -1,8 +1,18 @@
 // src/components/common/Footer.jsx
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaFacebookF, FaYoutube, FaTiktok } from "react-icons/fa";
+import { getAllCinemas } from "@/api/cinemaService";
 
 export default function Footer() {
+  const [cinemas, setCinemas] = useState([]);
+
+  useEffect(() => {
+    getAllCinemas()
+      .then(data => setCinemas(data || []))
+      .catch(() => {});
+  }, []);
+
   return (
     <footer className="mt-16 bg-gradient-to-r from-[#070016] via-[#0b0620] to-[#051226] text-white relative overflow-hidden">
       {/* soft glow background */}
@@ -76,10 +86,16 @@ export default function Footer() {
             <FooterLink to="/careers">Tuyển dụng</FooterLink> */}
 
             <FooterTitle>Hệ thống rạp</FooterTitle>
-            <FooterText>CinesVerse Tran Quoc(Hà Nội)</FooterText>
-            <FooterText>CinesVerse Tran Quoc1(TP.HCM)</FooterText>
-            <FooterText>CinesVerse Tran Quoc2(Huế)</FooterText>
-            <FooterText>CinesVerse Tran Quoc3(Đà Lạt)</FooterText>
+            {cinemas.length === 0 ? (
+              <p className="text-xs text-white/35 italic">Đang tải...</p>
+            ) : (
+              cinemas.map(c => (
+                <FooterLink key={c.id} to={`/cinema/${c.id}`}>
+                  {c.name}
+                  {c.city ? <span className="text-white/40 ml-1">({c.city})</span> : null}
+                </FooterLink>
+              ))
+            )}
           </div>
         </div>
 

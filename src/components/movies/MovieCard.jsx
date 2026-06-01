@@ -6,19 +6,20 @@ export default function MovieCard({ m }) {
 
   const handleBookClick = (e) => {
     e.stopPropagation();
-    nav(`/movie/${m.id}`);
+    nav(`/movie/${m.id || m.movieId}`);
   };
 
   const handleTrailerClick = (e) => {
     e.stopPropagation();
-    if (m.trailerUrl) {
-      window.open(m.trailerUrl, "_blank");
-    }
+    if (m.trailerUrl) window.open(m.trailerUrl, "_blank");
   };
+
+  const avgRating = m.avgRating ?? m.avg_rating ?? 10;
+  const reviewCount = m.reviewCount ?? m.review_count ?? 0;
 
   return (
     <Link
-      to={`/movie/${m.id}`}
+      to={`/movie/${m.id || m.movieId}`}
       className="group relative rounded-xl overflow-hidden bg-[#0f1626] border border-white/10 transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.12)] hover:-translate-y-1"
     >
       {/* Poster */}
@@ -28,6 +29,12 @@ export default function MovieCard({ m }) {
           alt={m.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
+
+        {/* Star badge — vàng cả khi mặc định lẫn có review */}
+        <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-black/70 backdrop-blur-sm border border-[#FFE700]/40">
+          <span className="text-[#FFE700] text-[10px]">★</span>
+          <span className="text-white text-[10px] font-bold">{Number(avgRating).toFixed(1)}</span>
+        </div>
 
         {/* Overlay khi hover */}
         <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-3 gap-2">
@@ -49,11 +56,11 @@ export default function MovieCard({ m }) {
       {/* Info */}
       <div className="p-3 bg-black/85 backdrop-blur-sm border-t border-white/10 h-[104px] flex flex-col rounded-b-2xl">
         <h4 className="text-white font-bold text-sm leading-[19px] h-[38px] line-clamp-2">
-          {m.title || "\u00A0"}
+          {m.title || " "}
         </h4>
 
         <p className="text-[10px] text-[#9ca3ff] uppercase tracking-wide leading-[14px] h-[14px] line-clamp-1">
-          {m.genre || "\u00A0"}
+          {m.genre || " "}
         </p>
 
         <div className="mt-1 flex items-center gap-1.5 text-[10px] text-white/55 leading-[14px] h-[14px] overflow-hidden">
@@ -66,13 +73,11 @@ export default function MovieCard({ m }) {
               T00
             </span>
           )}
-
           <span className="truncate">
-            {m.duration ? `${m.duration} phút` : "\u00A0"}
+            {m.duration ? `${m.duration} phút` : " "}
           </span>
-
           <span className="truncate">
-            {m.language ? `• ${m.language}` : "\u00A0"}
+            {m.language ? `• ${m.language}` : " "}
           </span>
         </div>
       </div>

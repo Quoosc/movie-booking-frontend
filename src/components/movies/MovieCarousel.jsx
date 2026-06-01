@@ -133,16 +133,9 @@ export default function MovieCarousel({ title, movies = [], onShowAll }) {
               initial="initial"
               animate="animate"
               className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-6"
- 
-              style={{ direction: "rtl" }}
             >
               {currentMovies.map((m) => (
-            
-                <div
-                  key={getMovieKey(m)}
-                  style={{ direction: "ltr" }}
-                  className="text-left"
-                >
+                <div key={getMovieKey(m)}>
                   <MovieCard m={m} />
                 </div>
               ))}
