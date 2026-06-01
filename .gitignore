@@ -54,3 +54,8 @@ Thumbs.db
 # Other
 .eslintcache
 *.tsbuildinfo
+
+# Local only
+docs/
+e2e/
+.env.e2e
