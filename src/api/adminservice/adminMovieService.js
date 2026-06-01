@@ -89,6 +89,13 @@ export async function deleteShowtime(showtimeId) {
   return true;
 }
 
+export async function toggleShowtimeActive(showtimeId) {
+  const res = await apiFetch(`/showtimes/${showtimeId}/toggle-active`, {
+    method: "PATCH",
+  });
+  return res?.data || res;
+}
+
 export async function getShowtimeById(showtimeId) {
   const res = await apiFetch(`/showtimes/${showtimeId}`);
   return res.data || res;

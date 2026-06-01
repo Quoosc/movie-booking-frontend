@@ -15,20 +15,23 @@ function mapMovie(m) {
   return {
     id: m.movieId || m.movie_id || m.id,
     title: m.title,
-    posterUrl: buildPosterUrl(m), // luôn có giá trị hợp lý
-    bannerUrl: m.bannerUrl || m.banner_url || buildPosterUrl(m), // nếu không có banner thì fallback poster
+    posterUrl: buildPosterUrl(m),
+    bannerUrl: m.bannerUrl || m.banner_url || buildPosterUrl(m),
     description: m.description || "",
     genre: m.genre,
     language: m.language,
     duration: m.duration,
     minimumAge: m.minimumAge ?? m.minimum_age,
-    releaseDate: m.releaseDate || m.release_date,
     director: m.director,
     cast: m.cast || m.actors,
     trailerUrl: m.trailerUrl || m.trailer_url,
     status: m.status,
+    premiereDate: m.premiereDate || m.premiere_date || null,
+    createdAt: m.createdAt || m.created_at,
     ratingAvg: m.ratingAvg ?? m.rating_avg ?? null,
-    posterCloudinaryId: m.posterCloudinaryId || m.poster_cloudinary_id, // để màn admin dùng
+    avgRating: m.avgRating ?? m.avg_rating ?? m.ratingAvg ?? null,
+    reviewCount: m.reviewCount ?? m.review_count ?? 0,
+    posterCloudinaryId: m.posterCloudinaryId || m.poster_cloudinary_id,
   };
 }
 

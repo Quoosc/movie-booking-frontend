@@ -99,6 +99,25 @@ export async function uploadSnackImage(file) {
   };
 }
 
+export async function uploadFeedbackImage(file) {
+  validateCloudinaryConfig();
+  if (!file) throw new Error("No file provided");
+
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+  formData.append("folder", "feedback-attachments");
+
+  const res = await fetch(url, { method: "POST", body: formData });
+  const data = await res.json();
+
+  if (!res.ok) throw new Error(data.error?.message || "Upload ảnh thất bại");
+
+  return { attachmentUrl: data.secure_url };
+}
+
 export async function uploadAvatar(file) {
   validateCloudinaryConfig();
   if (!file) throw new Error("No file provided");
