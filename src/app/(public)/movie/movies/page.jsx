@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import MovieCarousel from "@/components/movies/MovieCarousel";
+import MovieCardSkeleton from "@/components/movies/MovieCardSkeleton";
 import HomeButton from "@/components/shared/Buttons/HomeButton";
 
 import { getShowingMovies, getUpcomingMovies } from "@/api/movieService";
@@ -83,8 +84,17 @@ export default function MoviesPage() {
         </section>
 
         {loading ? (
-          <div className="max-w-7xl mx-auto px-4 pb-10 text-center text-sm text-white/70">
-            Đang tải danh sách phim...
+          <div className="max-w-7xl mx-auto px-4 pb-10 space-y-10">
+            {[0, 1].map((s) => (
+              <div key={s}>
+                <div className="h-4 w-40 rounded-full bg-white/10 animate-pulse mb-6" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <MovieCardSkeleton key={i} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <>

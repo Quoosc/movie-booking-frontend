@@ -9,8 +9,8 @@ import Footer from "@/components/common/Footer";
 import HomeButton from "@/components/shared/Buttons/HomeButton";
 import { getTicketTypes } from "@/api/ticketTypeService";
 import { getMovieById, getMovieShowtimesByDate } from "@/api/movieService";
-
 import { getSeatLayout, getSnacksByCinema } from "@/api/bookingService";
+import ReviewSection from "@/components/movies/ReviewSection";
 
 const DAYS = 7;
 
@@ -59,6 +59,8 @@ export default function MovieDetailPage() {
 
   const { user } = useAuth();
   const isAuthenticated = !!user; // true nếu đã đăng nhập, false nếu guest thường
+
+  const [activeTab, setActiveTab] = useState("showtimes"); // "showtimes" | "reviews"
 
   const [movie, setMovie] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getToday());
@@ -559,6 +561,34 @@ export default function MovieDetailPage() {
         {/* HERO: Poster + info */}
         <HeroSection movie={movie} />
 
+        {/* TAB SWITCHER */}
+        <div className="max-w-6xl mx-auto px-4 mb-2">
+          <div className="inline-flex rounded-2xl bg-white/5 border border-white/10 p-1 gap-1">
+            {[
+              { key: "showtimes", label: "🎬 LỊCH CHIẾU" },
+              { key: "reviews",   label: "⭐ ĐÁNH GIÁ" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={`px-5 py-2.5 rounded-xl text-xs font-extrabold tracking-[0.18em] uppercase transition-all ${
+                  activeTab === key
+                    ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white shadow-[0_0_18px_rgba(123,92,255,0.8)]"
+                    : "text-white/60 hover:text-white hover:bg-white/8"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* NỘI DUNG THEO TAB */}
+        {activeTab === "reviews" ? (
+          <ReviewSection movieId={id} user={user} />
+        ) : (
+          <>
         {/* LỊCH CHIẾU */}
         <ShowtimeSection
           showtimes={showtimes}
@@ -648,6 +678,9 @@ export default function MovieDetailPage() {
               </div>
             </div>
           </div>
+        )}
+
+          </>
         )}
 
         {/* POPUP CẢNH BÁO THAY alert() */}
@@ -742,6 +775,16 @@ function HeroSection({ movie }) {
           {movie?.releaseDate && (
             <span className="px-3 py-1 rounded-xl bg-white/5 border border-white/10">
               Khởi chiếu: {movie.releaseDate}
+            </span>
+          )}
+          {(movie?.avgRating ?? null) !== null && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-[#FFE700]/10 border border-[#FFE700]/30">
+              <span className="text-[#FFE700]">★</span>
+              <span className="text-[#FFE700] font-bold">{Number(movie.avgRating).toFixed(1)}</span>
+              <span className="text-white/50">/10</span>
+              {movie?.reviewCount > 0 && (
+                <span className="text-white/40">({movie.reviewCount})</span>
+              )}
             </span>
           )}
         </div>

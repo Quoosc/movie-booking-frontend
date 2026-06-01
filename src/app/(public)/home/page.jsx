@@ -20,28 +20,14 @@ function unwrapMovies(res) {
   return [];
 }
 
-// ✅ "mới thêm" = sort theo createdAt/created_at (KHÔNG dùng updatedAt)
-function sortMoviesByCreatedDesc(list) {
+// Sort theo premiereDate desc, fallback createdAt — phim công chiếu mới nhất lên đầu
+function sortByPremiereDateDesc(list) {
   const toTime = (x) => {
-    const v =
-      x?.createdAt ||
-      x?.created_at ||
-      x?.createdDate ||
-      x?.created_date ||
-      x?.created; // fallback hiếm
+    const v = x?.premiereDate || x?.premiere_date || x?.createdAt || x?.created_at;
     const t = v ? new Date(v).getTime() : NaN;
     return Number.isFinite(t) ? t : 0;
   };
-
-  return [...list].sort((a, b) => {
-    const diff = toTime(b) - toTime(a);
-    if (diff !== 0) return diff;
-
-    // tie-breaker ổn định nếu createdAt trùng nhau
-    const ida = String(a?.movieId || a?.id || "");
-    const idb = String(b?.movieId || b?.id || "");
-    return idb.localeCompare(ida); // desc
-  });
+  return [...list].sort((a, b) => toTime(b) - toTime(a));
 }
 
 export default function HomePage() {
@@ -64,12 +50,12 @@ export default function HomePage() {
         const showingArr = unwrapMovies(showingRes);
         const upcomingArr = unwrapMovies(upcomingRes);
 
-        setShowingMovies(sortMoviesByCreatedDesc(showingArr));
-        setUpcomingMovies(sortMoviesByCreatedDesc(upcomingArr));
+        setShowingMovies(sortByPremiereDateDesc(showingArr));
+        setUpcomingMovies(sortByPremiereDateDesc(upcomingArr));
 
         // DEBUG nếu vẫn thấy "chưa đảo"
         // console.table(
-        //   sortMoviesByCreatedDesc(showingArr).map((x) => ({
+        //   sortByPremiereDateDesc(showingArr).map((x) => ({
         //     title: x.title,
         //     createdAt: x.createdAt || x.created_at,
         //     updatedAt: x.updatedAt || x.updated_at,

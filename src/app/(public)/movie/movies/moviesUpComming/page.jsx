@@ -5,8 +5,18 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import MovieCard from "@/components/movies/MovieCard";
+import MovieCardSkeleton from "@/components/movies/MovieCardSkeleton";
 import { getUpcomingMovies } from "@/api/movieService";
 import HomeButton from "@/components/shared/Buttons/HomeButton";
+
+function sortByPremiereDateDesc(list) {
+  const toTime = (x) => {
+    const v = x?.premiereDate || x?.premiere_date || x?.createdAt || x?.created_at;
+    const t = v ? new Date(v).getTime() : NaN;
+    return Number.isFinite(t) ? t : 0;
+  };
+  return [...list].sort((a, b) => toTime(b) - toTime(a));
+}
 
 export default function MoviesUpCommingPage() {
   const nav = useNavigate();
@@ -18,7 +28,8 @@ export default function MoviesUpCommingPage() {
       try {
         setLoading(true);
         const data = await getUpcomingMovies();
-        setMovies(Array.isArray(data) ? data : []);
+        const arr = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        setMovies(sortByPremiereDateDesc(arr));
       } catch (err) {
         console.error("Load upcoming movies failed", err);
         setMovies([]);
@@ -82,9 +93,11 @@ export default function MoviesUpCommingPage() {
         <section className="max-w-6xl mx-auto px-4">
           <div className="rounded-3xl bg-white/[0.03] border border-white/10 shadow-[0_22px_70px_rgba(0,0,0,0.85)] px-4 md:px-6 py-6 md:py-8">
             {loading ? (
-              <p className="text-center text-sm text-white/70 py-6">
-                Đang tải danh sách phim...
-              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <MovieCardSkeleton key={i} />
+                ))}
+              </div>
             ) : movies.length === 0 ? (
               <p className="text-center text-sm text-white/60 py-6">
                 Hiện chưa có phim sắp chiếu.
@@ -92,7 +105,7 @@ export default function MoviesUpCommingPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                 {movies.map((m) => (
-                  <div key={m.id} className="flex">
+                  <div key={m.id || m.movieId}>
                     <MovieCard m={m} />
                   </div>
                 ))}

@@ -5,38 +5,17 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import MovieCard from "@/components/movies/MovieCard";
+import MovieCardSkeleton from "@/components/movies/MovieCardSkeleton";
 import { getShowingMovies } from "@/api/movieService";
 import HomeButton from "@/components/shared/Buttons/HomeButton";
 
-// ✅ NEWEST FIRST: createdAt desc (fallback updatedAt), tie-break by id desc
-function sortMoviesNewestFirst(list) {
+function sortByPremiereDateDesc(list) {
   const toTime = (x) => {
-    const v =
-      x?.createdAt ||
-      x?.created_at ||
-      x?.createdDate ||
-      x?.created_date ||
-      // fallback nếu BE trả updatedAt mà createdAt thiếu
-      x?.updatedAt ||
-      x?.updated_at;
+    const v = x?.premiereDate || x?.premiere_date || x?.createdAt || x?.created_at;
     const t = v ? new Date(v).getTime() : NaN;
     return Number.isFinite(t) ? t : 0;
   };
-
-  const toId = (x) => String(x?.movieId || x?.movie_id || x?.id || "");
-
-  return [...list].sort((a, b) => {
-    const ta = toTime(a);
-    const tb = toTime(b);
-
-    // ✅ DESC: mới lên đầu
-    if (tb !== ta) return tb - ta;
-
-    // tie-breaker ổn định: id DESC (uuid string compare)
-    const ida = toId(a);
-    const idb = toId(b);
-    return idb.localeCompare(ida);
-  });
+  return [...list].sort((a, b) => toTime(b) - toTime(a));
 }
 
 export default function MoviesShowingPage() {
@@ -58,7 +37,7 @@ export default function MoviesShowingPage() {
           ? res
           : [];
 
-        setMovies(sortMoviesNewestFirst(arr));
+        setMovies(sortByPremiereDateDesc(arr));
       } catch (err) {
         console.error("Load showing movies failed", err);
         setMovies([]);
@@ -120,22 +99,21 @@ export default function MoviesShowingPage() {
         <section className="max-w-6xl mx-auto px-4">
           <div className="rounded-3xl bg-white/[0.03] border border-white/10 shadow-[0_22px_70px_rgba(0,0,0,0.85)] px-4 md:px-6 py-6 md:py-8">
             {loading ? (
-              <p className="text-center text-sm text-white/70 py-6">
-                Đang tải danh sách phim...
-              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <MovieCardSkeleton key={i} />
+                ))}
+              </div>
             ) : movies.length === 0 ? (
               <p className="text-center text-sm text-white/60 py-6">
                 Hiện chưa có phim đang chiếu.
               </p>
             ) : (
-              <div
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8"
-                style={{ direction: "rtl" }}
-              >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                 {movies.map((m) => {
                   const key = m?.movieId || m?.movie_id || m?.id;
                   return (
-                    <div key={key} className="flex">
+                    <div key={key}>
                       <MovieCard m={m} />
                     </div>
                   );

@@ -6,6 +6,7 @@ import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import HomeButton from "@/components/shared/Buttons/HomeButton";
 import MovieCard from "@/components/movies/MovieCard";
+import MovieCardSkeleton from "@/components/movies/MovieCardSkeleton";
 
 import {
   searchMoviesByTitle,
@@ -240,9 +241,11 @@ export default function MovieSearchPage() {
         {/* Grid kết quả */}
         <section className="max-w-7xl mx-auto px-4 mt-8">
           {loading ? (
-            <p className="text-center text-sm text-white/70">
-              Đang tìm kiếm phim...
-            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <MovieCardSkeleton key={i} />
+              ))}
+            </div>
           ) : movies.length === 0 ? (
             <p className="text-center text-sm text-white/70">
               Không tìm thấy phim nào phù hợp. Thử từ khóa khác hoặc thay đổi bộ
