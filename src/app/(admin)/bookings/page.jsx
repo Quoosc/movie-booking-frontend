@@ -49,7 +49,7 @@ export default function AdminBookingsPage() {
     setWarning({ open: false, title: "", message: "", onConfirm: null });
 
   // ==== handlers ====
-
+  // Search booking by ID
   const handleSearch = async (e) => {
     e?.preventDefault();
     const id = searchId.trim();
