@@ -29,9 +29,11 @@ vi.mock("@/context/AuthContext", () => ({
 
 const getUserLoyaltyMock = vi.fn();
 const getActiveMembershipTiersMock = vi.fn();
+const getLoyaltyTransactionsMock = vi.fn();
 vi.mock("@/api/userService", () => ({
   getUserLoyalty: (...args) => getUserLoyaltyMock(...args),
   getActiveMembershipTiers: (...args) => getActiveMembershipTiersMock(...args),
+  getLoyaltyTransactions: (...args) => getLoyaltyTransactionsMock(...args),
 }));
 
 function renderPage(path = "/account/account-member") {
@@ -54,6 +56,11 @@ describe("AccountMemberPage", () => {
         membershipTier: { name: "Silver" },
       },
       logout: vi.fn(),
+    });
+    getLoyaltyTransactionsMock.mockResolvedValue({
+      items: [],
+      summary: { totalEarned: 0, totalSpent: 0, currentBalance: 0 },
+      pagination: { currentPage: 1, lastPage: 1, total: 0 },
     });
   });
 

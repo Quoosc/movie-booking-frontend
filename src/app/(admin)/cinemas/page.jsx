@@ -14,6 +14,8 @@ const STATUS_FILTERS = ["ALL", "ACTIVE", "INACTIVE"];
 const EMPTY_FORM = {
   name: "",
   address: "",
+  city: "",
+  district: "",
   hotline: "",
   isActive: true,
 };
@@ -88,6 +90,8 @@ setModalOpen(true);
     setForm({
       name: cinema.name || cinema.cinemaName || "",
       address: cinema.address || "",
+      city: cinema.city || "",
+      district: cinema.district || "",
       hotline: cinema.hotline || cinema.phone || "",
       isActive: cinema.isActive ?? cinema.active ?? true,
     });
@@ -118,6 +122,8 @@ toast.error(msg);
     const payload = {
       name: form.name.trim(),
       address: form.address.trim() || null,
+      city: form.city.trim() || null,
+      district: form.district.trim() || null,
       hotline: form.hotline.trim() || null,
       isActive: !!form.isActive,
     };
@@ -623,6 +629,33 @@ function CinemaModal({ isEdit, form, saving, onChange, onClose, onSubmit }) {
                 className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
                 placeholder="Số nhà, đường, khu vực..."
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
+                  Thành phố / Tỉnh
+                </label>
+                <input
+                  type="text"
+                  value={form.city}
+                  onChange={onChange("city")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="TP. Hồ Chí Minh"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-[0.16em]">
+                  Quận / Huyện
+                </label>
+                <input
+                  type="text"
+                  value={form.district}
+                  onChange={onChange("district")}
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/40 focus:bg-white/10 transition-all"
+                  placeholder="Quận 1"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

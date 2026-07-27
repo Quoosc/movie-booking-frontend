@@ -4,7 +4,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import { useAuth } from "@/context/AuthContext";
-import { getUserLoyalty, getActiveMembershipTiers } from "@/api/userService";
+import {
+  getActiveMembershipTiers,
+  getLoyaltyTransactions,
+  getUserLoyalty,
+} from "@/api/userService";
 
 function formatNumber(n) {
   return new Intl.NumberFormat("vi-VN").format(n ?? 0);
@@ -14,6 +18,10 @@ export default function AccountMemberPage() {
   const { currentUser, logout } = useAuth() || {};
   const [loyalty, setLoyalty] = useState(null);
   const [tiers, setTiers] = useState([]);
+  const [transactions, setTransactions] = useState({
+    items: [],
+    summary: { totalEarned: 0, totalSpent: 0, currentBalance: 0 },
+  });
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -68,12 +76,14 @@ export default function AccountMemberPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [loyaltyRes, tierRes] = await Promise.all([
+        const [loyaltyRes, tierRes, transactionRes] = await Promise.all([
           getUserLoyalty(),
           getActiveMembershipTiers(),
+          getLoyaltyTransactions({ perPage: 10 }),
         ]);
         setLoyalty(loyaltyRes);
         setTiers(Array.isArray(tierRes) ? tierRes : tierRes?.data || []);
+        setTransactions(transactionRes);
       } catch (error) {
         console.error(error);
         setErr("Không thể tải thông tin membership. Vui lòng thử lại sau.");
@@ -349,6 +359,37 @@ export default function AccountMemberPage() {
                           />
                         </div>
                       </div>
+                    </div>
+                  </section>
+
+                  <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-6 shadow-2xl md:p-8">
+                    <div className="flex flex-wrap items-end justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Minh bạch từng điểm</p>
+                        <h3 className="mt-1 text-2xl font-black">Lịch sử tích điểm</h3>
+                      </div>
+                      <div className="flex gap-2 text-xs">
+                        <span className="rounded-xl bg-emerald-400/10 px-3 py-2 text-emerald-300">Đã tích +{formatNumber(transactions.summary.totalEarned)}</span>
+                        <span className="rounded-xl bg-rose-400/10 px-3 py-2 text-rose-300">Đã trừ -{formatNumber(transactions.summary.totalSpent)}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 divide-y divide-white/10">
+                      {transactions.items.length === 0 ? (
+                        <p className="py-10 text-center text-sm text-white/50">Chưa có giao dịch điểm.</p>
+                      ) : transactions.items.map((transaction) => (
+                        <div key={transaction.transactionId} className="flex items-center justify-between gap-4 py-4">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-white">{transaction.description || "Giao dịch điểm"}</p>
+                            <p className="mt-1 text-xs text-white/45">
+                              {new Date(transaction.createdAt).toLocaleString("vi-VN")} · Số dư sau giao dịch: {formatNumber(transaction.balanceAfter)}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 text-lg font-black ${transaction.points >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                            {transaction.points >= 0 ? "+" : ""}{formatNumber(transaction.points)}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </section>
 

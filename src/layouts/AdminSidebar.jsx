@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 const adminNavItems = [
   { id: "dashboard", label: "Tổng quan", path: "/admin" },
   { id: "movies", label: "Quản lý phim", path: "/admin/movies" },
+  { id: "reviews", label: "Kiểm duyệt đánh giá", path: "/admin/reviews" },
   { id: "cinemas", label: "Rạp chiếu", path: "/admin/cinemas" },
   { id: "showtimes", label: "Suất chiếu", path: "/admin/showtimes" },
   { id: "seats", label: "Ghế & layout", path: "/admin/seats" },
