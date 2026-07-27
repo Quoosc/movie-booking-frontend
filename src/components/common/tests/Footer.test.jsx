@@ -1,10 +1,18 @@
 // src/components/common/tests/Footer.test.jsx
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import Footer from "../Footer";
+import { getAllCinemas } from "@/api/cinemaService";
+
+vi.mock("@/api/cinemaService", () => ({
+  getAllCinemas: vi.fn(),
+}));
 
 describe("Footer", () => {
+  beforeEach(() => {
+    getAllCinemas.mockReturnValue(new Promise(() => {}));
+  });
   it("renders CinesVerse logo and tagline", () => {
     render(
       <BrowserRouter>
@@ -16,7 +24,7 @@ describe("Footer", () => {
     expect(logo).toBeInTheDocument();
 
     expect(screen.getByText(/Movie Booking Platform/i)).toBeInTheDocument();
-    expect(screen.getByText("CinesVerse")).toBeInTheDocument();
+    expect(screen.getByText(/Cineon/i)).toBeInTheDocument();
     expect(screen.getByText(/BE HAPPY, BE A STAR/i)).toBeInTheDocument();
   });
 
@@ -61,7 +69,12 @@ describe("Footer", () => {
     ).toHaveAttribute("href", "/movie/movies");
   });
 
-  it("renders Hệ thống rạp section with cinema locations", () => {
+  it("renders Hệ thống rạp section with cinema locations", async () => {
+    getAllCinemas.mockResolvedValueOnce([
+      { id: "c1", name: "CinesVerse Tran Quoc", city: "Hà Nội" },
+      { id: "c2", name: "CinesVerse Tran Quoc1", city: "TP.HCM" },
+    ]);
+
     render(
       <BrowserRouter>
         <Footer />
@@ -70,10 +83,14 @@ describe("Footer", () => {
 
     expect(screen.getByText("Hệ thống rạp")).toBeInTheDocument();
     expect(
-      screen.getByText(/CinesVerse Tran Quoc\(Hà Nội\)/i)
+      await screen.findByRole("link", {
+        name: /^CinesVerse Tran Quoc\s*\(Hà Nội\)$/i,
+      })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/CinesVerse Tran Quoc1\(TP.HCM\)/i)
+      await screen.findByRole("link", {
+        name: /^CinesVerse Tran Quoc1\s*\(TP\.HCM\)$/i,
+      })
     ).toBeInTheDocument();
   });
 

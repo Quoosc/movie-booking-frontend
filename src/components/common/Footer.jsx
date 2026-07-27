@@ -6,11 +6,13 @@ import { getAllCinemas } from "@/api/cinemaService";
 
 export default function Footer() {
   const [cinemas, setCinemas] = useState([]);
+  const [cinemasLoading, setCinemasLoading] = useState(true);
 
   useEffect(() => {
     getAllCinemas()
-      .then(data => setCinemas(data || []))
-      .catch(() => {});
+      .then((data) => setCinemas(data || []))
+      .catch(() => setCinemas([]))
+      .finally(() => setCinemasLoading(false));
   }, []);
 
   return (
@@ -27,17 +29,56 @@ export default function Footer() {
           {/* Logo + tagline + socials */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <img
-                src="/public/movies/—Pngtree—film festival logo popcorn and_4686389.png"
-                alt="CinesVerse"
-                className="h-11 w-auto drop-shadow-[0_3px_16px_rgba(0,0,0,0.75)]"
-              />
+              <Link
+                to="/"
+                className="
+    relative
+    flex
+    items-center
+    shrink-0
+    group
+    py-1
+  "
+              >
+                <div
+                  className="
+      absolute
+      inset-0
+      bg-blue-500/20
+      blur-xl
+      rounded-full
+      scale-75
+      group-hover:bg-pink-500/30
+      transition-all
+      duration-300
+    "
+                />
+
+                <img
+                  src="/movies/LOGO-RẠP.png"
+                  alt="CinesVerse"
+                  className="
+      relative
+      z-10
+      h-18
+      md:h-22
+      lg:h-20
+      w-auto
+      object-contain
+      transition-all
+      duration-300
+      group-hover:scale-105
+      drop-shadow-[0_0_12px_rgba(59,130,246,0.85)]
+      group-hover:drop-shadow-[0_0_20px_rgba(236,72,153,0.95)]
+    "
+                />
+              </Link>
               <div>
                 <p className="text-[11px] tracking-[0.22em] uppercase text-[#9ca3ff]">
                   Movie Booking Platform
                 </p>
                 <p className="text-sm font-semibold text-[#e5e7ff]">
-                  CinesVerse
+                  Cineon - BE HAPPY, BE A ONS
                 </p>
               </div>
             </div>
@@ -86,13 +127,19 @@ export default function Footer() {
             <FooterLink to="/careers">Tuyển dụng</FooterLink> */}
 
             <FooterTitle>Hệ thống rạp</FooterTitle>
-            {cinemas.length === 0 ? (
+            {cinemasLoading ? (
               <p className="text-xs text-white/35 italic">Đang tải...</p>
+            ) : cinemas.length === 0 ? (
+              <p className="text-xs text-white/35 italic">
+                Chưa có thông tin rạp.
+              </p>
             ) : (
-              cinemas.map(c => (
+              cinemas.map((c) => (
                 <FooterLink key={c.id} to={`/cinema/${c.id}`}>
                   {c.name}
-                  {c.city ? <span className="text-white/40 ml-1">({c.city})</span> : null}
+                  {c.city ? (
+                    <span className="text-white/40 ml-1">({c.city})</span>
+                  ) : null}
                 </FooterLink>
               ))
             )}
@@ -105,7 +152,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] text-white/60">
           <p>
-            © 2025 CinesVerse.Copyright by{" "}
+            © {new Date().getFullYear()} CinesVerse. Copyright by{" "}
             <span className="text-[#7b5cff] font-semibold">PhamTranQuoc</span>.
           </p>
 

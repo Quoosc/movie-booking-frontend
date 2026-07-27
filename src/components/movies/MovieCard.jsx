@@ -69,9 +69,10 @@ export default function MovieCard({ m }) {
               T{m.minimumAge}
             </span>
           ) : (
-            <span className="px-1.5 py-0.5 rounded-sm opacity-0 text-[9px] font-extrabold">
-              T00
-            </span>
+            <span
+              aria-hidden="true"
+              className="px-1.5 py-0.5 rounded-sm opacity-0 text-[9px] font-extrabold"
+            />
           )}
           <span className="truncate">
             {m.duration ? `${m.duration} phút` : " "}

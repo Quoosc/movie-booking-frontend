@@ -1,7 +1,15 @@
 // src/components/movies/ReviewSection.jsx
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { getMovieReviews, submitMovieReview, reactToReview, replyToReview } from "@/api/reviewService";
+import {
+  deleteMovieReview,
+  getMovieReviews,
+  reactToReview,
+  replyToReview,
+  reportMovieReview,
+  submitMovieReview,
+  updateMovieReview,
+} from "@/api/reviewService";
 import { uploadFeedbackImage } from "@/api/cloudinaryService";
 
 const REACTIONS = [
@@ -12,7 +20,7 @@ const REACTIONS = [
   { type: "SAD",  emoji: "😢" },
 ];
 const STAR_LABELS = ["","Tệ hại","Rất tệ","Kém","Không hay","Tạm được","Bình thường","Khá hay","Hay","Rất hay","Tuyệt vời"];
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 /* ─── Helpers ─── */
 function timeAgo(iso) {
@@ -195,12 +203,19 @@ const THREAD_CSS = `
 `;
 
 /* ─── Single comment (works for both top-level and reply) ─── */
-function CommentItem({ review, movieId, user, isReply = false }) {
+function CommentItem({ review, movieId, user, isReply = false, onRefresh }) {
   const [reactions, setReactions] = useState(review.reactions || {});
-  const [myReaction, setMyReaction] = useState(null);
+  const [myReaction, setMyReaction] = useState(review.myReaction || null);
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replies, setReplies] = useState(review.replies || []);
   const [isRepliesExpanded, setIsRepliesExpanded] = useState(false);
+  const [spoilerRevealed, setSpoilerRevealed] = useState(!review.isSpoiler);
+  const [editing, setEditing] = useState(false);
+  const [editComment, setEditComment] = useState(review.comment || "");
+  const [editRating, setEditRating] = useState(review.rating || 0);
+  const [saving, setSaving] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("spam");
 
   const hasReplies = replies.length > 0;
 
@@ -233,6 +248,46 @@ function CommentItem({ review, movieId, user, isReply = false }) {
     setIsRepliesExpanded(true);
   };
 
+  const handleSave = async () => {
+    if (!editComment.trim()) return toast.error("Nội dung không được để trống.");
+    try {
+      setSaving(true);
+      await updateMovieReview(movieId, review.reviewId, {
+        comment: editComment.trim(),
+        ...(!isReply && { rating: editRating }),
+        isSpoiler: review.isSpoiler,
+      });
+      toast.success("Đã cập nhật đánh giá.");
+      setEditing(false);
+      onRefresh?.();
+    } catch (error) {
+      toast.error(error?.message || "Không thể cập nhật đánh giá.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Bạn chắc chắn muốn xóa đánh giá này?")) return;
+    try {
+      await deleteMovieReview(movieId, review.reviewId);
+      toast.success("Đã xóa đánh giá.");
+      onRefresh?.();
+    } catch (error) {
+      toast.error(error?.message || "Không thể xóa đánh giá.");
+    }
+  };
+
+  const handleReport = async () => {
+    try {
+      await reportMovieReview(movieId, review.reviewId, { reason: reportReason });
+      toast.success("Báo cáo đã được gửi tới quản trị viên.");
+      setReportOpen(false);
+    } catch (error) {
+      toast.error(error?.message || "Không thể gửi báo cáo.");
+    }
+  };
+
   return (
     <div>
       {/* ── Row: avatar + bubble ── */}
@@ -247,10 +302,30 @@ function CommentItem({ review, movieId, user, isReply = false }) {
             <div className={`rounded-2xl px-3 py-2.5 ${isReply ? "bg-gray-100" : "bg-gray-50 border border-gray-100"}`}>
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="text-sm font-semibold text-gray-800">{review.reviewerName || "Khách"}</span>
+                {review.verifiedPurchase && (
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-700">✓ Đã xem tại rạp</span>
+                )}
                 <span className="text-[10px] text-gray-400">{timeAgo(review.createdAt)}</span>
+                {review.editedAt && <span className="text-[9px] italic text-gray-400">đã sửa</span>}
                 {!isReply && <StarDisplay rating={review.rating} />}
               </div>
-              <p className="text-sm text-gray-700 leading-relaxed">{review.comment}</p>
+              {editing ? (
+                <div className="min-w-[260px] space-y-2">
+                  {!isReply && <StarPicker value={editRating} onChange={setEditRating} />}
+                  <textarea value={editComment} onChange={(event) => setEditComment(event.target.value)} rows={3}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#7b5cff]" />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={handleSave} disabled={saving} className="rounded-lg bg-[#7b5cff] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">{saving ? "Đang lưu..." : "Lưu"}</button>
+                    <button type="button" onClick={() => setEditing(false)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500">Hủy</button>
+                  </div>
+                </div>
+              ) : review.isSpoiler && !spoilerRevealed ? (
+                <button type="button" onClick={() => setSpoilerRevealed(true)} className="w-full rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-4 text-left text-xs font-semibold text-amber-700">
+                  ⚠ Nội dung có tiết lộ phim — nhấn để xem
+                </button>
+              ) : (
+                <p className="text-sm text-gray-700 leading-relaxed">{review.comment}</p>
+              )}
             </div>
             {review.imageUrl && (
               <a href={review.imageUrl} target="_blank" rel="noreferrer" className="block mt-1.5">
@@ -269,7 +344,29 @@ function CommentItem({ review, movieId, user, isReply = false }) {
                 💬 Trả lời
               </button>
             )}
+            {review.canEdit && !editing && (
+              <>
+                <button type="button" onClick={() => setEditing(true)} className="text-xs font-semibold text-gray-400 hover:text-[#7b5cff]">Sửa</button>
+                <button type="button" onClick={handleDelete} className="text-xs font-semibold text-gray-400 hover:text-red-500">Xóa</button>
+              </>
+            )}
+            {!review.canEdit && (
+              <button type="button" onClick={() => setReportOpen((value) => !value)} className="text-xs text-gray-400 hover:text-red-500">Báo cáo</button>
+            )}
           </div>
+
+          {reportOpen && (
+            <div className="mt-2 flex max-w-sm items-center gap-2 rounded-xl border border-gray-200 bg-white p-2">
+              <select value={reportReason} onChange={(event) => setReportReason(event.target.value)} className="flex-1 rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-700">
+                <option value="spam">Spam / quảng cáo</option>
+                <option value="spoiler">Không cảnh báo spoiler</option>
+                <option value="abuse">Ngôn từ công kích</option>
+                <option value="misinformation">Thông tin sai</option>
+                <option value="other">Lý do khác</option>
+              </select>
+              <button type="button" onClick={handleReport} className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white">Gửi</button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -298,7 +395,7 @@ function CommentItem({ review, movieId, user, isReply = false }) {
             <div className="cv-replies">
               {replies.map(r => (
                 <div key={r.reviewId} className="cv-reply-row">
-                  <CommentItem review={r} movieId={movieId} user={user} isReply />
+                  <CommentItem review={r} movieId={movieId} user={user} isReply onRefresh={onRefresh} />
                 </div>
               ))}
               <button type="button" onClick={() => setIsRepliesExpanded(false)}
@@ -315,8 +412,7 @@ function CommentItem({ review, movieId, user, isReply = false }) {
 }
 
 /* ─── Pagination ─── */
-function Pagination({ page, total, onPageChange }) {
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+function Pagination({ page, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
   return (
     <div className="flex items-center justify-center gap-1.5 pt-3 border-t border-white/10">
@@ -338,11 +434,17 @@ function Pagination({ page, total, onPageChange }) {
 /* ─── Main ─── */
 export default function ReviewSection({ movieId, user }) {
   const [reviews, setReviews] = useState([]);
+  const [summary, setSummary] = useState({ average: null, total: 0, distribution: {} });
+  const [pagination, setPagination] = useState({ currentPage: 1, lastPage: 1, total: 0 });
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState("newest");
+  const [ratingFilter, setRatingFilter] = useState("");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [isSpoiler, setIsSpoiler] = useState(false);
   const [reviewerName, setReviewerName] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
@@ -350,18 +452,31 @@ export default function ReviewSection({ movieId, user }) {
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoadingReviews(true);
-        const data = await getMovieReviews(movieId);
-        setReviews(Array.isArray(data) ? data : []);
-      } catch { setReviews([]); }
-      finally { setLoadingReviews(false); }
-    })();
-  }, [movieId]);
+  const loadReviews = useCallback(async () => {
+    try {
+      setLoadingReviews(true);
+      const data = await getMovieReviews(movieId, {
+        page,
+        perPage: PAGE_SIZE,
+        sort,
+        rating: ratingFilter,
+        verifiedOnly,
+      });
+      setReviews(data.items);
+      setSummary(data.summary);
+      setPagination(data.pagination);
+    } catch {
+      setReviews([]);
+      setSummary({ average: null, total: 0, distribution: {} });
+      setPagination({ currentPage: 1, lastPage: 1, total: 0 });
+    } finally {
+      setLoadingReviews(false);
+    }
+  }, [movieId, page, ratingFilter, sort, verifiedOnly]);
 
-  const paginatedReviews = reviews.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  useEffect(() => {
+    loadReviews();
+  }, [loadReviews]);
 
   const handleImageChange = async (e) => {
     const file = e.target.files?.[0];
@@ -390,22 +505,22 @@ export default function ReviewSection({ movieId, user }) {
     if (uploadingImage) { toast.error("Đang upload ảnh..."); return; }
     try {
       setSubmitting(true);
-      const newReview = await submitMovieReview(movieId, {
+      await submitMovieReview(movieId, {
         rating, comment: comment.trim(),
         ...(reviewerName.trim() && { reviewerName: reviewerName.trim() }),
         ...(imageUrl && { imageUrl }),
+        isSpoiler,
       });
-      setReviews(prev => [newReview, ...prev]);
       setPage(1);
       toast.success("Đánh giá đã được gửi!");
-      setRating(0); setComment(""); setReviewerName(""); removeImage();
+      setRating(0); setComment(""); setReviewerName(""); setIsSpoiler(false); removeImage();
+      if (page === 1) loadReviews();
     } catch (err) {
       toast.error(err?.message || "Gửi đánh giá thất bại.");
     } finally { setSubmitting(false); }
   };
 
-  const avgRating = reviews.length
-    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : null;
+  const avgRating = summary.average;
 
   return (
     <section className="max-w-6xl mx-auto px-4 pb-16 space-y-6">
@@ -416,13 +531,36 @@ export default function ReviewSection({ movieId, user }) {
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
             <span className="text-[#FFE700]">★</span>
             <span className="text-white font-bold text-sm">{avgRating}</span>
-            <span className="text-white/50 text-xs">/ 10 ({reviews.length})</span>
+            <span className="text-white/50 text-xs">/ 10 ({summary.total})</span>
           </div>
         )}
       </div>
 
       {/* CSS thread-line — inject một lần */}
       <style>{THREAD_CSS}</style>
+
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+        <select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}
+          className="rounded-xl border border-white/15 bg-[#0c0924] px-3 py-2 text-xs text-white outline-none">
+          <option value="newest">Mới nhất</option>
+          <option value="helpful">Hữu ích nhất</option>
+          <option value="highest">Điểm cao nhất</option>
+          <option value="lowest">Điểm thấp nhất</option>
+          <option value="oldest">Cũ nhất</option>
+        </select>
+        <select value={ratingFilter} onChange={(event) => { setRatingFilter(event.target.value); setPage(1); }}
+          className="rounded-xl border border-white/15 bg-[#0c0924] px-3 py-2 text-xs text-white outline-none">
+          <option value="">Mọi mức điểm</option>
+          {Array.from({ length: 10 }).map((_, index) => {
+            const value = 10 - index;
+            return <option key={value} value={value}>{value}/10 ({summary.distribution?.[value] || 0})</option>;
+          })}
+        </select>
+        <label className="flex items-center gap-2 text-xs text-white/70">
+          <input type="checkbox" checked={verifiedOnly} onChange={(event) => { setVerifiedOnly(event.target.checked); setPage(1); }} />
+          Chỉ người đã xem tại rạp
+        </label>
+      </div>
 
       {/* ── Comment list ── */}
       <div className="rounded-3xl bg-white/10 border border-white/20 backdrop-blur-sm shadow-[0_8px_32px_rgba(0,0,0,0.4)] p-5 md:p-6 space-y-5">
@@ -446,14 +584,14 @@ export default function ReviewSection({ movieId, user }) {
         ) : (
           <>
             <p className="text-xs text-white/40">
-              Hiển thị {(page-1)*PAGE_SIZE+1}–{Math.min(page*PAGE_SIZE, reviews.length)} / {reviews.length} đánh giá
+              Hiển thị {(page-1)*PAGE_SIZE+1}–{Math.min(page*PAGE_SIZE, pagination.total)} / {pagination.total} đánh giá
             </p>
             <div className="space-y-5">
-              {paginatedReviews.map(r => (
-                <CommentItem key={r.reviewId} review={r} movieId={movieId} user={user} />
+              {reviews.map(r => (
+                <CommentItem key={r.reviewId} review={r} movieId={movieId} user={user} onRefresh={loadReviews} />
               ))}
             </div>
-            <Pagination page={page} total={reviews.length} onPageChange={setPage} />
+            <Pagination page={page} totalPages={pagination.lastPage} onPageChange={setPage} />
           </>
         )}
       </div>
@@ -483,6 +621,10 @@ export default function ReviewSection({ movieId, user }) {
               value={comment} onChange={(e) => setComment(e.target.value)} maxLength={5000}
               className="w-full rounded-xl bg-white border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 resize-y focus:outline-none focus:ring-2 focus:ring-[#7b5cff]/50 shadow-sm" />
             <p className="text-right text-[10px] text-gray-400 mt-1">{comment.length}/5000</p>
+            <label className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+              <input type="checkbox" checked={isSpoiler} onChange={(event) => setIsSpoiler(event.target.checked)} />
+              Nội dung có tiết lộ tình tiết phim
+            </label>
           </div>
 
           <div>

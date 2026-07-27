@@ -1,22 +1,22 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-
 import PaymentCallbackPage from "../page.jsx";
-import { capturePayment } from "@/api/paymentService";
+import {
+  capturePayment,
+  getPaymentStatus,
+} from "@/api/paymentService";
 
 vi.mock("@/api/paymentService", () => ({
   capturePayment: vi.fn(),
+  getPaymentStatus: vi.fn(),
 }));
 
 const navigateMock = vi.fn();
 vi.mock("react-router-dom", async (importOriginal) => {
   const actual = await importOriginal();
-  return {
-    ...actual,
-    useNavigate: () => navigateMock,
-  };
+  return { ...actual, useNavigate: () => navigateMock };
 });
 
 function renderWithUrl(url) {
@@ -31,156 +31,118 @@ describe("PaymentCallbackPage", () => {
   beforeEach(() => {
     navigateMock.mockReset();
     capturePayment.mockReset();
-
-    vi.spyOn(console, "log").mockImplementation(() => {});
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    getPaymentStatus.mockReset();
   });
 
   afterEach(() => {
-    console.log.mockRestore?.();
-    console.error.mockRestore?.();
     vi.restoreAllMocks();
   });
 
-  it("shows error when missing transactionId or method", async () => {
+  it("rejects callbacks without a transaction and method", async () => {
     const user = userEvent.setup();
-
     renderWithUrl("/payment-callback");
 
     expect(
       await screen.findByText("Có lỗi xảy ra khi xử lý thanh toán.")
     ).toBeInTheDocument();
-
     expect(capturePayment).not.toHaveBeenCalled();
+    expect(getPaymentStatus).not.toHaveBeenCalled();
 
-    const btn = screen.getByRole("button", { name: /về trang chủ/i });
-    await user.click(btn);
-
+    await user.click(screen.getByRole("button", { name: /về trang chủ/i }));
     expect(navigateMock).toHaveBeenCalledWith("/", { replace: true });
   });
 
-  it("calls capturePayment and navigates to checkout-success on success", async () => {
-    const realSetTimeout = globalThis.setTimeout;
-    const timeoutSpy = vi
-      .spyOn(globalThis, "setTimeout")
-      .mockImplementation((fn, ms, ...args) => {
-        // chỉ chạy ngay timeout 1200ms của PaymentCallbackPage
-        if (Number(ms) === 1200) {
-          fn(...args);
-          return 0;
-        }
-        return realSetTimeout(fn, ms, ...args);
-      });
-
+  it("captures PayPal and navigates with a durable booking query", async () => {
     capturePayment.mockResolvedValue({
       code: 200,
-      data: { bookingId: "b-1" },
+      data: { bookingId: "booking-1" },
     });
 
-    renderWithUrl("/payment-callback?transactionId=tx-1&method=momo");
+    renderWithUrl("/payment-callback?token=paypal-order&method=paypal");
 
     expect(
-      await screen.findByText("Thanh toán thành công!")
+      await screen.findByText("Thanh toán thành công!", {}, { timeout: 2000 })
     ).toBeInTheDocument();
-
+    expect(capturePayment).toHaveBeenCalledWith({
+      transactionId: "paypal-order",
+      paymentMethod: "PAYPAL",
+    });
+    expect(getPaymentStatus).not.toHaveBeenCalled();
     expect(navigateMock).toHaveBeenCalledWith(
-      "/checkout-success?bookingId=b-1&method=MOMO",
+      "/checkout-success?bookingId=booking-1&method=PAYPAL",
       { replace: true }
     );
-
-    timeoutSpy.mockRestore();
   });
 
-  it("uses bookingId from query when API response has no bookingId", async () => {
-    const realSetTimeout = globalThis.setTimeout;
-    const timeoutSpy = vi
-      .spyOn(globalThis, "setTimeout")
-      .mockImplementation((fn, ms, ...args) => {
-        if (Number(ms) === 1200) {
-          fn(...args);
-          return 0;
-        }
-        return realSetTimeout(fn, ms, ...args);
-      });
+  it("does not capture MoMo in the browser and trusts persisted IPN state", async () => {
+    getPaymentStatus.mockResolvedValue({
+      status: "SUCCESS",
+      bookingId: "booking-momo",
+    });
 
+    renderWithUrl("/payment-callback?orderId=momo-order&method=momo");
+
+    expect(await screen.findByText("Thanh toán thành công!")).toBeInTheDocument();
+    expect(getPaymentStatus).toHaveBeenCalledWith({
+      transactionId: "momo-order",
+      paymentMethod: "MOMO",
+    });
+    expect(capturePayment).not.toHaveBeenCalled();
+    expect(navigateMock).toHaveBeenCalledWith(
+      "/checkout-success?bookingId=booking-momo&method=MOMO",
+      { replace: true }
+    );
+  });
+
+  it("polls while the MoMo IPN is pending", async () => {
+    getPaymentStatus
+      .mockResolvedValueOnce({ status: "PENDING", bookingId: "booking-momo" })
+      .mockResolvedValueOnce({ status: "SUCCESS", bookingId: "booking-momo" });
+
+    renderWithUrl("/payment-callback?requestId=momo-order");
+
+    expect(
+      await screen.findByText("Thanh toán thành công!", {}, { timeout: 2000 })
+    ).toBeInTheDocument();
+    expect(getPaymentStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the gateway failure persisted by the MoMo IPN", async () => {
+    getPaymentStatus.mockResolvedValue({
+      status: "FAILED",
+      errorMessage: "MoMo rejected the payment",
+    });
+
+    renderWithUrl("/payment-callback?orderId=momo-order&method=MOMO");
+
+    expect(
+      await screen.findByText("Có lỗi xảy ra khi xử lý thanh toán.")
+    ).toBeInTheDocument();
+    expect(screen.getByText(/momo rejected the payment/i)).toBeInTheDocument();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("uses bookingId from the query when PayPal omits it", async () => {
     capturePayment.mockResolvedValue({ code: 200, data: {} });
 
     renderWithUrl(
-      "/payment-callback?transactionId=tx-1&method=PAYPAL&bookingId=bq-9"
+      "/payment-callback?token=paypal-order&method=PAYPAL&bookingId=booking-query"
     );
 
-    expect(
-      await screen.findByText("Thanh toán thành công!")
-    ).toBeInTheDocument();
-
-    expect(navigateMock).toHaveBeenCalledWith(
-      "/checkout-success?bookingId=bq-9&method=PAYPAL",
-      { replace: true }
-    );
-
-    timeoutSpy.mockRestore();
-  });
-
-  it("shows error when wrapper.code = 409 (already processed)", async () => {
-    capturePayment.mockResolvedValue({
-      code: 409,
-      message: "Đã xử lý giao dịch",
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith(
+        "/checkout-success?bookingId=booking-query&method=PAYPAL",
+        { replace: true }
+      );
     });
-
-    renderWithUrl("/payment-callback?transactionId=tx-1&method=MOMO");
-
-    expect(
-      await screen.findByText("Có lỗi xảy ra khi xử lý thanh toán.")
-    ).toBeInTheDocument();
-
-    expect(screen.getByText(/đã xử lý giao dịch/i)).toBeInTheDocument();
-    expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  it("shows generic failure when wrapper.code != 200 and not 409", async () => {
-    capturePayment.mockResolvedValue({
-      code: 500,
-      message: "Gateway failed",
-    });
+  it("shows an actionable error when payment verification fails", async () => {
+    getPaymentStatus.mockRejectedValue(new Error("network unavailable"));
 
-    renderWithUrl("/payment-callback?transactionId=tx-1&method=MOMO");
+    renderWithUrl("/payment-callback?orderId=momo-order&method=MOMO");
 
-    expect(
-      await screen.findByText("Có lỗi xảy ra khi xử lý thanh toán.")
-    ).toBeInTheDocument();
-
-    expect(screen.getByText(/gateway failed/i)).toBeInTheDocument();
-    expect(navigateMock).not.toHaveBeenCalled();
-  });
-
-  it("shows error when success but no bookingId anywhere", async () => {
-    capturePayment.mockResolvedValue({ code: 200, data: {} });
-
-    renderWithUrl("/payment-callback?transactionId=tx-1&method=MOMO");
-
-    expect(
-      await screen.findByText("Có lỗi xảy ra khi xử lý thanh toán.")
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText(/không tìm thấy thông tin vé/i)
-    ).toBeInTheDocument();
-    expect(navigateMock).not.toHaveBeenCalled();
-  });
-
-  it("shows error when capturePayment throws", async () => {
-    capturePayment.mockRejectedValue(new Error("network"));
-
-    renderWithUrl("/payment-callback?transactionId=tx-1&method=MOMO");
-
-    expect(
-      await screen.findByText("Có lỗi xảy ra khi xử lý thanh toán.")
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText(/có lỗi xảy ra khi xác nhận thanh toán/i)
-    ).toBeInTheDocument();
-
+    expect(await screen.findByText(/network unavailable/i)).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
   });
 });

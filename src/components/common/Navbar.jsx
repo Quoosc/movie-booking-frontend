@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import { MdLocalActivity } from "react-icons/md";
 import { RiCoupon3Fill } from "react-icons/ri";
 import { AiOutlineInfoCircle } from "react-icons/ai";
+import NotificationBell from "@/components/common/NotificationBell";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -69,12 +70,46 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center gap-2 shrink-0 hover:opacity-95 transition"
+            className="
+    relative
+    flex
+    items-center
+    shrink-0
+    group
+    py-1
+  "
           >
+            <div
+              className="
+      absolute
+      inset-0
+      bg-blue-500/20
+      blur-xl
+      rounded-full
+      scale-75
+      group-hover:bg-pink-500/30
+      transition-all
+      duration-300
+    "
+            />
+
             <img
-              src="/movies/—Pngtree—film festival logo popcorn and_4686389.png"
-              alt="CinesVerse"
-              className="h-9 w-auto drop-shadow-[0_0_14px_rgba(123,92,255,0.9)]"
+              src="/movies/LOGO-RẠP.png"
+              alt="Cineon"
+              className="
+      relative
+      z-10
+      h-18
+      md:h-22
+      lg:h-20
+      w-auto
+      object-contain
+      transition-all
+      duration-300
+      group-hover:scale-105
+      drop-shadow-[0_0_12px_rgba(59,130,246,0.85)]
+      group-hover:drop-shadow-[0_0_20px_rgba(236,72,153,0.95)]
+    "
             />
           </Link>
 
@@ -166,7 +201,9 @@ export default function Navbar() {
             )}
 
             {isAuthenticated && (
-              <div className="relative">
+              <>
+                <NotificationBell />
+                <div className="relative">
                 <button
                   onClick={() => setOpenUserMenu((v) => !v)}
                   className="px-3 py-2 rounded-lg border border-white/15 bg-white/5 text-[#d4ddff] hover:bg-white/10 hover:border-[#7b5cffaa] transition-all duration-200 flex items-center gap-2 text-[13px]"
@@ -190,6 +227,24 @@ export default function Navbar() {
                           className="w-full text-left px-4 py-2 hover:bg:white/8 text-[#e5e7ff]"
                         >
                           Thông tin cá nhân
+                        </button>
+                        <button
+                          onClick={() => {
+                            setOpenUserMenu(false);
+                            nav("/account/account-history");
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-white/8 text-[#e5e7ff]"
+                        >
+                          Lịch sử đặt vé
+                        </button>
+                        <button
+                          onClick={() => {
+                            setOpenUserMenu(false);
+                            nav("/account/account-member");
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-white/8 text-[#e5e7ff]"
+                        >
+                          Điểm và hạng thành viên
                         </button>
                         <div className="my-1 h-px bg-white/10" />
                       </>
@@ -219,7 +274,8 @@ export default function Navbar() {
                     </button>
                   </div>
                 )}
-              </div>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -227,6 +283,21 @@ export default function Navbar() {
         {/* ROW 2: dùng chung nền, không thêm border dưới */}
         <div className="h-[40px] flex items-center">
           <nav className="flex items-center gap-6">
+            <NavLink
+              to="/showtimes"
+              className={({ isActive }) =>
+                `${LinkBase} ${
+                  isActive ? "text-white" : ""
+                } flex items-center gap-2`
+              }
+            >
+              <PiCalendarCheckBold className="text-[16px] text-[#9ca3ff]/80 group-hover:text-[#43e1ff] transition-colors" />
+              Lịch chiếu
+              {Underline}
+            </NavLink>
+
+            <span className="opacity-25">|</span>
+
             <div className={`${LinkBase} flex items-center gap-2`}>
               <CinemaDropdown />
               {Underline}
@@ -360,7 +431,7 @@ export default function Navbar() {
                     <button
                       onClick={() => {
                         setOpen(false);
-                        nav("/profile");
+                        nav("/account/account-profile");
                       }}
                       className="w-full text-left text-[#d4ddff]/85 py-2"
                     >
@@ -369,7 +440,7 @@ export default function Navbar() {
                     <button
                       onClick={() => {
                         setOpen(false);
-                        nav("/my-bookings");
+                        nav("/account/account-history");
                       }}
                       className="w-full text-left text-[#d4ddff]/85 py-2"
                     >
@@ -378,7 +449,7 @@ export default function Navbar() {
                     <button
                       onClick={() => {
                         setOpen(false);
-                        nav("/membership");
+                        nav("/account/account-member");
                       }}
                       className="w-full text-left text-[#d4ddff]/85 py-2"
                     >
@@ -386,6 +457,16 @@ export default function Navbar() {
                     </button>
                   </>
                 )}
+
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    nav("/account/notifications");
+                  }}
+                  className="w-full text-left text-[#d4ddff]/85 py-2"
+                >
+                  Thông báo
+                </button>
 
                 {isAdmin && (
                   <button
@@ -412,6 +493,15 @@ export default function Navbar() {
 
             <div className="h-px bg-white/10 my-2" />
 
+            <button
+              onClick={() => {
+                setOpen(false);
+                nav("/showtimes");
+              }}
+              className="w-full text-left text-[#d4ddff]/85 py-2"
+            >
+              Lịch chiếu
+            </button>
             <button className="w-full text-left text-[#d4ddff]/85 py-2">
               Chọn rạp
             </button>

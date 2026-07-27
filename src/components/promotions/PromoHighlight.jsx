@@ -8,17 +8,17 @@ const promos = [
   {
     id: 1,
     title: "C'SCHOOL - Vé từ 45K cho HSSV/U22/Giáo viên",
-    image: "/movies/CINESVERSE1.jpg",
+    image: "/movies/logo1.png",
   },
   {
     id: 2,
     title: "HAPPY HOUR - Suất sớm & khuya chỉ từ 45K",
-    image: "/movies/CINESVERSE2.jpg",
+    image: "/movies/logo2.png",
   },
   {
     id: 3,
     title: "THỨ 4 HAPPY DAY - Ưu đãi siêu dễ",
-    image: "/movies/CINESVERSE3.jpg",
+    image: "/movies/logo3.png",
   },
 ];
 

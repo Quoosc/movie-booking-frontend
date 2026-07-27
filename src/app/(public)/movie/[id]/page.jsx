@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
@@ -11,59 +11,27 @@ import { getTicketTypes } from "@/api/ticketTypeService";
 import { getMovieById, getMovieShowtimesByDate } from "@/api/movieService";
 import { getSeatLayout, getSnacksByCinema } from "@/api/bookingService";
 import ReviewSection from "@/components/movies/ReviewSection";
+import RelatedMovies from "@/components/movies/RelatedMovies";
 
 const DAYS = 7;
-
-// mock
-// const DEFAULT_TICKET_TYPES = [
-//   {
-//     id: "adult",
-//     code: "adult",
-//     ticketTypeId: null,
-//     label: "NGƯỜI LỚN",
-//     price: 69000,
-//   },
-//   {
-//     id: "student",
-//     code: "student",
-//     ticketTypeId: null,
-//     label: "HSSV/U22-GV",
-//     price: 49000,
-//   },
-//   {
-//     id: "senior",
-//     code: "senior",
-//     ticketTypeId: null,
-//     label: "NGƯỜI CAO TUỔI",
-//     price: 55000,
-//   },
-//   {
-//     id: "member",
-//     code: "member",
-//     ticketTypeId: null,
-//     label: "GIÁ VÉ THÀNH VIÊN",
-//     price: 45000,
-//   },
-//   {
-//     id: "double",
-//     code: "double",
-//     ticketTypeId: null,
-//     label: "GHẾ ĐÔI (2 NGƯỜI)",
-//     price: 128000,
-//   },
-// ];
 
 export default function MovieDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const { user } = useAuth();
   const isAuthenticated = !!user; // true nếu đã đăng nhập, false nếu guest thường
 
-  const [activeTab, setActiveTab] = useState("showtimes"); // "showtimes" | "reviews"
+  const [activeTab, setActiveTab] = useState(() =>
+    searchParams.get("tab") === "reviews" ? "reviews" : "showtimes"
+  ); // "showtimes" | "reviews"
 
   const [movie, setMovie] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(getToday());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const requestedDate = searchParams.get("date");
+    return /^\d{4}-\d{2}-\d{2}$/.test(requestedDate || "") ? requestedDate : getToday();
+  });
   const [showtimes, setShowtimes] = useState([]);
   const [loadingMovie, setLoadingMovie] = useState(true);
   const [loadingShowtimes, setLoadingShowtimes] = useState(true);
@@ -74,6 +42,7 @@ export default function MovieDetailPage() {
   const [selectedSeats, setSelectedSeats] = useState([]); // [{ seat_id, row, number, price }]
 
   const [ticketTypes, setTicketTypes] = useState([]);
+  const [ticketTypeError, setTicketTypeError] = useState("");
 
   const [snacks, setSnacks] = useState([]);
   const [selectedSnacks, setSelectedSnacks] = useState({}); // { snack_id: { ...snack, quantity } }
@@ -114,34 +83,40 @@ export default function MovieDetailPage() {
 
   /* ===== LOAD TICKET TYPES (MỖI SUẤT CHIẾU 1 BẢNG GIÁ – DÙNG API MỚI) ===== */
   useEffect(() => {
-    // Chưa chọn suất chiếu thì reset về default
-    // if (!activeShowtime?.showtimeId) {
-    //   setTicketTypes(DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 })));
-    //   return;
-    // }
+    if (!activeShowtime?.showtimeId) {
+      setTicketTypes([]);
+      setTicketTypeError("");
+      return;
+    }
 
     const fetchTicketTypesPerShowtime = async () => {
       try {
+        setTicketTypeError("");
         const data = await getTicketTypes({
           showtimeId: activeShowtime.showtimeId,
           userId: user?.userId || null,
         });
 
-        // data đã được mapTicketType() trong ticketTypeService rồi
-        const list =
-          Array.isArray(data) && data.length > 0 ? data : DEFAULT_TICKET_TYPES;
+        if (!Array.isArray(data) || data.length === 0) {
+          setTicketTypes([]);
+          setTicketTypeError(
+            "Suất chiếu này chưa được cấu hình loại vé. Vui lòng chọn suất khác."
+          );
+          return;
+        }
 
-        setTicketTypes(list.map((t) => ({ ...t, quantity: 0 })));
+        setTicketTypes(data.map((t) => ({ ...t, quantity: 0 })));
       } catch (err) {
-        console.error("getTicketTypes error, dùng DEFAULT_TICKET_TYPES", err);
-        setTicketTypes(
-          DEFAULT_TICKET_TYPES.map((t) => ({ ...t, quantity: 0 }))
+        console.error("getTicketTypes error", err);
+        setTicketTypes([]);
+        setTicketTypeError(
+          "Không tải được loại vé. Vui lòng thử lại hoặc chọn suất khác."
         );
       }
     };
 
     fetchTicketTypesPerShowtime();
-  }, [activeShowtime?.showtimeId, user?.id]);
+  }, [activeShowtime?.showtimeId, user?.userId]);
 
   /* ===== LOAD SHOWTIMES THEO NGÀY ===== */
   useEffect(() => {
@@ -153,6 +128,17 @@ export default function MovieDetailPage() {
       setShowtimes(data || []);
       setLoadingShowtimes(false);
       resetBookingState(); // đổi ngày => reset
+
+      const requestedShowtimeId = searchParams.get("showtimeId");
+      if (requestedShowtimeId) {
+        const cinema = (data || []).find((group) =>
+          group.showtimes?.some((showtime) => String(showtime.showtimeId) === String(requestedShowtimeId))
+        );
+        const showtime = cinema?.showtimes?.find(
+          (item) => String(item.showtimeId) === String(requestedShowtimeId)
+        );
+        if (cinema && showtime) await handleSelectShowtime(cinema, showtime);
+      }
     };
     fetchShowtimes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -478,6 +464,11 @@ export default function MovieDetailPage() {
   const handleProceedBooking = () => {
     if (!activeShowtime) return;
 
+    if (ticketTypes.length === 0) {
+      showWarning(ticketTypeError || "Suất chiếu này chưa có loại vé khả dụng.");
+      return;
+    }
+
     if (totalTickets === 0) {
       showWarning("Vui lòng chọn vé.");
       return;
@@ -604,6 +595,7 @@ export default function MovieDetailPage() {
           <BookingPanel
             activeShowtime={activeShowtime}
             ticketTypes={ticketTypes}
+            ticketTypeError={ticketTypeError}
             onChangeTicket={handleChangeTicket}
             layoutByRow={layoutByRow}
             onToggleSeat={handleToggleSeat}
@@ -682,6 +674,8 @@ export default function MovieDetailPage() {
 
           </>
         )}
+
+        <RelatedMovies movieId={id} />
 
         {/* POPUP CẢNH BÁO THAY alert() */}
         {warning.open && (
@@ -943,6 +937,7 @@ function ShowtimeSection({
 function BookingPanel({
   activeShowtime,
   ticketTypes,
+  ticketTypeError,
   onChangeTicket,
   layoutByRow,
   onToggleSeat,
@@ -959,6 +954,15 @@ function BookingPanel({
         <h3 className="text-center text-xl md:text-2xl font-extrabold tracking-[0.24em] mb-8 text-white">
           CHỌN LOẠI VÉ
         </h3>
+
+        {ticketTypeError && (
+          <p
+            role="alert"
+            className="mb-5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-center text-xs text-amber-200"
+          >
+            {ticketTypeError}
+          </p>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 text-[11px]">
           {ticketTypes.map((t) => {

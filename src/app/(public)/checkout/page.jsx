@@ -481,7 +481,7 @@ export default function CheckoutPage() {
         if (isActiveBookingError && currentUser) {
           showWarning(msg, "Lỗi khóa ghế", {
             buttonText: "Xem lịch sử đặt vé",
-            onConfirm: () => navigate("/account/history"),
+            onConfirm: () => navigate("/account/account-history"),
           });
         } else {
           showWarning(msg, "Lỗi khóa ghế", {
@@ -636,13 +636,6 @@ export default function CheckoutPage() {
     try {
       const snacksArray = Object.values(snacks || {});
       const gatewayMethod = mapPaymentMethodForApi(paymentMethod);
-
-      const ticketTypesPayload = ticketTypes
-        .filter((t) => t.quantity > 0)
-        .map((t) => ({
-          ticketTypeId: t.ticketTypeId || t.id,
-          quantity: t.quantity,
-        }));
 
       const snacksPayload = snacksArray
         .filter((s) => s.quantity > 0)
