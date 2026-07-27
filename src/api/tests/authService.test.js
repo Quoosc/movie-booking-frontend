@@ -106,29 +106,40 @@ describe("authService", () => {
 
     await logout();
 
+    expect(apiFetchMock).toHaveBeenCalledWith("/auth/logout", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken: "rt" }),
+    });
+
     expect(localStorage.getItem("user")).toBe(null);
     expect(localStorage.getItem("accessToken")).toBe(null);
     expect(localStorage.getItem("refreshToken")).toBe(null);
   });
 
-  it("logoutAll calls POST /auth/logout-all?email=", async () => {
+  it("logoutAll calls the protected current-user endpoint", async () => {
     apiFetchMock.mockResolvedValue({ ok: true });
 
-    await logoutAll("a@b.com");
+    await logoutAll();
 
-    expect(apiFetchMock).toHaveBeenCalledWith(
-      "/auth/logout-all?email=a%40b.com",
-      { method: "POST" }
-    );
+    expect(apiFetchMock).toHaveBeenCalledWith("/auth/logout-all", {
+      method: "POST",
+    });
   });
 
-  it("refreshToken calls GET /auth/refresh and stores accessToken if provided", async () => {
-    apiFetchMock.mockResolvedValue({ data: { accessToken: "new-at" } });
+  it("refreshToken rotates and stores both tokens", async () => {
+    localStorage.setItem("refreshToken", "old-rt");
+    apiFetchMock.mockResolvedValue({
+      data: { accessToken: "new-at", refreshToken: "new-rt" },
+    });
 
     const ok = await refreshToken();
 
-    expect(apiFetchMock).toHaveBeenCalledWith("/auth/refresh", { method: "GET" });
+    expect(apiFetchMock).toHaveBeenCalledWith("/auth/refresh", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken: "old-rt" }),
+    });
     expect(localStorage.getItem("accessToken")).toBe("new-at");
+    expect(localStorage.getItem("refreshToken")).toBe("new-rt");
     expect(ok).toBe(true);
   });
 

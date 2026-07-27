@@ -52,13 +52,8 @@ function shouldAttachBearer() {
   if (AUTH_MODE === "bearer") return true;
   if (AUTH_MODE === "cookie") return false;
 
-  // auto: Laravel thường chạy :8000, Spring thường :8080
-  try {
-    const u = new URL(API_BASE_URL);
-    return u.port === "8000";
-  } catch {
-    return false;
-  }
+  // Auto mode sends a stored bearer token on any API host or port.
+  return true;
 }
 
 export async function apiFetch(path, options = {}) {

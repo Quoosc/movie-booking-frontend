@@ -9,6 +9,12 @@ import { AuthProvider } from "@/context/AuthContext";
 // Mock API service
 vi.mock("@/api/authService", () => ({
   login: vi.fn(),
+  logout: vi.fn(),
+  me: vi.fn(() => new Promise(() => {})),
+  refreshToken: vi.fn(),
+  getStoredUser: vi.fn(() => null),
+  setStoredUser: vi.fn(),
+  clearStoredUser: vi.fn(),
 }));
 
 // Mock toast

@@ -137,22 +137,37 @@ export async function me() {
 
 /** LOGOUT */
 export async function logout() {
-  clearStoredUser();
+  const refreshToken = localStorage.getItem(STORAGE_KEYS.refreshToken);
   try {
-    await apiFetch("/auth/logout", { method: "POST" });
-  } catch {}
+    await apiFetch("/auth/logout", {
+      method: "POST",
+      body: refreshToken ? JSON.stringify({ refreshToken }) : undefined,
+    });
+  } catch {
+    // Local logout must still complete when the API is unavailable.
+  } finally {
+    clearStoredUser();
+  }
 }
 
 /** LOGOUT ALL */
-export async function logoutAll(email) {
-  await apiFetch(`/auth/logout-all?email=${encodeURIComponent(email)}`, {
-    method: "POST",
-  });
+export async function logoutAll() {
+  try {
+    await apiFetch("/auth/logout-all", { method: "POST" });
+  } finally {
+    clearStoredUser();
+  }
 }
 
 /** REFRESH */
 export async function refreshToken() {
-  const res = await apiFetch("/auth/refresh", { method: "GET" });
+  const currentRefreshToken = localStorage.getItem(STORAGE_KEYS.refreshToken);
+  const res = await apiFetch("/auth/refresh", {
+    method: "POST",
+    body: currentRefreshToken
+      ? JSON.stringify({ refreshToken: currentRefreshToken })
+      : undefined,
+  });
 
   const payload = res?.data ?? res;
   const accessToken =
@@ -161,6 +176,15 @@ export async function refreshToken() {
     payload?.user?.accessToken ||
     null;
 
+  const nextRefreshToken =
+    payload?.refreshToken ||
+    payload?.data?.refreshToken ||
+    payload?.user?.refreshToken ||
+    null;
+
   if (accessToken) localStorage.setItem(STORAGE_KEYS.accessToken, accessToken);
+  if (nextRefreshToken) {
+    localStorage.setItem(STORAGE_KEYS.refreshToken, nextRefreshToken);
+  }
   return true;
 }

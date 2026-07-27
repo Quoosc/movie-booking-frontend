@@ -99,3 +99,49 @@ export async function getShowtimeDetail(id) {
   const res = await apiFetch(`/showtimes/${id}`);
   return res.data || res;
 }
+
+function buildSearchQuery(filters = {}) {
+  const params = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    params.set(key, String(value));
+  });
+
+  return params.toString();
+}
+
+/**
+ * Tìm lịch chiếu xuyên suốt toàn hệ thống theo phim, rạp, ngày, giờ và định dạng.
+ */
+export async function searchShowtimes(filters = {}) {
+  const query = buildSearchQuery(filters);
+  const res = await apiFetch(`/showtimes/search${query ? `?${query}` : ""}`);
+  const data = res?.data || res || {};
+
+  return {
+    items: Array.isArray(data.items) ? data.items : [],
+    pagination: data.pagination
+      ? {
+          ...data.pagination,
+          currentPage: data.pagination.currentPage ?? data.pagination.page ?? 1,
+        }
+      : {
+          currentPage: 1,
+          lastPage: 1,
+          perPage: Number(filters.perPage) || 30,
+          total: 0,
+        },
+  };
+}
+
+/** Các giá trị bộ lọc hiện có trong lịch chiếu tương lai. */
+export async function getShowtimeSearchOptions() {
+  const res = await apiFetch("/showtimes/options");
+  const data = res?.data || res || {};
+
+  return {
+    formats: Array.isArray(data.formats) ? data.formats : [],
+    cities: Array.isArray(data.cities) ? data.cities : [],
+  };
+}

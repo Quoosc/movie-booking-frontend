@@ -28,6 +28,23 @@ export async function capturePayment({ transactionId, paymentMethod }) {
   return json;
 }
 
+/**
+ * Read the persisted MoMo result after its signed IPN callback.
+ * The browser redirect is not trusted as proof of payment.
+ */
+export async function getPaymentStatus({ transactionId, paymentMethod }) {
+  if (!transactionId || !paymentMethod) {
+    throw new Error("transactionId và paymentMethod là bắt buộc");
+  }
+
+  const query = new URLSearchParams({
+    transactionId,
+    paymentMethod: String(paymentMethod).toUpperCase(),
+  });
+
+  return apiFetch(`/payments/order/status?${query.toString()}`);
+}
+
 
 
 

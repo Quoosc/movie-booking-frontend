@@ -36,8 +36,8 @@ describe("cinemaService", () => {
         address: "Q1",
         city: "HCM",
         district: "1",
-        heroImageUrl: "/public/cinemas/default-hero.jpg",
-        thumbnailUrl: "/public/cinemas/default-thumb.jpg",
+        heroImageUrl: "",
+        thumbnailUrl: "",
       }),
     ]);
   });

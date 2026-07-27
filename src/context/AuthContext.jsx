@@ -24,6 +24,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
+  const loadProfile = useCallback(async () => {
+    try {
+      return await authApi.me();
+    } catch (err) {
+      if (err?.status !== 401) throw err;
+      await authApi.refreshToken();
+      return authApi.me();
+    }
+  }, []);
+
   const persistUser = (profile) => {
     try {
       authApi.setStoredUser?.(profile);
@@ -47,7 +57,7 @@ export function AuthProvider({ children }) {
 
   const refreshProfile = useCallback(async () => {
     try {
-      const profile = await authApi.me();
+      const profile = await loadProfile();
       setUser(profile);
       persistUser(profile);
       return profile;
@@ -61,14 +71,14 @@ export function AuthProvider({ children }) {
       }
       throw err;
     }
-  }, []);
+  }, [loadProfile]);
 
   useEffect(() => {
     let mounted = true;
 
     async function fetchProfile() {
       try {
-        const profile = await authApi.me();
+        const profile = await loadProfile();
         if (!mounted) return;
         setUser(profile);
         persistUser(profile);
@@ -90,7 +100,7 @@ export function AuthProvider({ children }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [loadProfile]);
 
   async function handleLogin({ email, password }) {
     setLoading(true);

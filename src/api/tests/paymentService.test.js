@@ -6,7 +6,7 @@ vi.mock("../fetchConfig", () => ({
   apiFetch: (...args) => apiFetchMock(...args),
 }));
 
-import { capturePayment } from "../paymentService";
+import { capturePayment, getPaymentStatus } from "../paymentService";
 
 describe("paymentService", () => {
   beforeEach(() => {
@@ -39,5 +39,21 @@ describe("paymentService", () => {
     });
 
     expect(res).toEqual({ code: 200, data: { bookingId: "b1" } });
+  });
+
+  it("GET /payments/order/status with encoded MoMo transaction", async () => {
+    apiFetchMock.mockResolvedValue({
+      status: "SUCCESS",
+      bookingId: "b1",
+    });
+
+    await getPaymentStatus({
+      transactionId: "order id/1",
+      paymentMethod: "momo",
+    });
+
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      "/payments/order/status?transactionId=order+id%2F1&paymentMethod=MOMO"
+    );
   });
 });

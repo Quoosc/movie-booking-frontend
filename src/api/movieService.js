@@ -94,6 +94,13 @@ export async function getMovieById(id) {
   return mapMovie(res.data || res);
 }
 
+/** GET /movies/{id}/related */
+export async function getRelatedMovies(id) {
+  const res = await apiFetch(`/movies/${id}/related`);
+  const data = res?.data || res || [];
+  return (Array.isArray(data) ? data : []).map(mapMovie);
+}
+
 /**
  * GET /movies/{id}/showtimes?date=YYYY-MM-DD
  *
