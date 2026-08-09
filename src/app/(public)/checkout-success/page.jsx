@@ -103,9 +103,7 @@ export default function CheckoutSuccessPage() {
     (async () => {
       try {
         setIsLoading(true);
-        console.log("🔍 [CheckoutSuccess] Gọi API getBookingById:", bookingId);
         const data = await getBookingById(bookingId);
-        console.log("✅ [CheckoutSuccess] Booking từ API:", data);
 
         if (isMounted) {
           // ✅ Merge qrPayload từ state nếu API không trả về
@@ -116,7 +114,6 @@ export default function CheckoutSuccessPage() {
           setBooking(finalBooking);
         }
       } catch (err) {
-        console.error("❌ [CheckoutSuccess] Lỗi API:", err);
         if (isMounted) {
           setError(err.message || "Không tải được thông tin vé.");
         }
@@ -170,7 +167,7 @@ export default function CheckoutSuccessPage() {
     location.state?.movie?.posterUrl ||
     booking?.PosterUrl ||
     booking?.posterUrl ||
-    "https://via.placeholder.com/300x450?text=Movie";
+    "/assets/movie-placeholder.svg";
 
   // ✅ NEW: qrPayload từ BE
   const qrPayload = booking?.qrPayload || "";

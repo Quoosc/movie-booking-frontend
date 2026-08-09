@@ -75,6 +75,26 @@ function getOrCreateGuestSessionId() {
   }
 }
 
+const BOOKING_ACCESS_TOKEN_PREFIX = "cv_booking_access_token:";
+
+export function rememberBookingAccessToken(bookingId, token) {
+  if (!bookingId || !token) return;
+
+  try {
+    sessionStorage.setItem(`${BOOKING_ACCESS_TOKEN_PREFIX}${bookingId}`, token);
+  } catch {
+    // A disabled storage API must not interrupt the payment flow.
+  }
+}
+
+function getBookingAccessToken(bookingId) {
+  try {
+    return sessionStorage.getItem(`${BOOKING_ACCESS_TOKEN_PREFIX}${bookingId}`);
+  } catch {
+    return null;
+  }
+}
+
 /* ======================================================
  *  MOCK SNACKS — CHUẨN THEO API /cinemas/snacks
  * ==================================================== */
@@ -104,7 +124,7 @@ const BASE_SNACKS_API = [
     price: 249000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/PICCONNEW/CNS037_COMBO_NHA_GAU.png?rand=1723084117",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/combo_nha_gau",
   },
   {
@@ -115,7 +135,7 @@ const BASE_SNACKS_API = [
     price: 119000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/PICCONNEW/CNS036_COMBO_CO_GAU.png?rand=1723084117",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/combo_gau_couple",
   },
   {
@@ -126,7 +146,7 @@ const BASE_SNACKS_API = [
     price: 99000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/PICCONNEW/CNS035_COMBO_GAU.png?rand=1723084117",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/combo_gau",
   },
 
@@ -139,7 +159,7 @@ const BASE_SNACKS_API = [
     price: 60000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/HCM/CSV/HANGBANONLINE/B_p_Ph_mai.png?rand=1751515931",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/pop_cheese",
   },
   {
@@ -150,7 +170,7 @@ const BASE_SNACKS_API = [
     price: 54000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/HCM/CSV/HANGBANONLINE/B_P_NG_T_60OZ.png?rand=1751515931",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/pop_sweet",
   },
   {
@@ -161,7 +181,7 @@ const BASE_SNACKS_API = [
     price: 71000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/HCM/CSV/HANGBANONLINE/B_P_2_NG_N_V_PH_MAI_CARAMEL.png?rand=1751960162",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/pop_mix2",
   },
   {
@@ -172,7 +192,7 @@ const BASE_SNACKS_API = [
     price: 60000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/HCM/CSV/HANGBANONLINE/B_P_CARAMEL_60OZ.png?rand=1751515931",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/pop_caramel",
   },
 
@@ -185,7 +205,7 @@ const BASE_SNACKS_API = [
     price: 37000,
     type: "DRINK",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/fanta.jpg?rand=1719572506",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/drink_fanta",
   },
   {
@@ -196,7 +216,7 @@ const BASE_SNACKS_API = [
     price: 37000,
     type: "DRINK",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/sprite.png?rand=1719572953",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/drink_sprite",
   },
   {
@@ -207,7 +227,7 @@ const BASE_SNACKS_API = [
     price: 37000,
     type: "DRINK",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/COKE-ZERO.png?rand=1719573157",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/drink_coke",
   },
 
@@ -220,7 +240,7 @@ const BASE_SNACKS_API = [
     price: 28000,
     type: "DRINK",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/TEPPY.png?rand=1719572506",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/bottle_teppy",
   },
   {
@@ -231,7 +251,7 @@ const BASE_SNACKS_API = [
     price: 28000,
     type: "DRINK",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/NUTRI.png?rand=1719572506",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/bottle_nutri",
   },
   {
@@ -242,7 +262,7 @@ const BASE_SNACKS_API = [
     price: 16000,
     type: "DRINK",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/dasani.png?rand=1719572623",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/bottle_dasani",
   },
 
@@ -255,7 +275,7 @@ const BASE_SNACKS_API = [
     price: 25000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/snack-que-thai.png?rand=1718957425",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/snack_thai",
   },
 
@@ -268,7 +288,7 @@ const BASE_SNACKS_API = [
     price: 59000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/laystax.png?rand=1719632844",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/poca_lays",
   },
   {
@@ -279,7 +299,7 @@ const BASE_SNACKS_API = [
     price: 25000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/lays-vi-bo_1_.png?rand=1719632844",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/poca_wavy",
   },
   {
@@ -290,7 +310,7 @@ const BASE_SNACKS_API = [
     price: 20000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/HinhQuayconnew/poca-partyz.png?rand=1719633509",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/poca_partyz",
   },
 
@@ -303,7 +323,7 @@ const BASE_SNACKS_API = [
     price: 89000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/PICCONNEW/CNS032_COMBO_SOLO.png?rand=1723084117",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/combo_solo",
   },
   {
@@ -314,7 +334,7 @@ const BASE_SNACKS_API = [
     price: 109000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/PICCONNEW/CNS033_COMBO_COUPLE.png?rand=1723084117",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/combo_couple",
   },
   {
@@ -325,7 +345,7 @@ const BASE_SNACKS_API = [
     price: 139000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/pictures/PICCONNEW/CNS034_COMBO_PARTY.png?rand=1723084117",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/combo_party",
   },
   {
@@ -336,7 +356,7 @@ const BASE_SNACKS_API = [
     price: 89000,
     type: "FOOD",
     imageUrl:
-      "https://api-website.cinestar.com.vn/media/.thumbswysiwyg/HCM/CSV/HANGBANONLINE/combo-u22.jpg?rand=1758704032",
+      "/assets/snack-placeholder.svg",
     imageCloudinaryId: "snacks/combo_u22",
   },
 ];
@@ -686,11 +706,18 @@ export async function createBooking(payload = {}) {
   // THÊM SESSION ID CHO GUEST
   const sessionId = getOrCreateGuestSessionId();
 
-  return apiFetch("/bookings/confirm", {
+  const response = await apiFetch("/bookings/confirm", {
     method: "POST",
     headers: sessionId ? { "X-Session-Id": sessionId } : undefined,
     body: JSON.stringify(body),
   });
+
+  const bookingData = response?.data?.data || response?.data || response || {};
+  const bookingId =
+    bookingData.bookingId || bookingData.booking_id || bookingData.id;
+  rememberBookingAccessToken(bookingId, bookingData.guestAccessToken);
+
+  return response;
 }
 
 /* ======================================================
@@ -763,8 +790,13 @@ export async function createPaymentOrder({
 
   const normalizedMethod = String(rawMethod).toUpperCase();
 
+  const guestAccessToken = getBookingAccessToken(bookingId);
+
   const res = await apiFetch("/payments/order", {
     method: "POST",
+    headers: guestAccessToken
+      ? { "X-Booking-Access-Token": guestAccessToken }
+      : undefined,
     body: JSON.stringify({
       bookingId,
       paymentMethod: normalizedMethod, //  đúng key theo Swagger
@@ -780,7 +812,12 @@ export async function getBookingById(bookingId) {
     throw new Error("getBookingById: bookingId là bắt buộc");
   }
 
-  const res = await apiFetch(`/bookings/${bookingId}`);
+  const guestAccessToken = getBookingAccessToken(bookingId);
+  const res = guestAccessToken
+    ? await apiFetch(`/bookings/${bookingId}`, {
+        headers: { "X-Booking-Access-Token": guestAccessToken },
+      })
+    : await apiFetch(`/bookings/${bookingId}`);
   const raw = res.data || res;
   return raw.data || raw; 
 }

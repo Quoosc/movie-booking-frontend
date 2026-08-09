@@ -28,6 +28,7 @@ describe("bookingService", () => {
   beforeEach(() => {
     apiFetchMock.mockReset();
     localStorage.clear();
+    sessionStorage.clear();
 
     // đảm bảo không bị thiếu crypto.randomUUID trong môi trường test
     if (!globalThis.crypto) globalThis.crypto = {};
@@ -239,6 +240,26 @@ describe("bookingService", () => {
     });
 
     expect(res.code).toBe(200);
+  });
+
+  it("persists and sends the guest booking capability token", async () => {
+    setGuestSession("guest-999");
+    apiFetchMock
+      .mockResolvedValueOnce({
+        code: 200,
+        data: { bookingId: "b-token", guestAccessToken: "secret-token" },
+      })
+      .mockResolvedValueOnce({ data: { bookingId: "b-token" } });
+
+    await createBooking({ lockId: "lock-token" });
+    await getBookingById("b-token");
+
+    expect(sessionStorage.getItem("cv_booking_access_token:b-token")).toBe(
+      "secret-token"
+    );
+    expect(apiFetchMock).toHaveBeenLastCalledWith("/bookings/b-token", {
+      headers: { "X-Booking-Access-Token": "secret-token" },
+    });
   });
 
   it("getBookingById unwraps response shape", async () => {
