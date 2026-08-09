@@ -1091,12 +1091,12 @@ function Step2Payment({
     {
       id: "MOMO",
       label: "Thanh toán qua Momo",
-      img: "https://cinestar.com.vn/assets/images/img-momo.png",
+      img: "/assets/payment-momo.svg",
     },
     {
       id: "CARD_LOCAL",
       label: "Thanh toán qua PayPal",
-      img: "https://cinestar.com.vn/assets/images/img-card.png",
+      img: "/assets/payment-card.svg",
     },
     // {
     //   id: "CARD_INTL",
@@ -1321,7 +1321,7 @@ function BookingSummary({
           </div>
         )}
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-[11px] md:text-[12px] text.white/80">
+          <span className="text-[11px] md:text-[12px] text-white/80">
             Số tiền cần thanh toán
           </span>
           <span className="text-[18px] md:text-[20px] font-extrabold text-[#facc15]">
@@ -1381,7 +1381,7 @@ function PromoModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg.white/10 text-sm"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 text-sm"
             >
               ✕
             </button>
@@ -1434,7 +1434,7 @@ function PromoModal({
                     onClick={() => {
                       onSelectCode(promo.code);
                     }}
-                    className="w-full text-left rounded-2xl px-3 py-2.5 bg-black/25 border border-white/10 hover:border-[#ffe700aa] hover:bg.white/5 transition-all"
+                    className="w-full text-left rounded-2xl px-3 py-2.5 bg-black/25 border border-white/10 hover:border-[#ffe700aa] hover:bg-white/5 transition-all"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-semibold text-[#ffe700] tracking-[0.18em] uppercase">

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 120" role="img" aria-labelledby="title">
+  <title id="title">Màn hình phòng chiếu</title>
+  <defs><linearGradient id="screen" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#43e1ff" stop-opacity=".1"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#ff7af6" stop-opacity=".1"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="7"/></filter></defs>
+  <path d="M50 45 Q450 2 850 45" fill="none" stroke="#7b5cff" stroke-opacity=".55" stroke-width="18" filter="url(#glow)"/>
+  <path d="M50 45 Q450 2 850 45" fill="none" stroke="url(#screen)" stroke-width="7" stroke-linecap="round"/>
+  <text x="450" y="95" fill="#a5b4fc" font-family="Arial,sans-serif" font-size="14" letter-spacing="6" text-anchor="middle">MÀN HÌNH</text>
+</svg>

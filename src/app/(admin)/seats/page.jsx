@@ -266,7 +266,6 @@ return;
       setPreviewingLayout(true);
 
       const res = await AdminCinemaService.getSeatRowLabels(rowsNum);
-      console.log("Row labels response:", res);
 
       let labels;
 
@@ -1205,7 +1204,7 @@ function AdminSeatLayout({
         <div className="mx-auto flex justify-center w-full">
           <div className="relative w-full max-w-[960px]">
             <img
-              src="https://cinestar.com.vn/assets/images/img-screen.png"
+              src="/assets/cinema-screen.svg"
               alt="Screen"
               className="w-full mx-auto pointer-events-none select-none"
             />
@@ -1291,7 +1290,7 @@ function AdminSeatLayout({
           label="Ghế khớp tìm kiếm"
         />
         <SeatLegend
-          imageSrc="https://cinestar.com.vn/assets/images/seat-couple-w.svg"
+          imageSrc="/assets/seat-couple.svg"
           label="Ghế đôi (COUPLE)"
         />
       </div>

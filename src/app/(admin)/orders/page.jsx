@@ -489,7 +489,7 @@ export default function AdminOrdersPage() {
                     return (
                       <tr
                         key={p.paymentId}
-                        className="border-b border-white/5 hover:bg-white/5/10"
+                        className="border-b border-white/5 hover:bg-white/10"
                       >
                         {/* Payment info */}
                         <td className="py-3 pr-4 align-top">

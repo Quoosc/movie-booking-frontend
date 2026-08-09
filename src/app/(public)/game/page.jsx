@@ -9,44 +9,37 @@ const services = [
   {
     id: 1,
     title: "KIDZONE",
-    image:
-      "https://api-website.cinestar.com.vn/media/entertainment_images/s/e/service-1_1_.png",
+    image: "/assets/entertainment-placeholder.svg",
   },
   {
     id: 2,
     title: "MÓN NGON",
-    image:
-      "https://api-website.cinestar.com.vn/media/entertainment_images/r/e/rectangle_3463983_1_.png",
+    image: "/assets/entertainment-placeholder.svg",
   },
   {
     id: 3,
     title: "BOWLING",
-    image:
-      "https://api-website.cinestar.com.vn/media/entertainment_images/b/o/bowling-dt-2_1_.png",
+    image: "/assets/entertainment-placeholder.svg",
   },
   {
     id: 4,
     title: "BILLIARDS",
-    image:
-      "https://api-website.cinestar.com.vn/media/entertainment_images/b/i/billards-dt-2_1_.png",
+    image: "/assets/entertainment-placeholder.svg",
   },
   {
     id: 5,
     title: "DALAT OPERA HOUSE",
-    image:
-      "https://api-website.cinestar.com.vn/media/entertainment_images/o/p/opera-dt-2_1_.png",
+    image: "/assets/entertainment-placeholder.svg",
   },
   {
     id: 6,
     title: "GYM",
-    image:
-      "https://api-website.cinestar.com.vn/media/entertainment_images/g/y/gym-dt-2_1_.png",
+    image: "/assets/entertainment-placeholder.svg",
   },
   {
     id: 7,
     title: "COFFEE",
-    image:
-      "https://api-website.cinestar.com.vn/media/entertainment_images/c/o/coffee-dt-2_1_.png",
+    image: "/assets/entertainment-placeholder.svg",
   },
 ];
 
@@ -143,7 +136,9 @@ export default function EntertainmentServicesPage() {
                     {/* overlay + title */}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
                     <div className="absolute left-5 top-1/2 -translate-y-1/2">
-                      <div className="text-xl md:text-2xl font-extrabold tracking-[0.22em] uppercase text-white drop-shadow"></div>
+                      <div className="text-xl md:text-2xl font-extrabold tracking-[0.22em] uppercase text-white drop-shadow">
+                        {s.title}
+                      </div>
                     </div>
                   </div>
                 </button>

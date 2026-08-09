@@ -8,8 +8,7 @@ const fallbackSlides = [
   {
     heroSlideId: "fallback-1",
     title: "Hero Slide 1",
-    imageUrl:
-      "https://media.lottecinemavn.com/Media/WebAdmin/35faf5f79b8c43fa91450705f57b9b10.png",
+    imageUrl: "/movies/CINESVERSE1.jpg",
     altText: "PREDATOR",
     sortOrder: 0,
     isActive: true,
@@ -17,8 +16,7 @@ const fallbackSlides = [
   {
     heroSlideId: "fallback-2",
     title: "Hero Slide 2",
-    imageUrl:
-      "https://media.lottecinemavn.com/Media/WebAdmin/dae8ae8187d847638637ee528362fe86.jpg",
+    imageUrl: "/movies/CINESVERSE2.jpg",
     altText: "TINH NGUOI DUYEN MA",
     sortOrder: 1,
     isActive: true,
@@ -26,8 +24,7 @@ const fallbackSlides = [
   {
     heroSlideId: "fallback-3",
     title: "Hero Slide 3",
-    imageUrl:
-      "https://media.lottecinemavn.com/Media/WebAdmin/b8a254a018fc4345bd7869a93a0f37b1.jpg",
+    imageUrl: "/movies/CINESVERSE3.jpg",
     altText: "TINH NGUOI DUYEN MA",
     sortOrder: 2,
     isActive: true,
@@ -35,8 +32,7 @@ const fallbackSlides = [
   {
     heroSlideId: "fallback-4",
     title: "Hero Slide 4",
-    imageUrl:
-      "https://media.lottecinemavn.com/Media/WebAdmin/35a10a886e16496aacef84321c63631f.jpg",
+    imageUrl: "/movies/trai-tim-que-quat-poster.jpg",
     altText: "TRAI TIM QUE QUAT",
     sortOrder: 3,
     isActive: true,
@@ -159,6 +155,9 @@ export default function HeroSlider() {
                   "Hero Slide"
                 }
                 onLoad={handleImgLoad}
+                onError={(event) => {
+                  event.currentTarget.src = "/movies/CINESVERSE1.jpg";
+                }}
                 custom={direction}
                 variants={slideVariants}
                 initial="enter"

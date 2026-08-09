@@ -611,7 +611,7 @@ toast.error(msg);
                     return (
                       <tr
                         key={p.promotionId}
-                        className="border-b border-white/5 hover:bg-white/5/10"
+                        className="border-b border-white/5 hover:bg-white/10"
                       >
                         {/* Code / Name */}
                         <td className="py-3 pr-4 align-top">

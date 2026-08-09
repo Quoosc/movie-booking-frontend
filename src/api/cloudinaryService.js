@@ -5,17 +5,7 @@ const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 const FOLDER = import.meta.env.VITE_CLOUDINARY_FOLDER || "movie-posters";
 const SNACKS_FOLDER = import.meta.env.VITE_CLOUDINARY_SNACKS_FOLDER || "snacks";
-const AVATAR_FOLDER = import.meta.env.VITE_CLOUDINARY_SNACKS_FOLDER || "avatars";
-
-
-// Debug logging (only in development)
-if (import.meta.env.DEV) {
-  console.log("[Cloudinary Debug] Environment variables check:");
-  console.log("  CLOUD_NAME exists:", !!CLOUD_NAME);
-  console.log("  UPLOAD_PRESET exists:", !!UPLOAD_PRESET);
-  console.log("  FOLDER:", FOLDER);
-  console.log("  SNACKS_FOLDER:", SNACKS_FOLDER);
-}
+const AVATAR_FOLDER = import.meta.env.VITE_CLOUDINARY_AVATAR_FOLDER || "avatars";
 
 /**
  * Validates required Cloudinary environment variables
@@ -59,7 +49,6 @@ export async function uploadPoster(file) {
 
   const data = await res.json();
   if (!res.ok) {
-    console.error("Cloudinary upload error:", data);
     throw new Error(data.error?.message || "Upload poster thất bại");
   }
 
@@ -89,7 +78,6 @@ export async function uploadSnackImage(file) {
 
   const data = await res.json();
   if (!res.ok) {
-    console.error("Cloudinary upload error:", data);
     throw new Error(data.error?.message || "Upload snack image thất bại");
   }
 
@@ -133,7 +121,6 @@ export async function uploadAvatar(file) {
   const data = await res.json();
 
   if (!res.ok) {
-    console.error("Cloudinary upload error:", data);
     throw new Error(data.error?.message || "Upload avatar thất bại");
   }
 

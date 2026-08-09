@@ -101,7 +101,7 @@ export default function HomePage() {
         {/* DECOR GIF 2 BÊN (NHỎ) */}
         <div className="pointer-events-none fixed inset-0 z-0">
           <img
-            src="https://iguov8nhvyobj.vcdn.cloud/media/wysiwyg/2025/112025/floating_left_1.gif"
+            src="/movies/LOGO-RẠP.png"
             alt=""
             loading="lazy"
             className="
@@ -113,7 +113,7 @@ export default function HomePage() {
           />
 
           <img
-            src="https://iguov8nhvyobj.vcdn.cloud/media/wysiwyg/2025/112025/floating_left_1.gif"
+            src="/movies/LOGO-RẠP.png"
             alt=""
             loading="lazy"
             className="

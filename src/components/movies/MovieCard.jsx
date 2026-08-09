@@ -11,7 +11,7 @@ export default function MovieCard({ m }) {
 
   const handleTrailerClick = (e) => {
     e.stopPropagation();
-    if (m.trailerUrl) window.open(m.trailerUrl, "_blank");
+    if (m.trailerUrl) window.open(m.trailerUrl, "_blank", "noopener,noreferrer");
   };
 
   const avgRating = m.avgRating ?? m.avg_rating ?? 10;

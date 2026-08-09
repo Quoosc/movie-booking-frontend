@@ -67,7 +67,7 @@ export default function AboutPage() {
               <div className="relative">
                 <div className="absolute -inset-4 bg-[radial-gradient(circle_at_top,#7b5cff35,transparent)] blur-2xl" />
                 <img
-                  src="https://png.pngtree.com/thumb_back/fh260/background/20230704/pngtree-flat-lay-view-of-cinema-essentials-on-a-purple-background-popcorn-image_3754937.jpg"
+                  src="/movies/logo5.png"
                   alt="CinesVerse Entertainment"
                   className="relative w-full rounded-3xl object-cover border border-white/12 shadow-[0_20px_45px_rgba(0,0,0,0.85)]"
                 />

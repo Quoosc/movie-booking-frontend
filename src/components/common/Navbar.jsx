@@ -186,7 +186,7 @@ export default function Navbar() {
               <>
                 <button
                   onClick={() => nav("/auth/login")}
-                  className="px-3 py-2 rounded-lg border border-white/15 bg.white/3 bg-white/3 text-[#d4ddff] hover:text-white hover:bg-white/8 hover:border-[#7b5cff55] transition-all duration-200 flex items-center gap-2 text-[13px]"
+                  className="px-3 py-2 rounded-lg border border-white/15 bg-white/3 text-[#d4ddff] hover:text-white hover:bg-white/8 hover:border-[#7b5cff55] transition-all duration-200 flex items-center gap-2 text-[13px]"
                 >
                   <FaRegUser className="text-[#7b5cff]" />
                   <span className="font-semibold">Đăng nhập</span>
@@ -224,7 +224,7 @@ export default function Navbar() {
                             setOpenUserMenu(false);
                             nav("/account/account-profile");
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg:white/8 text-[#e5e7ff]"
+                          className="w-full text-left px-4 py-2 hover:bg-white/8 text-[#e5e7ff]"
                         >
                           Thông tin cá nhân
                         </button>

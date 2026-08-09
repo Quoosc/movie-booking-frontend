@@ -510,7 +510,7 @@ export default function AdminDashboardPage() {
                       return (
                         <tr
                           key={pid || Math.random()}
-                          className="border-b border-white/5 hover:bg-white/5/10"
+                          className="border-b border-white/5 hover:bg-white/10"
                         >
                           <td className="py-3 pr-4 font-mono text-[11px] text-white/90">
                             {code}

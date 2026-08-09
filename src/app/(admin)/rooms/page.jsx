@@ -472,7 +472,7 @@ toast.error(msg);
                     return (
                       <tr
                         key={r.roomId}
-                        className="border-b border-white/5 hover:bg-white/5/10"
+                        className="border-b border-white/5 hover:bg-white/10"
                       >
                         {/* Room */}
                         <td className="py-3 pr-4 align-top">

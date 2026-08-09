@@ -104,7 +104,8 @@ describe("MovieCard", () => {
 
     expect(windowOpenSpy).toHaveBeenCalledWith(
       "https://youtube.com/trailer",
-      "_blank"
+      "_blank",
+      "noopener,noreferrer"
     );
 
     windowOpenSpy.mockRestore();

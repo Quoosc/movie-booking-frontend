@@ -8,7 +8,7 @@ export default function CinemaHero({ cinema }) {
   const heroImage =
     cinema.heroImageUrl ||
     cinema.hero_image_url ||
-    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1400&q=80";
+    "/movies/CINESVERSE2.jpg";
 
   return (
     <section className="max-w-7xl mx-auto px-4 pt-8 md:pt-10">

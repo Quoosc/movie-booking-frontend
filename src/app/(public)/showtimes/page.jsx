@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiCalendar, FiClock, FiMapPin, FiSearch, FiUsers } from "react-icons/fi";
+import {
+  FiCalendar,
+  FiChevronLeft,
+  FiChevronRight,
+  FiClock,
+  FiMapPin,
+  FiSearch,
+  FiUsers,
+} from "react-icons/fi";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import { getAllCinemas } from "@/api/cinemaService";
@@ -39,7 +47,7 @@ const initialFilters = {
   format: "",
   minSeats: "",
   page: 1,
-  perPage: 50,
+  perPage: 30,
 };
 
 export default function ShowtimesPage() {
@@ -124,6 +132,14 @@ export default function ShowtimesPage() {
   };
 
   const resetFilters = () => setFilters(initialFilters);
+  const currentPage = Number(result.pagination?.currentPage || filters.page || 1);
+  const lastPage = Math.max(1, Number(result.pagination?.lastPage || 1));
+
+  const goToPage = (page) => {
+    const nextPage = Math.min(lastPage, Math.max(1, page));
+    setFilters((current) => ({ ...current, page: nextPage }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#050024] via-[#0b0630] to-[#020015] text-white">
@@ -331,6 +347,35 @@ export default function ShowtimesPage() {
             </article>
           ))}
         </section>
+
+        {!loading && !error && result.pagination?.total > 0 && (
+          <nav
+            className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#7b5cff]/25 bg-[#0b0a26]/75 px-4 py-3 text-sm backdrop-blur-md"
+            aria-label="Phân trang lịch chiếu"
+          >
+            <span className="text-[#e5e7ff]/60">
+              Trang {currentPage}/{lastPage} · {result.pagination.total} suất chiếu
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-semibold transition hover:border-[#43e1ff]/60 hover:bg-[#43e1ff]/10 disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                <FiChevronLeft /> Trước
+              </button>
+              <button
+                type="button"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage >= lastPage}
+                className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-semibold transition hover:border-[#43e1ff]/60 hover:bg-[#43e1ff]/10 disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                Sau <FiChevronRight />
+              </button>
+            </div>
+          </nav>
+        )}
       </main>
 
       <div className="relative z-10">

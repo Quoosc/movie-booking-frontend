@@ -528,7 +528,7 @@ toast.error(msg);
                     return (
                       <tr
                         key={m.movieId}
-                        className="border-b border-white/5 hover:bg-white/5/10"
+                        className="border-b border-white/5 hover:bg-white/10"
                       >
                         {/* Movie basic */}
                         <td className="py-3 pr-4">

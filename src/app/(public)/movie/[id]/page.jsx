@@ -814,8 +814,8 @@ function HeroSection({ movie }) {
         {movie?.trailerUrl && (
           <div className="mt-6">
             <button
-              onClick={() => window.open(movie.trailerUrl, "_blank")}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl text-[12px] sm:text-[13px] font-semibold text:white bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] shadow-[0_0_24px_rgba(123,92,255,0.9)] hover:shadow-[0_0_34px_rgba(123,92,255,1)] hover:scale-[1.03] active:scale-100 transition-all"
+              onClick={() => window.open(movie.trailerUrl, "_blank", "noopener,noreferrer")}
+              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl text-[12px] sm:text-[13px] font-semibold text-white bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] shadow-[0_0_24px_rgba(123,92,255,0.9)] hover:shadow-[0_0_34px_rgba(123,92,255,1)] hover:scale-[1.03] active:scale-100 transition-all"
             >
               🎬 XEM TRAILER
             </button>
@@ -871,7 +871,7 @@ function ShowtimeSection({
           Đang tải lịch chiếu...
         </p>
       ) : showtimes.length === 0 ? (
-        <p className="text-center text-sm text:white/60">
+        <p className="text-center text-sm text-white/60">
           Hiện chưa có lịch chiếu cho ngày này.
         </p>
       ) : (
@@ -888,10 +888,10 @@ function ShowtimeSection({
             >
               {/* Tên rạp + địa chỉ */}
               <div className="mb-4">
-                <p className="text-sm md:text-base font-semibold text:white">
+                <p className="text-sm md:text-base font-semibold text-white">
                   {c.cinemaName}
                 </p>
-                <p className="text-[11px] md:text-xs text:white/60 mt-0.5">
+                <p className="text-[11px] md:text-xs text-white/60 mt-0.5">
                   {c.address}
                 </p>
               </div>
@@ -911,7 +911,7 @@ function ShowtimeSection({
                         flex items-center gap-1.5
                         ${
                           isActive
-                            ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text:white border-transparent shadow-[0_0_16px_rgba(123,92,255,0.9)]"
+                            ? "bg-gradient-to-r from-[#43e1ff] via-[#7b5cff] to-[#ff7af6] text-white border-transparent shadow-[0_0_16px_rgba(123,92,255,0.9)]"
                             : "bg-[#020617] border-[#7b5cff66] text-[#e5e7ff] hover:bg-[#7b5cff33] hover:shadow-[0_0_14px_rgba(123,92,255,0.75)]"
                         }
                       `}
@@ -1010,7 +1010,7 @@ function BookingPanel({
                   </p>
                 )}
 
-                <div className="mt-3 flex items-center justify:center gap-2">
+                <div className="mt-3 flex items-center justify-center gap-2">
                   <button
                     onClick={() => onChangeTicket(t.id, -1)}
                     disabled={isDisabledMember}
@@ -1075,7 +1075,7 @@ function BookingPanel({
           <div className="mx-auto flex justify-center w-full">
             <div className="relative w-full max-w-[960px]">
               <img
-                src="https://cinestar.com.vn/assets/images/img-screen.png"
+                src="/assets/cinema-screen.svg"
                 alt="Screen"
                 className="w-full mx-auto pointer-events-none select-none"
               />
@@ -1159,7 +1159,7 @@ function BookingPanel({
 
           {/* Ghế đôi (2 người) – dùng icon SVG */}
           <Legend
-            imageSrc="https://cinestar.com.vn/assets/images/seat-couple-w.svg"
+            imageSrc="/assets/seat-couple.svg"
             label="Ghế đôi (2 người)"
           />
 
@@ -1203,7 +1203,7 @@ function BookingPanel({
                 return acc;
               }, {})
             ).map(([category, items]) => (
-              <div key={category} className="flex flex-col items:center">
+              <div key={category} className="flex flex-col items-center">
                 {/* Tiêu đề nhóm */}
                 <h4 className="mb-5 text-xs md:text-sm font-semibold text-[#ffdf7b] tracking-[0.22em] uppercase text-center">
                   {category}
@@ -1223,7 +1223,7 @@ function BookingPanel({
                     flex flex-col items-center text-center
                     px-4 pt-4 pb-3
                     rounded-3xl
-                    bg-[#0b0a26]/85Movie Detail
+                    bg-[#0b0a26]/85
                     border border-white/12
                     shadow-[0_16px_40px_rgba(0,0,0,0.85)]
                     hover:bg-[#18163d]/95

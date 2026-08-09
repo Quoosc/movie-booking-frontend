@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" role="img" aria-labelledby="title">
+  <title id="title">Ảnh phim đang cập nhật</title>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#160b46"/><stop offset=".55" stop-color="#35206f"/><stop offset="1" stop-color="#06142d"/></linearGradient></defs>
+  <rect width="300" height="450" rx="24" fill="url(#g)"/>
+  <circle cx="150" cy="190" r="76" fill="none" stroke="#7b5cff" stroke-width="8" opacity=".75"/>
+  <path d="m133 148 65 42-65 42z" fill="#43e1ff" opacity=".9"/>
+  <text x="150" y="310" fill="#e5e7ff" font-family="Arial,sans-serif" font-size="18" font-weight="700" text-anchor="middle">CINESVERSE</text>
+  <text x="150" y="338" fill="#a5b4fc" font-family="Arial,sans-serif" font-size="13" text-anchor="middle">Đang cập nhật poster</text>
+</svg>

@@ -51,7 +51,7 @@ export default function MembershipHighlight({ onSelect, activeId }) {
             inset-0
             opacity-[0.04]
             mix-blend-screen
-            bg-[url('https://png.pngtree.com/background/20211215/original/pngtree-film-film-purple-minimalist-film-festival-picture-image_1474584.jpg')]
+            bg-[url('/movies/CINESVERSE2.jpg')]
             bg-cover
             bg-center
           "

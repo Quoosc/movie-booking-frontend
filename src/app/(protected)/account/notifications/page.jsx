@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { FiBell, FiCheck, FiTrash2 } from "react-icons/fi";
+import {
+  FiBell,
+  FiCheck,
+  FiChevronLeft,
+  FiChevronRight,
+  FiTrash2,
+} from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import {
@@ -10,36 +17,68 @@ import {
   markNotificationRead,
 } from "@/api/notificationService";
 
+const PAGE_SIZE = 15;
+
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ currentPage: 1, lastPage: 1, total: 0 });
+  const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
-      const data = await getNotifications({ perPage: 50, unreadOnly });
+      const data = await getNotifications({ page, perPage: PAGE_SIZE, unreadOnly });
       setItems(data.items);
       setUnreadCount(data.unreadCount);
+      setPagination(data.pagination);
+      if (page > data.pagination.lastPage) {
+        setPage(Math.max(1, data.pagination.lastPage));
+      }
+    } catch (requestError) {
+      setItems([]);
+      setError(requestError?.message || "Không thể tải thông báo lúc này.");
     } finally {
       setLoading(false);
     }
-  }, [unreadOnly]);
+  }, [page, unreadOnly]);
 
   useEffect(() => { load(); }, [load]);
 
   const openItem = async (item) => {
-    if (!item.isRead) await markNotificationRead(item.notificationId);
+    if (!item.isRead) {
+      try {
+        await markNotificationRead(item.notificationId);
+      } catch {
+        toast.error("Chưa thể đánh dấu thông báo đã đọc.");
+      }
+    }
     if (item.actionUrl) navigate(item.actionUrl);
     else load();
   };
 
   const remove = async (event, id) => {
     event.stopPropagation();
-    await deleteNotification(id);
-    load();
+    try {
+      await deleteNotification(id);
+      await load();
+    } catch {
+      toast.error("Không thể xóa thông báo. Vui lòng thử lại.");
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      await load();
+    } catch {
+      toast.error("Không thể đánh dấu tất cả là đã đọc.");
+    }
   };
 
   return (
@@ -52,10 +91,10 @@ export default function NotificationsPage() {
             <h1 className="mt-2 flex items-center gap-3 text-3xl font-black md:text-4xl"><FiBell /> Trung tâm thông báo</h1>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setUnreadOnly((value) => !value)} className={`rounded-xl border px-3 py-2 text-xs font-bold ${unreadOnly ? "border-[#43e1ff] bg-[#43e1ff]/10" : "border-white/15 bg-white/5"}`}>
+            <button onClick={() => { setPage(1); setUnreadOnly((value) => !value); }} className={`rounded-xl border px-3 py-2 text-xs font-bold ${unreadOnly ? "border-[#43e1ff] bg-[#43e1ff]/10" : "border-white/15 bg-white/5"}`}>
               Chưa đọc ({unreadCount})
             </button>
-            <button onClick={async () => { await markAllNotificationsRead(); load(); }} className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold hover:border-[#7b5cff]">
+            <button onClick={markAllRead} className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold hover:border-[#7b5cff]">
               <FiCheck /> Đọc tất cả
             </button>
           </div>
@@ -64,6 +103,13 @@ export default function NotificationsPage() {
         <section className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04]">
           {loading ? (
             <p className="py-16 text-center text-sm text-white/50">Đang tải thông báo...</p>
+          ) : error ? (
+            <div className="px-5 py-14 text-center">
+              <p className="text-sm text-red-200">{error}</p>
+              <button type="button" onClick={load} className="mt-4 rounded-xl border border-red-300/30 px-4 py-2 text-xs font-bold text-red-100 hover:bg-red-400/10">
+                Thử lại
+              </button>
+            </div>
           ) : items.length === 0 ? (
             <p className="py-16 text-center text-sm text-white/50">Không có thông báo phù hợp.</p>
           ) : items.map((item) => (
@@ -78,6 +124,32 @@ export default function NotificationsPage() {
             </div>
           ))}
         </section>
+
+        {!loading && !error && pagination.total > 0 && (
+          <nav className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="Phân trang thông báo">
+            <span className="text-white/45">
+              Trang {pagination.currentPage}/{pagination.lastPage} · {pagination.total} thông báo
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={page <= 1}
+                className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-semibold hover:border-[#43e1ff] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                <FiChevronLeft /> Trước
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(pagination.lastPage, current + 1))}
+                disabled={page >= pagination.lastPage}
+                className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-semibold hover:border-[#43e1ff] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                Sau <FiChevronRight />
+              </button>
+            </div>
+          </nav>
+        )}
       </main>
       <Footer />
     </div>
